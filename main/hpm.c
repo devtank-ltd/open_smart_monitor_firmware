@@ -23,7 +23,7 @@ void hpm_uart_setup() {
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 }
 
-int hpm_query(int * pm25, int * pm10) {
+int hpm_query(uint16_t * pm25, uint16_t * pm10) {
     // The body of this function implements my understanding of the protocol laid out by table 4 in
     // the datasheet from Honeywell.
 

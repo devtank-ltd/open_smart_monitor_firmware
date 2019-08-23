@@ -61,7 +61,7 @@ void app_main(void)
     hpm_uart_setup();
 
     notification("QUERYING PARTICULATE MATTER SENSOR");
-    int pm25, pm10;
+    uint16_t pm25, pm10;
 
     if(!hpm_query(&pm25, &pm10)) {
         printf("PM2.5 = %d, PM10 = %d\n", pm25, pm10);
