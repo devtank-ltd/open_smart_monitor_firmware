@@ -17,21 +17,21 @@
 // and adapted to Actual C by me.
 void mqtt_sn_send(const char topic[2], char * message, bool retain)
 {
-  char header[7];
+    char header[7];
 
-  header[0] = sizeof(header) + strlen(message);
-  header[1] = MQTT_SN_TYPE_PUBLISH;
-  header[2] = MQTT_SN_FLAG_QOS_N1 | MQTT_SN_TOPIC_TYPE_SHORT;
-  if (retain) header[2] |= MQTT_SN_FLAG_RETAIN;
+    header[0] = sizeof(header) + strlen(message);
+    header[1] = MQTT_SN_TYPE_PUBLISH;
+    header[2] = MQTT_SN_FLAG_QOS_N1 | MQTT_SN_TOPIC_TYPE_SHORT;
+    if (retain) header[2] |= MQTT_SN_FLAG_RETAIN;
 
-  header[3] = topic[0];
-  header[4] = topic[1];
-  header[5] = 0x00;  // Message ID High
-  header[6] = 0x00;  // message ID Low
-  
+    header[3] = topic[0];
+    header[4] = topic[1];
+    header[5] = 0x00;  // Message ID High
+    header[6] = 0x00;  // message ID Low
 
-  uart_tx_chars(LORA_UART, header, 7);
-  uart_tx_chars(LORA_UART, message, strlen(message));
+
+    uart_tx_chars(LORA_UART, header, 7);
+    uart_tx_chars(LORA_UART, message, strlen(message));
 }
 
 void mqtt_sn_connect() {
