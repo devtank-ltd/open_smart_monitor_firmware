@@ -13,14 +13,14 @@ void hpm_uart_setup() {
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
         /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
-    ESP_ERROR_CHECK(uart_param_config(HPMUART, &hpm));
+    ESP_ERROR_CHECK(uart_param_config(HPM_UART, &hpm));
 
     //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
-    if(uart_set_pin(HPMUART, HPMUART_TX, HPMUART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
+    if(uart_set_pin(HPM_UART, HPM_UART_TX, HPM_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
         printf("Error in uart_set_pin!\n");
 
     const int uart_buffer_size = (1024 * 2);
-    ESP_ERROR_CHECK(uart_driver_install(HPMUART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
+    ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 }
 
 int hpm_query(int * pm25, int * pm10) {
@@ -29,7 +29,7 @@ int hpm_query(int * pm25, int * pm10) {
 
     // Send the request for the measurement
     static char hpm_send[4] = {0x68, 0x01, 0x04, 0x93};
-    if(uart_tx_chars(HPMUART, hpm_send, 4) != 4) {
+    if(uart_tx_chars(HPM_UART, hpm_send, 4) != 4) {
         printf("Error querying the HPM module\n");
         return -1;
     }
@@ -39,8 +39,8 @@ int hpm_query(int * pm25, int * pm10) {
     // OR the device responds with a negative ACK which doesn't.
     uint8_t data[128];
     int length;
-    uart_get_buffered_data_len(LORAUART, (size_t*)&length);
-    length = uart_read_bytes(LORAUART, data, length, 2000);
+    uart_get_buffered_data_len(HPM_UART, (size_t*)&length);
+    length = uart_read_bytes(HPM_UART, data, length, 2000);
 
     // Check if we got a negative ACK and bail out if so.
     // The negative ACK is two bytes long and reads: 0x96 0x96

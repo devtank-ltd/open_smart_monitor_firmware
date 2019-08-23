@@ -34,20 +34,20 @@ void lora_uart_setup() {
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
         /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
-    ESP_ERROR_CHECK(uart_param_config(LORAUART, &lora));
+    ESP_ERROR_CHECK(uart_param_config(LORA_UART, &lora));
 
     //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
-    if(uart_set_pin(LORAUART, LORAUART_TX, LORAUART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
+    if(uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
         printf("Error in uart_set_pin!\n");
     notification("UART PINS CONFIGURED");
 
     const int uart_buffer_size = (1024 * 2);
-    ESP_ERROR_CHECK(uart_driver_install(LORAUART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
+    ESP_ERROR_CHECK(uart_driver_install(LORA_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 
     notification("PRINTING TO LORA");
-    if(uart_tx_chars(LORAUART, "Hello, world! \n", 15) != 15)
+    if(uart_tx_chars(LORA_UART, "Hello, world! \n", 15) != 15)
         printf("Error printing a string to the UART");
-    ESP_ERROR_CHECK(uart_wait_tx_done(LORAUART, 100));
+    ESP_ERROR_CHECK(uart_wait_tx_done(LORA_UART, 100));
 }
 
 void app_main(void)
@@ -74,8 +74,8 @@ void app_main(void)
         uint8_t data[128];
         data[0] = 0;
         int length = 0;
-        uart_get_buffered_data_len(LORAUART, (size_t*)&length);
-        length = uart_read_bytes(LORAUART, data, length, 2000);
+        uart_get_buffered_data_len(LORA_UART, (size_t*)&length);
+        length = uart_read_bytes(LORA_UART, data, length, 2000);
         
         for(int i = 0; i < length; i++) putchar(data[i]);
         putchar('\n');
