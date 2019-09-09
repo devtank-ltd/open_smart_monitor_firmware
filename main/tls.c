@@ -21,7 +21,7 @@
 #define ACK_CHECK_EN  0x01
 #define ACK_CHECK_DIS 0x00
 
-uint8_t read_reg(uint8_t reg) {
+uint8_t read_tls_reg(uint8_t reg) {
     uint8_t ret;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
@@ -36,7 +36,7 @@ uint8_t read_reg(uint8_t reg) {
     return ret;
 }
 
-void write_reg(uint8_t reg, uint8_t value) {
+void write_tls_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TLS2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
@@ -49,11 +49,11 @@ void write_reg(uint8_t reg, uint8_t value) {
 }
 
 void tsl_powerdown() {
-    write_reg(ENABLE, 0x00);
+    write_tls_reg(ENABLE, 0x00);
 }
 
 void tsl_init() {
-    write_reg(ENABLE, ENABLE_PON | ENABLE_AEN);
+    write_tls_reg(ENABLE, ENABLE_PON | ENABLE_AEN);
 }
 
 void tsl_query(uint16_t * c0, uint16_t * c1) {
@@ -62,19 +62,19 @@ void tsl_query(uint16_t * c0, uint16_t * c1) {
 
     // Wait for the AVALID bit to equal 1, which signals that an integration cycle has completed and
     // the channels are ready to be read. 
-    while(!(read_reg(STATUS) && STATUS_AVALID));
+    while(!(read_tls_reg(STATUS) && STATUS_AVALID));
 
     // The datasheet recommends that all four bytes of ALS data are read as a single transaction to minimise skew between the two channels.
     // Some examples out there in the wild also read this data twice, due to the fact that the device is double-buffered. I don't know that that's really necessary though.
     uint8_t tmpl;
     uint8_t tmph;
 
-    tmpl = read_reg(C0DATAL);
-    tmph = read_reg(C0DATAH);
+    tmpl = read_tls_reg(C0DATAL);
+    tmph = read_tls_reg(C0DATAH);
     *c0 = tmph * 256 + tmpl;
 
-    tmpl = read_reg(C1DATAL);
-    tmph = read_reg(C1DATAH);
+    tmpl = read_tls_reg(C1DATAL);
+    tmph = read_tls_reg(C1DATAH);
     *c1 = tmph * 256 + tmpl;
     tsl_powerdown();
 }
