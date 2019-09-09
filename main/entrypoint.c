@@ -68,6 +68,13 @@ void app_main(void)
         printf("PM2.5 = %d, PM10 = %d\n", pm25, pm10);
     }
 
+    notification("QUERYING TEMP & HUMIDITY SENSOR");
+    float relative_humidity;
+    float temp_celsius;
+    hdc_query(&temp_celsius, &relative_humidity);
+    printf("Temperature: %f degrees celcius\n", temp_celsius);
+    printf("%f%% relative humidity\n", relative_humidity);
+
     /* Print chip information */
     for (int i = 9; i >= 0; i--) {
         printf("Echoing %d more lines ... ", i);
