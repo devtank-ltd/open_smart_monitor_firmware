@@ -75,6 +75,13 @@ void app_main(void)
     printf("Temperature: %f degrees celcius\n", temp_celsius);
     printf("%f%% relative humidity\n", relative_humidity);
 
+    notification("AMBIENT LIGHT SENSOR");
+    uint16_t ch0 = 0;
+    uint16_t ch1 = 0;
+    tsl_query(&ch0, &ch1);
+    printf("CH0 (visible light) = %d, CH1 (infrared) = %d\n", ch0, ch1);
+
+
     /* Print chip information */
     for (int i = 9; i >= 0; i--) {
         printf("Echoing %d more lines ... ", i);
