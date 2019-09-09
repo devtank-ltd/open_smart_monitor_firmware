@@ -9,6 +9,7 @@
 
 #include "pinmap.h"
 #include "devices.h"
+#include "mqtt-sn.h"
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -17,11 +18,10 @@ void __stack_chk_guard_setup(void)
 }
 
 void notification(const char * n) {
-    for(int i = 80; i; i--) putchar('*');
-    putchar('\n');
+    for(int i = 30; i; i--) putchar('*');
+    putchar(' ');
     puts(n);
-    for(int i = 80; i; i--) putchar('*');
-    putchar('\n');
+    putchar('\r');
     fflush(stdout);
 }
 
@@ -45,9 +45,10 @@ void lora_uart_setup() {
     ESP_ERROR_CHECK(uart_driver_install(LORA_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 
     notification("PRINTING TO LORA");
-    if(uart_tx_chars(LORA_UART, "Hello, world! \n", 15) != 15)
-        printf("Error printing a string to the UART");
-    ESP_ERROR_CHECK(uart_wait_tx_done(LORA_UART, 100));
+//    if(uart_tx_chars(LORA_UART, "Hello, world! \n", 15) != 15)
+//        printf("Error printing a string to the UART");
+//    ESP_ERROR_CHECK(uart_wait_tx_done(LORA_UART, 100));
+    mqtt_sn_send("f5", "fish5 is a live", 0);
 }
 
 void app_main(void)

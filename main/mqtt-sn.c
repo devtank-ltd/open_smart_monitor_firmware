@@ -13,8 +13,9 @@
 #define MQTT_SN_FLAG_RETAIN           (0x1 << 4)
 #define MQTT_SN_TOPIC_TYPE_SHORT      (0x02)
 
-// This funcion was shamelessly stolen from https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
-// and adapted to Actual C by me.
+// This funcion was shamelessly stolen from 
+// https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
+// and changed to Actual C by me.
 void mqtt_sn_send(const char topic[2], char * message, bool retain)
 {
     char header[7];
@@ -32,8 +33,4 @@ void mqtt_sn_send(const char topic[2], char * message, bool retain)
 
     uart_tx_chars(LORA_UART, header, 7);
     uart_tx_chars(LORA_UART, message, strlen(message));
-}
-
-void mqtt_sn_connect() {
-
 }
