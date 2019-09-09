@@ -55,8 +55,8 @@ void app_main(void)
 {
     notification("ENTRYPOINT REACHED");
 
-    notification("CONFIGURING UART2 for LORA");
-    lora_uart_setup();
+//    notification("CONFIGURING UART2 for LORA");
+//    lora_uart_setup();
 
     notification("CONFIGURING UART1 for HPM MODULE");
     hpm_uart_setup();
@@ -74,23 +74,22 @@ void app_main(void)
     hdc_query(&temp_celsius, &relative_humidity);
     printf("Temperature: %f degrees celcius\n", temp_celsius);
     printf("%f%% relative humidity\n", relative_humidity);
+//
+//    notification("AMBIENT LIGHT SENSOR");
+//    uint16_t ch0 = 0;
+//    uint16_t ch1 = 0;
+//    tsl_query(&ch0, &ch1);
+//    printf("CH0 (visible light) = %d, CH1 (infrared) = %d\n", ch0, ch1);
 
-    notification("AMBIENT LIGHT SENSOR");
-    uint16_t ch0 = 0;
-    uint16_t ch1 = 0;
-    tsl_query(&ch0, &ch1);
-    printf("CH0 (visible light) = %d, CH1 (infrared) = %d\n", ch0, ch1);
 
-
-    /* Print chip information */
     for (int i = 9; i >= 0; i--) {
         printf("Echoing %d more lines ... ", i);
         
         uint8_t data[128];
         data[0] = 0;
         int length = 0;
-        uart_get_buffered_data_len(LORA_UART, (size_t*)&length);
-        length = uart_read_bytes(LORA_UART, data, length, 2000);
+//        uart_get_buffered_data_len(LORA_UART, (size_t*)&length);
+//        length = uart_read_bytes(LORA_UART, data, length, 2000);
         
         for(int i = 0; i < length; i++) putchar(data[i]);
         putchar('\n');

@@ -47,8 +47,10 @@ void hdc_init() {
 }
 
 void hdc_wait() {
-    // TODO if the device never clears the flag to signal it's ready, this will loop forever which will cause the freertos watchdog to flip its lid.
-    while(read_reg(CONFIG) && 0x01);
+    while(read_reg(CONFIG) && 0x01) {
+        printf("Waiting for HDC2080\n");
+        vTaskDelay(1);
+    };
 }
 
 uint16_t q16(uint8_t reg_l, uint8_t reg_h) {
