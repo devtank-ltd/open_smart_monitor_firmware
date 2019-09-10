@@ -85,6 +85,7 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
     }
 
 unknown_response:
+    if(length > 128) length = 128;
     printf("Unknown response from HPM module, length %d, as follows:\n", length);
     for(int i = 0; i < length; i++) printf("0x%02x ", data[i]);
     if(length == 0) printf(" - is it even connected?");
