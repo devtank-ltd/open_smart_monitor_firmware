@@ -20,7 +20,7 @@
 #define MEAS_TRIG     0x01
 
 uint8_t read_reg(uint8_t reg) {
-    uint8_t ret = 0x5a;
+    uint8_t ret = 0;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
     i2c_master_start(cmd);
