@@ -17,8 +17,8 @@
 /* 
  * Pin assignments for the I2C bus.
  */
-#define I2CPIN_MASTER_SDA 0x21
-#define I2CPIN_MASTER_SCL 0x22
+#define I2CPIN_MASTER_SDA 21
+#define I2CPIN_MASTER_SCL 22
 
 /*
  * The LoRa module is connected to UART2.

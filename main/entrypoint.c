@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
+#include "driver/i2c.h"
 
 #include "pinmap.h"
 #include "devices.h"
@@ -51,6 +52,26 @@ void lora_uart_setup() {
     mqtt_sn_send("f5", "fish5 is a live", 0);
 }
 
+void i2c_setup() {
+
+    i2c_config_t conf;
+
+    conf.mode = I2C_MODE_MASTER;
+    conf.sda_io_num = I2CPIN_MASTER_SDA;
+    conf.scl_io_num = I2CPIN_MASTER_SCL;
+    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
+    conf.master.clk_speed = 10000;
+
+    if (i2c_param_config(I2CBUS, &conf) != ESP_OK)
+    	return false;
+
+    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK)
+		return false;
+
+    return true;
+}
+
 void app_main(void)
 {
     notification("ENTRYPOINT REACHED");
@@ -61,39 +82,32 @@ void app_main(void)
     notification("CONFIGURING UART1 for HPM MODULE");
     hpm_uart_setup();
 
-    notification("QUERYING PARTICULATE MATTER SENSOR");
-    uint16_t pm25, pm10;
+    notification("INSTALLING I2C DRIVER");
+    i2c_setup();
 
-    if(!hpm_query(&pm25, &pm10)) {
-        printf("PM2.5 = %d, PM10 = %d\n", pm25, pm10);
-    }
+    for(;;) {
 
-    notification("QUERYING TEMP & HUMIDITY SENSOR");
-    float relative_humidity;
-    float temp_celsius;
-    hdc_query(&temp_celsius, &relative_humidity);
-    printf("Temperature: %f degrees celcius\n", temp_celsius);
-    printf("%f%% relative humidity\n", relative_humidity);
-//
-//    notification("AMBIENT LIGHT SENSOR");
-//    uint16_t ch0 = 0;
-//    uint16_t ch1 = 0;
-//    tsl_query(&ch0, &ch1);
-//    printf("CH0 (visible light) = %d, CH1 (infrared) = %d\n", ch0, ch1);
+//        notification("QUERYING PARTICULATE MATTER SENSOR");
+        uint16_t pm25, pm10;
+
+        if(!hpm_query(&pm25, &pm10)) {
+            printf("PM2.5 = %d\nPM10 = %d\n", pm25, pm10);
+        }
+
+//        notification("QUERYING TEMP & HUMIDITY SENSOR");
+        float relative_humidity;
+        float temp_celsius;
+        hdc_query(&temp_celsius, &relative_humidity);
+        printf("Temperature: %f degrees celcius\n", temp_celsius);
+        printf("%f%% relative humidity\n", relative_humidity);
+
+//        notification("AMBIENT LIGHT SENSOR");
+        uint16_t ch0 = 0;
+        uint16_t ch1 = 0;
+        tsl_query(&ch0, &ch1);
+        printf("CH0 (visible light) = 0x%04x\nCH1 (infrared) = 0x%04x\n", ch0, ch1);
 
 
-    for (int i = 9; i >= 0; i--) {
-        printf("Echoing %d more lines ... ", i);
-        
-        uint8_t data[128];
-        data[0] = 0;
-        int length = 0;
-//        uart_get_buffered_data_len(LORA_UART, (size_t*)&length);
-//        length = uart_read_bytes(LORA_UART, data, length, 2000);
-        
-        for(int i = 0; i < length; i++) putchar(data[i]);
-        putchar('\n');
-        
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     printf("Restarting now.\n");
