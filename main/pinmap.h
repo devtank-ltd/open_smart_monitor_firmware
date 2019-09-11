@@ -24,6 +24,8 @@
  * The LoRa module is connected to UART2.
  */
 #define LORA_UART    UART_NUM_2
-#define LORA_UART_RX 18
-#define LORA_UART_TX 19
+#define LORA_UART_RX 10
+#define LORA_UART_TX 9
+//#define LORA_UART_RX 18
+//#define LORA_UART_TX 19
 
