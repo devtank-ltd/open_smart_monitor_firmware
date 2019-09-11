@@ -4,6 +4,9 @@
 #include "esp32/rom/uart.h"
 #include "pinmap.h"
 
+// Number of FreeRTOS ticks to wait while trying to receive
+#define TICKS_TO_WAIT 100
+
 void hpm_uart_setup() {
     /* UART setup */
     uart_config_t hpm = {
@@ -44,10 +47,14 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
     size_t length = 0;
 
     // Wait for at least eight bytes from the particle sensor.
-    while(length < 8) {
+    int i;
+    for(i = 0; i < TICKS_TO_WAIT && length < 8; i++) {
         uart_get_buffered_data_len(HPM_UART, &length);
+        printf("Waiting for particulate matter sensor\n");
         vTaskDelay(1);
     }
+    if(length < 8) goto unknown_response;
+    
     uart_get_buffered_data_len(HPM_UART, &length);
     length = uart_read_bytes(HPM_UART, data, length, 2000);
 
