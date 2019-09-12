@@ -37,15 +37,14 @@ void lora_uart_setup() {
     };
     ESP_ERROR_CHECK(uart_param_config(LORA_UART, &lora));
 
-//    esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    esp_err_t err = uart_set_pin(LORA_UART, 17, 18, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     if(err != ESP_OK) {
         printf("Trouble %s setting the pins up!\n", esp_err_to_name(err));
         while(1);
     }
 
-    const int uart_buffer_size = 1024;
-    ESP_ERROR_CHECK(uart_driver_install(LORA_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
+    const int uart_buffer_size = 2 * 1024;
+    ESP_ERROR_CHECK(uart_driver_install(LORA_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
 
 }
 
@@ -67,11 +66,6 @@ void i2c_setup() {
 		return false;
 
     return true;
-}
-
-void mqtt_sn_notify(const char * ident, const char * msg) {
-    printf("mqtt_notify topic %s\t\"%s\"\n", ident, msg);
-    mqtt_sn_send(ident, msg, 0);
 }
 
 void app_main(void)
@@ -104,11 +98,11 @@ void app_main(void)
 
         uint16_t ch0 = 0;
         uint16_t ch1 = 0;
-//        tsl_query(&ch0, &ch1);
+        tsl_query(&ch0, &ch1);
         printf("CH0 (visible light) = 0x%04x\nCH1 (infrared) = 0x%04x\n", ch0, ch1);
 
         sprintf(&msg, "PM2.5 = %u", (uint)pm25);
-        mqtt_sn_notify("f5", msg);
+//        mqtt_update('f', msg);
         
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
