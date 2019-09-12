@@ -43,9 +43,8 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
     header[6] = 0x00;  // message ID Low;
 
     uart_wait_tx_done(LORA_UART, 100);
-    uart_tx_chars(LORA_UART, header, 6);
+    uart_tx_chars(LORA_UART, header, 7);
     uart_tx_chars(LORA_UART, message, len);
-    
 }
 
 void mqtt_update(const char ident, const char * msg) {
