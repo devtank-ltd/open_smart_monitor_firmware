@@ -28,10 +28,9 @@ uint8_t read_reg(uint8_t reg) {
     i2c_master_write_byte(cmd, reg, ACK_CHECK_EN);
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (HDC2080_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
-    i2c_master_read_byte(cmd, &ret, ACK_CHECK_DIS);
+    i2c_master_read_byte(cmd, &ret, ACK_CHECK_EN);
     i2c_master_stop(cmd);
 
-    // TODO: Figure out why the hell this is timing out, but still succeeding in returning the value
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK) printf("Trouble %s reading from the HDC2080\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
