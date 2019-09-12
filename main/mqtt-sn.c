@@ -42,9 +42,13 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
     header[5] = 0x00;  // Message ID High
     header[6] = 0x00;  // message ID Low;
 
-    uart_wait_tx_done(LORA_UART, 100);
+    if(uart_wait_tx_done(LORA_UART, 100) == ESP_ERR_TIMEOUT) printf("Timeout while waiting1 for the MQTT packet to leave\n");
     uart_tx_chars(LORA_UART, header, 7);
+    if(uart_wait_tx_done(LORA_UART, 100) == ESP_ERR_TIMEOUT) printf("Timeout while waiting2 for the MQTT packet to leave\n");
     uart_tx_chars(LORA_UART, message, len);
+    if(uart_wait_tx_done(LORA_UART, 100) == ESP_ERR_TIMEOUT) printf("Timeout while waiting3 for the MQTT packet to leave\n");
+
+    printf("sent msg %s\n", message);
 }
 
 void mqtt_update(const char ident, const char * msg) {
