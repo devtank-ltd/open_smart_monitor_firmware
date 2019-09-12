@@ -50,7 +50,6 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
     int i;
     for(i = 0; i < TICKS_TO_WAIT && length < 8; i++) {
         uart_get_buffered_data_len(HPM_UART, &length);
-        printf("Waiting for particulate matter sensor\n");
         vTaskDelay(1);
     }
     if(length < 8) goto unknown_response;
