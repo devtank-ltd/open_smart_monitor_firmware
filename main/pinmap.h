@@ -21,11 +21,13 @@
 #define I2CPIN_MASTER_SCL 22
 
 /*
- * The LoRa module is connected to UART2.
+ * The LoRa module is connected to UART2. We cannot use pins 9 and 10 on the 
+ * prototype, because these are involved in SPI bus that connects the flash
+ * memory to the ESP32. So we'll just use the same pins as on the olimex board.
  */
 #define LORA_UART    UART_NUM_2
-#define LORA_UART_RX 10
-#define LORA_UART_TX 9
-//#define LORA_UART_RX 18
-//#define LORA_UART_TX 19
+//#define LORA_UART_RX 10
+//#define LORA_UART_TX 9
+#define LORA_UART_RX 19
+#define LORA_UART_TX 18
 
