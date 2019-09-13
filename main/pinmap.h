@@ -26,8 +26,6 @@
  * memory to the ESP32. So we'll just use the same pins as on the olimex board.
  */
 #define LORA_UART    UART_NUM_2
-//#define LORA_UART_RX 10
-//#define LORA_UART_TX 9
 #define LORA_UART_RX 19
 #define LORA_UART_TX 18
 
