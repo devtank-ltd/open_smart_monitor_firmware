@@ -101,9 +101,11 @@ void app_main(void)
         tsl_query(&ch0, &ch1);
         printf("CH0 (visible light) = 0x%04x\nCH1 (infrared) = 0x%04x\n", ch0, ch1);
 
-        sprintf(&msg, "PM2.5 = %u", (uint)pm25);
-//        mqtt_update('f', msg);
-        
+        sprintf(msg, "PM2.5 = %u", (uint)pm25);
+        mqtt_sn_send("f5", msg, 0);
+        sprintf(msg, "PM10 = %u", (uint)pm10);
+        mqtt_sn_send("f5", msg, 0);
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
 
