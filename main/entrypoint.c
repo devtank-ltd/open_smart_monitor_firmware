@@ -78,35 +78,30 @@ void app_main(void)
     i2c_setup();
 
     for(;;) {
-
+        
+        notification("Restarting now.\n");
         mqtt_sn_send("f5", "fish5 is a live", 0);
 
-        notification("Restarting now.\n");
+        // Query the particle sensor
         uint16_t pm25, pm10;
-        char msg[512];
-        
         if(!hpm_query(&pm25, &pm10)) {
-            printf("PM2.5 = %d\nPM10 = %d\n", pm25, pm10);
+            update_pm25(pm25);
+            update_pm10(pm10);
         }
-        notification("finished querying hpm.\n");
 
         float relative_humidity;
         float temp_celsius;
         hdc_query(&temp_celsius, &relative_humidity);
-        printf("Temperature: %f degrees celcius\n", temp_celsius);
-        printf("%f%% relative humidity\n", relative_humidity);
-
+        update_hum(relative_humidity);
+        update_temp(temp_celsius);
+        
         uint16_t ch0 = 0;
         uint16_t ch1 = 0;
         tsl_query(&ch0, &ch1);
-        printf("CH0 (visible light) = 0x%04x\nCH1 (infrared) = 0x%04x\n", ch0, ch1);
+        update_ch0(ch0);
+        update_ch1(ch1);
 
-        sprintf(msg, "PM2.5 = %u", (uint)pm25);
-        mqtt_sn_send("f5", msg, 0);
-        sprintf(msg, "PM10 = %u", (uint)pm10);
-        mqtt_sn_send("f5", msg, 0);
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);

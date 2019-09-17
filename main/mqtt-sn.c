@@ -15,6 +15,9 @@
 
 #define SFNODE '9'
 
+#define BUFLEN 24
+
+
 void sendthebytes(const char * str, unsigned int len) {
     while(len)
     {
@@ -26,6 +29,7 @@ void sendthebytes(const char * str, unsigned int len) {
             {
                 len -= sent;
                 str += sent;
+                if(len) printf("Only printed %d bytes, should have printed %d. Trying again.\n", len, sent);
 //                for(int i = 0; i <= sent; i++) printf("\n - 0x%02x", str[i]);
             }
             else if (sent < 0)
@@ -79,4 +83,64 @@ void mqtt_update(const char ident, const char * msg) {
     topic[0] = SFNODE;
     topic[1] = ident;
     mqtt_sn_send(topic, msg, 1);
+}
+
+void update_pm25(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "PM2.5 = %u", (uint)val);
+        mqtt_update('p', msg);
+        oldval = val;
+    }
+}
+
+void update_pm10(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "PM10 = %u", (uint)val);
+        mqtt_update('P', msg);
+        oldval = val;
+    }
+}
+
+void update_ch0(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "CH0 = %u", (uint)val);
+        mqtt_update('l', msg);
+        oldval = val;
+    }
+}
+
+void update_ch1(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
+        mqtt_update('u', msg);
+        oldval = val;
+    }
+}
+
+void update_hum(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "Hum = %f", val);
+        mqtt_update('h', msg);
+        oldval = val;
+    }
+}
+
+void update_temp(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "Temp = %f", val);
+        mqtt_update('h', msg);
+        oldval = val;
+    }
 }
