@@ -119,7 +119,7 @@ void update_ch1(uint16_t val) {
     char msg[BUFLEN];
     if(oldval != val) {
         snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
-        mqtt_update('u', msg);
+        mqtt_update('i', msg);
         oldval = val;
     }
 }
@@ -139,7 +139,7 @@ void update_temp(float val) {
     char msg[BUFLEN];
     if(oldval != val) {
         snprintf(msg, BUFLEN - 1, "Temp = %f", val);
-        mqtt_update('h', msg);
+        mqtt_update('t', msg);
         oldval = val;
     }
 }
