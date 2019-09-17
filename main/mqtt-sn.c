@@ -75,7 +75,6 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
     sendthebytes(message, len);
 
     printf("sent msg %s, length %d\n", message, sizeof(header) + len);
-    vTaskDelay(200);
 }
 
 void mqtt_update(const char ident, const char * msg) {
