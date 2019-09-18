@@ -25,7 +25,7 @@
  * prototype, because these are involved in SPI bus that connects the flash
  * memory to the ESP32. So we'll just use the same pins as on the olimex board.
  */
-#define LORA_UART    UART_NUM_2
-#define LORA_UART_RX 19
-#define LORA_UART_TX 18
-
+#define LORA_UART     UART_NUM_2
+#define LORA_UART_RX  19
+#define LORA_UART_TX  18
+#define LORA_UART_CTS 13

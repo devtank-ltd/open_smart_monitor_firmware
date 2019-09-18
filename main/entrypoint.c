@@ -33,11 +33,11 @@ void lora_uart_setup() {
         /* UART byte size */            .data_bits = UART_DATA_8_BITS,
         /* UART parity mode */          .parity = UART_PARITY_DISABLE,
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
-        /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_CTS,
     };
     ESP_ERROR_CHECK(uart_param_config(LORA_UART, &lora));
 
-    esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, LORA_UART_CTS);
     if(err != ESP_OK) {
         printf("Trouble %s setting the pins up!\n", esp_err_to_name(err));
         while(1);

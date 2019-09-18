@@ -21,7 +21,7 @@
 void sendthebytes(const char * str, unsigned int len) {
     while(len)
     {
-        esp_err_t err = uart_wait_tx_done(LORA_UART, 100);
+        esp_err_t err = uart_wait_tx_done(LORA_UART, 10);
         if(err == ESP_OK)
         {
             int sent = uart_tx_chars(LORA_UART, str, len);
@@ -38,7 +38,6 @@ void sendthebytes(const char * str, unsigned int len) {
             }
         } else {
             printf("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
-            vTaskDelay(1);
         }
     }
 }
