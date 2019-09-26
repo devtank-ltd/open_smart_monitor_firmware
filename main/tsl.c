@@ -10,6 +10,8 @@
 #define C1DATAL       0x16
 #define C1DATAH       0x17
 
+#define COMMAND       0x80
+
 #define CONTROL       0x00
 
 #define CONTROL_ON    0x03
@@ -28,16 +30,16 @@ uint8_t read_tsl_reg(uint8_t reg) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
 
-    i2c_master_write_byte(cmd, 0x80 | reg, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, COMMAND | reg, ACK_CHECK_EN);
     
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
-    i2c_master_read_byte(cmd, &ret, ACK_CHECK_EN);
+    i2c_master_read_byte(cmd, &ret, ACK_CHECK_DIS);
     i2c_master_stop(cmd);
 
-    esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
+    esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 1000);
     if(err != ESP_OK) printf("Trouble %s reading from the TSL2561\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
@@ -49,9 +51,7 @@ void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
 
-    // For the following byte, bits 101x xxxx means "select register xxxxx". This is specified in the data sheet on page 14.
-    i2c_master_write_byte(cmd, 0xa0 | reg, ACK_CHECK_EN);
-    // The following byte is the payload, or value that will be stored into the selected register.
+    i2c_master_write_byte(cmd, COMMAND | reg, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, value, ACK_CHECK_DIS);
     i2c_master_stop(cmd);
 
@@ -66,12 +66,10 @@ void tsl_powerdown() {
 
 void tsl_init() {
     write_tsl_reg(CONTROL, CONTROL_ON);
-    write_tsl_reg(TIMING, 0x02); // An integration cycle begins every 402ms.
+    write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
 }
 
 void tsl_query(uint16_t * c0, uint16_t * c1) {
-
-    tsl_init();
 
     uint8_t alive = read_tsl_reg(CONTROL);
     if(alive != 0x03) {
@@ -86,7 +84,7 @@ void tsl_query(uint16_t * c0, uint16_t * c1) {
     tmpl = read_tsl_reg(C0DATAL);
     tmph = read_tsl_reg(C0DATAH);
     *c0 = tmph * 256 + tmpl;
-
+    printf("c0 = %u\n", *c0);
     tmpl = read_tsl_reg(C1DATAL);
     tmph = read_tsl_reg(C1DATAH);
     *c1 = tmph * 256 + tmpl;
