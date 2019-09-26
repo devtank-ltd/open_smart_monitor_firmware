@@ -26,21 +26,21 @@
 
 uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
+    esp_err_t err = ESP_OK;
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
-
+    i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, COMMAND | reg, ACK_CHECK_EN);
-    
+
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN);
-    i2c_master_read_byte(cmd, &ret, ACK_CHECK_DIS);
+    i2c_master_read_byte(cmd, &ret, ACK_CHECK_EN);
     i2c_master_stop(cmd);
 
-    esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 1000);
-    if(err != ESP_OK) printf("Trouble %s reading from the TSL2561\n", esp_err_to_name(err));
+    err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
+    if(err != ESP_OK) printf("Trouble2 %s reading from the TSL2561\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
@@ -67,6 +67,7 @@ void tsl_powerdown() {
 void tsl_init() {
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
+    printf("TSL2561 initialised %d \n", read_tsl_reg(CONTROL));
 }
 
 void tsl_query(uint16_t * c0, uint16_t * c1) {
