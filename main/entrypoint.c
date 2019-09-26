@@ -76,7 +76,7 @@ void app_main(void)
     lora_uart_setup();
     hpm_uart_setup();
     i2c_setup();
-
+    tsl_init();
     for(;;) {
         
         notification("Restarting now.\n");
