@@ -52,7 +52,7 @@ void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
 
     i2c_master_write_byte(cmd, COMMAND | reg, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, value, ACK_CHECK_DIS);
+    i2c_master_write_byte(cmd, value, ACK_CHECK_EN);
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
