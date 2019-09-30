@@ -5,10 +5,10 @@
 // possible addresses are: 0x29, 0x39, 0x49.
 #define TSL2591_ADDR  0x39 // 0x39 is correct on the lashup.
 
-#define C0DATAL       0x14
-#define C0DATAH       0x15
-#define C1DATAL       0x16
-#define C1DATAH       0x17
+#define C0DATAL       0x0c
+#define C0DATAH       0x0d
+#define C1DATAL       0x0e
+#define C1DATAH       0x0f
 
 #define COMMAND       0x80
 
@@ -39,11 +39,9 @@ uint8_t read_tsl_reg(uint8_t reg) {
     i2c_master_read_byte(cmd, &ret, ACK_CHECK_EN);
     i2c_master_stop(cmd);
 
-    printf("%u\n", ret);
     err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK) printf("Trouble2 %s reading from the TSL2561\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
-    printf("%u = %u\n", reg, ret);
 
     return ret;
 }
@@ -74,7 +72,7 @@ void tsl_init() {
 
 void tsl_query(uint16_t * c0, uint16_t * c1) {
 
-    uint8_t alive = read_tsl_reg(CONTROL);
+    uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
     if(alive != 0x03) {
         printf("TSL2561 was found to be dead. %u\n", alive);
     }
