@@ -79,8 +79,8 @@ void app_main(void)
     tsl_init();
     for(;;) {
         
-        notification("Restarting now.\n");
-        mqtt_sn_send("f5", "fish5 is a live", 0);
+//        notification("Restarting now.\n");
+        im_alive();
 
         // Query the particle sensor
         uint16_t pm25, pm10;

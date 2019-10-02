@@ -83,6 +83,10 @@ void mqtt_update(const char ident, const char * msg) {
     mqtt_sn_send(topic, msg, 1);
 }
 
+void im_alive() {
+    mqtt_update('f', "I'm alive");
+}
+
 void update_pm25(uint16_t val) {
     static uint16_t oldval = 0;
     char msg[BUFLEN];
