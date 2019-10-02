@@ -13,7 +13,35 @@
 #define MQTT_SN_FLAG_RETAIN           (0x1 << 4)
 #define MQTT_SN_TOPIC_TYPE_SHORT      (0x02)
 
-#define SFNODE      '9'
+#define SFNODE '9'
+
+#define BUFLEN 24
+
+
+void sendthebytes(const char * str, unsigned int len) {
+    while(len)
+    {
+        esp_err_t err = uart_wait_tx_done(LORA_UART, 10);
+        if(err == ESP_OK)
+        {
+            int sent = uart_tx_chars(LORA_UART, str, len);
+            if (sent > 0)
+            {
+                len -= sent;
+                str += sent;
+                if(len) printf("Only printed %d bytes, should have printed %d. Trying again.\n", len, sent);
+//                for(int i = 0; i <= sent; i++) printf("\n - 0x%02x", str[i]);
+            }
+            else if (sent < 0)
+            {
+                printf("Error writing to UART\n");
+            }
+        } else {
+            printf("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
+        }
+    }
+}
+
 
 // This funcion was shamelessly stolen from 
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
@@ -42,9 +70,10 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
     header[5] = 0x00;  // Message ID High
     header[6] = 0x00;  // message ID Low;
 
-    uart_wait_tx_done(LORA_UART, 100);
-    uart_tx_chars(LORA_UART, header, 7);
-    uart_tx_chars(LORA_UART, message, len);
+    sendthebytes(header, 7);
+    sendthebytes(message, len);
+
+    printf("%c%c: %s\n", topic[0], topic[1], message);
 }
 
 void mqtt_update(const char ident, const char * msg) {
@@ -52,4 +81,68 @@ void mqtt_update(const char ident, const char * msg) {
     topic[0] = SFNODE;
     topic[1] = ident;
     mqtt_sn_send(topic, msg, 1);
+}
+
+void im_alive() {
+    mqtt_update('f', "I'm alive");
+}
+
+void update_pm25(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "PM2.5 = %u", (uint)val);
+        mqtt_update('p', msg);
+        oldval = val;
+    }
+}
+
+void update_pm10(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "PM10 = %u", (uint)val);
+        mqtt_update('P', msg);
+        oldval = val;
+    }
+}
+
+void update_ch0(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "CH0 = %u", (uint)val);
+        mqtt_update('l', msg);
+        oldval = val;
+    }
+}
+
+void update_ch1(uint16_t val) {
+    static uint16_t oldval = 0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
+        mqtt_update('i', msg);
+        oldval = val;
+    }
+}
+
+void update_hum(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "Hum = %f", val);
+        mqtt_update('h', msg);
+        oldval = val;
+    }
+}
+
+void update_temp(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "Temp = %f", val);
+        mqtt_update('t', msg);
+        oldval = val;
+    }
 }
