@@ -8,4 +8,7 @@ void tsl_query(uint16_t * c0, uint16_t * c1);
 
 void hdc_query(float * temp_celsius, float * relative_humidity);
 
+void init_smart_meter();
+void query_countis();
+
 #define I2CBUS I2C_NUM_0
