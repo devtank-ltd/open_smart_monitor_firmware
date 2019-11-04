@@ -40,11 +40,11 @@
 // to the end of the list. Even though it means that the order of items ends up making no sense.
 const mb_parameter_descriptor_t countis_e53[] = { \
  // { Cid, Param Name,                     Units,                           SlaveAddr,Modbus Reg Type,  Start,Size,Offs, Data Type,DataSize,ParamOptions,Access Mode}
-    { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50512,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
-    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
-    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
-    { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,  1, NOOPTS, PAR_PERMS_READ },
-    { 4,   (const char *)"Product version",(const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
+    { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50512,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,    1, NOOPTS, PAR_PERMS_READ },
+    { 4,   (const char *)"Product version",(const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -95,6 +95,27 @@ esp_err_t init_smart_meter() {
     if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
         printf("Error in uart_set_pin!\n");
     uart_set_mode(UART_NUM, UART_MODE_RS485_HALF_DUPLEX);
+
+
+    // Make sure we're actually connected to a SOCOMEC smart meter!
+    // This function really returns a null byte between each character, "S\0O\0C\0O\0",
+    // so to compare it I just shuffle the bytes about a bit to get "SOCO\0\0O\0", which
+    // can be treated with strcmp and friends.
+    char soco[8];
+    sense_modbus_read_value(4, soco);
+    soco[1] = soco[2];
+    soco[2] = soco[4];
+    soco[3] = soco[6];
+    soco[4] = '\0';
+
+    for(int i = 0; i < 8; i++) {
+        printf("soco[%d] == '%c';\n", i, soco[i]);
+    }
+    if(strcmp(soco, "SOCO")) {
+        printf("Product ident %s, don't know what that means\n", soco);
+    } else {
+        printf("Product ident %s, that's great.\n", soco);
+    }
 
     return err;
 }
