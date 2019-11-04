@@ -74,14 +74,15 @@ void app_main(void)
 
     notification("CONFIGURING UARTS AND I2C");
     lora_uart_setup();
-    hpm_uart_setup();
+//    hpm_uart_setup();
     i2c_setup();
     tsl_init();
+    init_smart_meter();
+
     for(;;) {
         
-//        notification("Restarting now.\n");
         im_alive();
-
+/*
         // Query the particle sensor
         uint16_t pm25, pm10;
         if(!hpm_query(&pm25, &pm10)) {
@@ -100,7 +101,8 @@ void app_main(void)
         tsl_query(&ch0, &ch1);
         update_ch0(ch0);
         update_ch1(ch1);
-
+*/
+        query_countis();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
