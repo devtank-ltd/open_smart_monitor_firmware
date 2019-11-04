@@ -34,12 +34,17 @@
 #define OPTS(min_val, max_val, step_val) { .opt1 = min_val, .opt2 = max_val, .opt3 = step_val }
 #define NOOPTS { .opt1 = 0, .opt2 = 0, .opt3 = 0 }
 
+
+// The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially, 
+// each element needs a Cid equal to the subscript that identifies it, which makes adding ro removing parameters very tricky. Therefore, I recomment you only add them
+// to the end of the list. Even though it means that the order of items ends up making no sense.
 const mb_parameter_descriptor_t countis_e53[] = { \
  // { Cid, Param Name,                     Units,                           SlaveAddr,Modbus Reg Type,  Start,Size,Offs, Data Type,DataSize,ParamOptions,Access Mode}
     { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50512,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
-    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32, 4, OPTS(0,0,0), PAR_PERMS_READ },
-    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32, 4, OPTS(0,0,0), PAR_PERMS_READ },
-    { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,  1, OPTS(0,0,0), PAR_PERMS_READ },
+    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
+    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
+    { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,  1, NOOPTS, PAR_PERMS_READ },
+    { 4,   (const char *)"Product version",(const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   4,   0, PARAM_TYPE_U32, 4, NOOPTS, PAR_PERMS_READ },
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
