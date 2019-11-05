@@ -44,7 +44,10 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,    1, NOOPTS, PAR_PERMS_READ },
-    { 4,   (const char *)"Product version",(const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 4,   (const char *)"Ident",          (const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 5,   (const char *)"Vendor name",    (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50042,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 6,   (const char *)"Product name",   (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50050,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 7,   (const char *)"ProductNameExt", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50058,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -98,26 +101,41 @@ esp_err_t init_smart_meter() {
 
 
     // Make sure we're actually connected to a SOCOMEC smart meter!
-    // This function really returns a null byte between each character, "S\0O\0C\0O\0",
-    // so to compare it I just shuffle the bytes about a bit to get "SOCO\0\0O\0", which
-    // can be treated with strcmp and friends.
+    // This function really returns a null byte between each character, "S\0O\0C\0O\0".
     char soco[8];
     sense_modbus_read_value(4, soco);
-    soco[1] = soco[2];
-    soco[2] = soco[4];
-    soco[3] = soco[6];
-    soco[4] = '\0';
 
-    for(int i = 0; i < 8; i++) {
-        printf("soco[%d] == '%c';\n", i, soco[i]);
-    }
-    if(strcmp(soco, "SOCO")) {
-        printf("Product ident %s, don't know what that means\n", soco);
-    } else {
-        printf("Product ident %s, that's great.\n", soco);
-    }
+    if(soco[0] != 'S')     goto unknown_device;
+    if(soco[1] !=    '\0') goto unknown_device;
+    if(soco[2] != 'O')     goto unknown_device;
+    if(soco[3] !=    '\0') goto unknown_device;
+    if(soco[4] != 'C')     goto unknown_device;
+    if(soco[5] !=    '\0') goto unknown_device;
+    if(soco[6] != 'O')     goto unknown_device;
+    if(soco[7] !=    '\0') goto unknown_device;
 
     return err;
+    // Try and identify the model number. This doesn't work because of
+    // Endianness mismatch and also buffer overruns; Might take another look later.
+    /*
+    char vendor[8];
+    char productname[8];
+    char productnameext[8];
+    vendor[7] = '\0';
+    productname[7] = '\0';
+    productnameext[7] = '\0';
+
+    sense_modbus_read_value(5, vendor);
+    sense_modbus_read_value(6, productname);
+    sense_modbus_read_value(7, productnameext);
+
+    printf("Connected to a %s %s %s.\n", vendor, productname, productnameext);
+    */
+unknown_device:
+    for(int i = 0; i < 8; i++) printf("soco[%d] == '%c';\n", i, soco[i]);
+    printf("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
+    return err;
+
 }
 
 void query_countis()
