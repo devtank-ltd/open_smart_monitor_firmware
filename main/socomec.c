@@ -48,6 +48,10 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 5,   (const char *)"Vendor name",    (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50042,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
     { 6,   (const char *)"Product name",   (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50050,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
     { 7,   (const char *)"ProductNameExt", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50058,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 8,   (const char *)"Simple voltage", (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }, 
+    { 9,   (const char *)"Frequency",      (const char *)"Hz",              E53_ADDR, MB_PARAM_HOLDING, 50606,   4,   0, PARAM_TYPE_FLOAT, 4, NOOPTS, PAR_PERMS_READ },
+    { 10,  (const char *)"Current",        (const char *)"A",               E53_ADDR, MB_PARAM_HOLDING, 50528,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -93,6 +97,7 @@ esp_err_t init_smart_meter() {
     SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
                                 "mb controller set descriptor fail, returns(0x%x).",
                                 (uint32_t)err);
+
 
 
     if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
@@ -144,15 +149,29 @@ void query_countis()
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;
     uint8_t networktype = 0;
+    uint32_t volt = 0;
+    float ffreq = 0.0;
+    uint32_t current = 0;
 
-    sense_modbus_read_value(0, &hourmeter);
-    sense_modbus_read_value(1, &apparentpower);
-    sense_modbus_read_value(2, &fhourmeter);
-    sense_modbus_read_value(3, &networktype);
+    sense_modbus_read_value(0,  &hourmeter);
+    sense_modbus_read_value(1,  &apparentpower);
+    sense_modbus_read_value(2,  &fhourmeter);
+    sense_modbus_read_value(3,  &networktype);
+    sense_modbus_read_value(8,  &volt);
+    sense_modbus_read_value(9,  &ffreq);
+    sense_modbus_read_value(10, &current);
+
+    // The volt reads as:
+    // high byte, low byte, zero, zero
+    // all inside a uint32_t. The two upper bits encode a number a hundred times the actual voltage.
+    float voltage = (volt >> 16) / 100.0;
+    // I suspect a similar thing goes for the current reading.
+    float fcurrent = (current >> 16) / 100.0;
 
     const char * ntnames[] = { "1bl", "2bl", "3bl", "3nbl", "4bl", "4nbl" };
 
     printf("network type: %s\n", ntnames[networktype]);
 
     printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
+    printf("%fV, %f Hz, %fA\n", voltage, ffreq, fcurrent);
 }
