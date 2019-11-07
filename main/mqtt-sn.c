@@ -146,3 +146,24 @@ void update_temp(float val) {
         oldval = val;
     }
 }
+
+void update_volt(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "%fV", val);
+        mqtt_update('V', msg);
+        oldval = val;
+    }
+}
+
+
+void update_curr(float val) {
+    static float oldval = 0.0;
+    char msg[BUFLEN];
+    if(oldval != val) {
+        snprintf(msg, BUFLEN - 1, "%fA", val);
+        mqtt_update('I', msg);
+        oldval = val;
+    }
+}

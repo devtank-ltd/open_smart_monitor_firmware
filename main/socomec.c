@@ -13,6 +13,7 @@
 #include "esp_spi_flash.h"
 #include "driver/uart.h"
 #include "esp_modbus_master.h"
+#include "mqtt-sn.h"
 
 #define UART_NUM UART_NUM_1
 #define HPM_UART_TX 17
@@ -98,8 +99,6 @@ esp_err_t init_smart_meter() {
                                 "mb controller set descriptor fail, returns(0x%x).",
                                 (uint32_t)err);
 
-
-
     if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
         printf("Error in uart_set_pin!\n");
     uart_set_mode(UART_NUM, UART_MODE_RS485_HALF_DUPLEX);
@@ -174,4 +173,7 @@ void query_countis()
 
     printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
     printf("%fV, %f Hz, %fA\n", voltage, ffreq, fcurrent);
+    
+    update_volt(voltage);
+    update_curr(fcurrent);
 }
