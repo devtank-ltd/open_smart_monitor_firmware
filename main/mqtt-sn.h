@@ -6,5 +6,5 @@ void update_ch0(uint16_t val);
 void update_ch1(uint16_t val);
 void update_hum(float val);
 void update_temp(float val);
-void update_volt(float val);
-void update_curr(float val);
+void update_volt(int mV);
+void update_curr(int mA);
