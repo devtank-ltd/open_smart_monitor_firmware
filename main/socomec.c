@@ -47,8 +47,8 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,    1, NOOPTS, PAR_PERMS_READ },
     { 4,   (const char *)"Ident",          (const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
     { 5,   (const char *)"Vendor name",    (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50042,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
-    { 6,   (const char *)"Product name",   (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50050,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
-    { 7,   (const char *)"ProductNameExt", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50058,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
+    { 6,   (const char *)"ProductOrderID", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50004,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
+    { 7,   (const char *)"ProductID",      (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50005,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
     { 8,   (const char *)"Simple voltage", (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }, 
     { 9,   (const char *)"Frequency",      (const char *)"Hz",              E53_ADDR, MB_PARAM_HOLDING, 50606,   4,   0, PARAM_TYPE_FLOAT, 4, NOOPTS, PAR_PERMS_READ },
     { 10,  (const char *)"Current",        (const char *)"A",               E53_ADDR, MB_PARAM_HOLDING, 50528,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
@@ -118,24 +118,34 @@ esp_err_t init_smart_meter() {
     if(soco[6] != 'O')     goto unknown_device;
     if(soco[7] !=    '\0') goto unknown_device;
 
-    return err;
     // Try and identify the model number. This doesn't work because of
     // Endianness mismatch and also buffer overruns; Might take another look later.
-    /*
-    char vendor[8];
-    char productname[8];
-    char productnameext[8];
-    vendor[7] = '\0';
-    productname[7] = '\0';
-    productnameext[7] = '\0';
+    
+    uint16_t product_order_id;
+    uint16_t product_id;
+    const char * prod = 0;
+    const char * prodorder = 0;
 
-    sense_modbus_read_value(5, vendor);
-    sense_modbus_read_value(6, productname);
-    sense_modbus_read_value(7, productnameext);
+    sense_modbus_read_value(6, &product_order_id);
+    sense_modbus_read_value(7, &product_id);
+    
+    if(product_order_id == 100) prodorder = "Countis";
+    if(product_order_id == 200) prodorder = "Protection";
+    if(product_order_id == 300) prodorder = "Atys";
+    if(product_order_id == 400) prodorder = "Diris";
 
-    printf("Connected to a %s %s %s.\n", vendor, productname, productnameext);
-    */
+    if(!prodorder) goto unknown_device;
+
+    if(product_id == 100) prod = "E53";
+    if(product_id == 1000) prod = "ATS3";
+
+    if(!prod) goto unknown_device;
+
+    printf("Connected to a Socomec %s %s.\n", prodorder, prod);
+    return err;
+    
 unknown_device:
+    printf("product_order_id = %d\nproduct_id = %d\n", product_order_id, product_id);
     for(int i = 0; i < 8; i++) printf("soco[%d] == '%c';\n", i, soco[i]);
     printf("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
     return err;
@@ -163,17 +173,17 @@ void query_countis()
     // The volt reads as:
     // high byte, low byte, zero, zero
     // all inside a uint32_t. The two upper bits encode a number a hundred times the actual voltage.
-    float voltage = (volt >> 16) / 100.0;
-    // I suspect a similar thing goes for the current reading.
-    float fcurrent = (current >> 16) / 100.0;
+    int mV = (volt >> 16) * 100;
+    // I suspect a similar thing goes for the ampage.
+    int mA = (current >> 16) * 100;
 
     const char * ntnames[] = { "1bl", "2bl", "3bl", "3nbl", "4bl", "4nbl" };
 
     printf("network type: %s\n", ntnames[networktype]);
 
     printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
-    printf("%fV, %f Hz, %fA\n", voltage, ffreq, fcurrent);
+    printf("%dmV, %dmA\n", mV, mA);
     
-    update_volt(voltage);
-    update_curr(fcurrent);
+    update_volt(mV);
+    update_curr(mA);
 }
