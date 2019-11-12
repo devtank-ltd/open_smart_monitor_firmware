@@ -152,22 +152,3 @@ void mqtt_announce_int(char * key, int val) {
     snprintf(msg, BUFLEN - 1, "%s %d ", key, val);
     mqtt_update('I', msg);
 }
-
-
-void announce_power(int phase, int active, int reactive, int powerfactor) {
-    static int oldactive[4];
-    static int oldreactive[4];
-    static int oldfactor[4];
-
-    if(active      != oldactive[phase])   goto announce;
-    if(reactive    != oldreactive[phase]) goto announce;
-    if(powerfactor != oldfactor[phase])   goto announce;
-
-    char msg[BUFLEN];
-announce:
-    snprintf(msg, BUFLEN - 1, "%d,%d,%d,%d", phase, active, reactive, powerfactor);
-    mqtt_update('S', msg);
-    oldactive[phase] = active;
-    oldreactive[phase] = reactive;
-    oldfactor[phase] = powerfactor;
-}
