@@ -67,7 +67,11 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 20,  (const char *)"ActivePowerP3",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50548,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 21,  (const char *)"ReactivePowerP3",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50554,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 22,  (const char *)"PowerFactorP3",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50566,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 23,  (const char *)"ApparentPower",  (const char *)"VA",              E53_ADDR, MB_PARAM_HOLDING, 50540,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }
+    { 23,  (const char *)"ApparentPower",  (const char *)"VA",              E53_ADDR, MB_PARAM_HOLDING, 50540,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+
+    { 24,  (const char *)"ActivePowerh",   (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50770,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 25,  (const char *)"ReactivePowerh", (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50772,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 26,  (const char *)"ApparentPowerh", (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50774,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -199,7 +203,7 @@ void query_countis()
     printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
     printf("%dmV, %dmA\n", mV, mA);
    
-    for(int i = 8; i <= 23; i++) {
+    for(int i = 8; i <= 26; i++) {
         int32_t v = 0;
         sense_modbus_read_value(i, &v);
         mqtt_announce_int(countis_e53[i].param_key, v >> 16);
