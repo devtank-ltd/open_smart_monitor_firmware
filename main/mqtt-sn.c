@@ -179,7 +179,7 @@ void announce_power(int phase, int active, int reactive, int powerfactor) {
 
     char msg[BUFLEN];
 announce:
-    snprintf(msg, BUFLEN - 1, "Phase %d: %dP %dQ, %dPF", phase, active, reactive, powerfactor);
+    snprintf(msg, BUFLEN - 1, "%d,%d,%d,%d", phase, active, reactive, powerfactor);
     mqtt_update('S', msg);
     oldactive[phase] = active;
     oldreactive[phase] = reactive;
