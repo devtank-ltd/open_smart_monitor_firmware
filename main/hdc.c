@@ -81,4 +81,7 @@ void hdc_query(float * temp_celsius, float * relative_humidity) {
     
     uint16_t humreading = q16(HUM_L, HUM_H);
     *relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
+
+    mqtt_announce_int("temperature", temp_celsius);
+    mqtt_announce_int("humidity", relative_humidity);
 }
