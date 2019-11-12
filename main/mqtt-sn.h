@@ -8,3 +8,5 @@ void update_hum(float val);
 void update_temp(float val);
 void update_volt(int mV);
 void update_curr(int mA);
+
+void announce_power(int phase, int active, int reactive, int powerfactor);
