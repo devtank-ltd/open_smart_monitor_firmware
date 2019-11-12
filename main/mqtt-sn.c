@@ -147,26 +147,12 @@ void update_temp(float val) {
     }
 }
 
-void update_volt(int mV) {
-    static int oldval = 0.0;
+void mqtt_announce_int(char * key, int val) {
     char msg[BUFLEN];
-    if(oldval != mV) {
-        snprintf(msg, BUFLEN - 1, "%dmV", mV);
-        mqtt_update('V', msg);
-        oldval = mV;
-    }
+    snprintf(msg, BUFLEN - 1, "%s %d ", key, val);
+    mqtt_update('I', msg);
 }
 
-
-void update_curr(int mA) {
-    static int oldval = 0.0;
-    char msg[BUFLEN];
-    if(oldval != mA) {
-        snprintf(msg, BUFLEN - 1, "%dmA", mA);
-        mqtt_update('I', msg);
-        oldval = mA;
-    }
-}
 
 void announce_power(int phase, int active, int reactive, int powerfactor) {
     static int oldactive[4];
