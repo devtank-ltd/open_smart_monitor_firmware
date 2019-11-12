@@ -52,7 +52,21 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 8,   (const char *)"Simple voltage", (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }, 
     { 9,   (const char *)"Frequency",      (const char *)"Hz",              E53_ADDR, MB_PARAM_HOLDING, 50606,   4,   0, PARAM_TYPE_FLOAT, 4, NOOPTS, PAR_PERMS_READ },
     { 10,  (const char *)"Current",        (const char *)"A",               E53_ADDR, MB_PARAM_HOLDING, 50528,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 11,  (const char *)"ActivePower",    (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 12,  (const char *)"ReactivePower",  (const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50538,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 13,  (const char *)"PowerFactor",    (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50542,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
 
+    { 14,  (const char *)"ActivePowerP1",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50544,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 15,  (const char *)"ReactivePowerP1",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50550,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 16,  (const char *)"PowerFactorP1",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50562,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+
+    { 17,  (const char *)"ActivePowerP2",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50546,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 18,  (const char *)"ReactivePowerP2",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50552,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 19,  (const char *)"PowerFactorP2",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50564,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+
+    { 20,  (const char *)"ActivePowerP3",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50548,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 21,  (const char *)"ReactivePowerP3",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50554,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 22,  (const char *)"PowerFactorP3",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50566,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -152,6 +166,21 @@ unknown_device:
 
 }
 
+void qrypwr(int phase, int p, int q, int pf) {
+    int32_t rp = 0;
+    int32_t rq = 0;
+    int32_t rpf = 0;
+    
+    sense_modbus_read_value(p, &rp);
+    sense_modbus_read_value(q, &rq);
+    sense_modbus_read_value(pf, &rpf);
+
+    rpf /= 1000;
+    printf("Announcing readings for phase %d: %dP %dQ. Power factor: %d\n", phase, rp, rq, rpf);
+
+    announce_power(phase, rp, rq, rpf);
+}
+
 void query_countis()
 {
     uint32_t hourmeter = 0;
@@ -186,4 +215,8 @@ void query_countis()
     
     update_volt(mV);
     update_curr(mA);
+    qrypwr(0, 11, 12, 13);
+    qrypwr(1, 14, 15, 16);
+    qrypwr(2, 17, 18, 19);
+    qrypwr(3, 20, 21, 22);
 }
