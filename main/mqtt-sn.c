@@ -21,7 +21,7 @@
 void sendthebytes(const char * str, unsigned int len) {
     while(len)
     {
-        esp_err_t err = uart_wait_tx_done(LORA_UART, 10);
+        esp_err_t err = uart_wait_tx_done(LORA_UART, 20);
         if(err == ESP_OK)
         {
             int sent = uart_tx_chars(LORA_UART, str, len);
@@ -166,4 +166,22 @@ void update_curr(int mA) {
         mqtt_update('I', msg);
         oldval = mA;
     }
+}
+
+void announce_power(int phase, int active, int reactive, int powerfactor) {
+    static int oldactive[4];
+    static int oldreactive[4];
+    static int oldfactor[4];
+
+    if(active      != oldactive[phase])   goto announce;
+    if(reactive    != oldreactive[phase]) goto announce;
+    if(powerfactor != oldfactor[phase])   goto announce;
+
+    char msg[BUFLEN];
+announce:
+    snprintf(msg, BUFLEN - 1, "Phase %d: %dP %dQ, %dPF", phase, active, reactive, powerfactor);
+    mqtt_update('S', msg);
+    oldactive[phase] = active;
+    oldreactive[phase] = reactive;
+    oldfactor[phase] = powerfactor;
 }
