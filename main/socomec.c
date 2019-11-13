@@ -35,6 +35,7 @@
 #define OPTS(min_val, max_val, step_val) { .opt1 = min_val, .opt2 = max_val, .opt3 = step_val }
 #define NOOPTS { .opt1 = 0, .opt2 = 0, .opt3 = 0 }
 
+int sococonnected = 0;
 
 // The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially, 
 // each element needs a Cid equal to the subscript that identifies it, which makes adding ro removing parameters very tricky. Therefore, I recomment you only add them
@@ -69,9 +70,9 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 22,  (const char *)"PowerFactorP3",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50566,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 23,  (const char *)"ApparentPower",  (const char *)"VA",              E53_ADDR, MB_PARAM_HOLDING, 50540,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
 
-    { 24,  (const char *)"ActivePowerh",   (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50770,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 25,  (const char *)"ReactivePowerh", (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50772,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 26,  (const char *)"ApparentPowerh", (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50774,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }
+    { 24,  (const char *)"ActivePowerh",   (const char *)"kWh",             E53_ADDR, MB_PARAM_HOLDING, 50770,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 25,  (const char *)"ReactivePowerh", (const char *)"varh",            E53_ADDR, MB_PARAM_HOLDING, 50772,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
+    { 26,  (const char *)"ApparentPowerh", (const char *)"VAh",             E53_ADDR, MB_PARAM_HOLDING, 50774,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -161,6 +162,7 @@ esp_err_t init_smart_meter() {
     if(!prod) goto unknown_device;
 
     printf("Connected to a Socomec %s %s.\n", prodorder, prod);
+    sococonnected = 1;
     return err;
     
 unknown_device:
@@ -173,6 +175,7 @@ unknown_device:
 
 void query_countis()
 {
+    if(!sococonnected) return;
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;
