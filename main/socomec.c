@@ -168,7 +168,7 @@ esp_err_t init_smart_meter() {
 unknown_device:
     printf("product_order_id = %d\nproduct_id = %d\n", product_order_id, product_id);
     for(int i = 0; i < 8; i++) printf("soco[%d] == '%c';\n", i, soco[i]);
-    printf("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
+    printf("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.\n");
     return err;
 
 }
