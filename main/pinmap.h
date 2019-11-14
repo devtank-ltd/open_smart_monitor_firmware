@@ -37,3 +37,6 @@
 #define LORA_UART_RX  19
 #define LORA_UART_TX  18
 #define LORA_UART_CTS 23
+
+
+#define FLOWRATE_GPIO 5

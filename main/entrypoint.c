@@ -78,6 +78,7 @@ void app_main(void)
     i2c_setup();
     tsl_init();
     init_smart_meter();
+    flowrate_setup();
 
     for(;;) {
         
@@ -103,6 +104,7 @@ void app_main(void)
         update_ch1(ch1);
 */
         query_countis();
+        qry_flowrate();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
