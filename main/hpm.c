@@ -3,6 +3,7 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "pinmap.h"
+#include "mqtt-sn.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
 #define TICKS_TO_WAIT 100

@@ -21,7 +21,7 @@
 void sendthebytes(const char * str, unsigned int len) {
     while(len)
     {
-        esp_err_t err = uart_wait_tx_done(LORA_UART, 20);
+        esp_err_t err = uart_wait_tx_done(LORA_UART, 200);
         if(err == ESP_OK)
         {
             int sent = uart_tx_chars(LORA_UART, str, len);
