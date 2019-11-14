@@ -30,7 +30,6 @@ void sendthebytes(const char * str, unsigned int len) {
                 len -= sent;
                 str += sent;
                 if(len) printf("Only printed %d bytes, should have printed %d. Trying again.\n", len, sent);
-//                for(int i = 0; i <= sent; i++) printf("\n - 0x%02x", str[i]);
             }
             else if (sent < 0)
             {
