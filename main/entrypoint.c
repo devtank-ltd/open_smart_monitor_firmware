@@ -78,12 +78,12 @@ void app_main(void)
     i2c_setup();
     tsl_init();
     init_smart_meter();
-    flowrate_setup();
+    volume_setup();
 
     for(;;) {
         
         im_alive();
-/*
+
         // Query the particle sensor
         uint16_t pm25, pm10;
         if(!hpm_query(&pm25, &pm10)) {
@@ -102,9 +102,9 @@ void app_main(void)
         tsl_query(&ch0, &ch1);
         update_ch0(ch0);
         update_ch1(ch1);
-*/
+
         query_countis();
-        qry_flowrate();
+        qry_volume();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
