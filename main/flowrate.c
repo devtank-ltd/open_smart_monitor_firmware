@@ -6,8 +6,7 @@
 
 static int lvl;
 static xQueueHandle gpio_evt_queue = NULL;
-static int litres = 0;
-static int flowrate = 0;
+static int volume = 0;
 
 static void IRAM_ATTR isr(void * arg) {
     uint32_t gpio_num = (uint32_t) arg;
@@ -22,15 +21,15 @@ static void gpio_task_example(void* arg)
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             int nlvl = gpio_get_level(io_num);
             if(lvl != nlvl) {
-                if(lvl) flowrate++;
+                if(lvl) volume++;
                 lvl = nlvl;
             }
         }   
     }   
 }
 
-void flowrate_setup() {
-    printf("Setting the flowrate gpio measurement thingies up\n");
+void volume_setup() {
+    printf("Setting the volume measurement gpio up\n");
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
     io_conf.pin_bit_mask = (1ULL << FLOWRATE_GPIO);
@@ -46,6 +45,6 @@ void flowrate_setup() {
     gpio_isr_handler_add(FLOWRATE_GPIO, isr, (void*) FLOWRATE_GPIO);
 }
 
-void qry_flowrate() {
-    printf("flowrate = %d\n", flowrate);
+void qry_volume() {
+    printf("volume = %d\n", volume);
 }
