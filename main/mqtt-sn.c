@@ -18,7 +18,7 @@
 #define BUFLEN 24
 
 
-void sendthebytes(const char * str, unsigned int len) {
+void sendthebytes(const char * str, size_t len) {
     while(len)
     {
         esp_err_t err = uart_wait_tx_done(LORA_UART, 200);
@@ -29,7 +29,7 @@ void sendthebytes(const char * str, unsigned int len) {
             {
                 len -= sent;
                 str += sent;
-                if(len) printf("Only printed %d bytes, should have printed %d. Trying again.\n", len, sent);
+                if(len) printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
             }
             else if (sent < 0)
             {
@@ -48,7 +48,7 @@ void sendthebytes(const char * str, unsigned int len) {
 void mqtt_sn_send(const char topic[2], const char * message, bool retain)
 {
     char header[7];
-    unsigned len = strlen(message);
+    size_t len = strlen(message);
 
     if (len > (255-7))
         len = 255-7;
