@@ -88,8 +88,8 @@ void im_alive() {
 
 void update_pm25(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "PM2.5 = %u", (uint)val);
         mqtt_update('p', msg);
         oldval = val;
@@ -98,8 +98,8 @@ void update_pm25(uint16_t val) {
 
 void update_pm10(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "PM10 = %u", (uint)val);
         mqtt_update('P', msg);
         oldval = val;
@@ -108,8 +108,8 @@ void update_pm10(uint16_t val) {
 
 void update_ch0(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "CH0 = %u", (uint)val);
         mqtt_update('l', msg);
         oldval = val;
@@ -118,8 +118,8 @@ void update_ch0(uint16_t val) {
 
 void update_ch1(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
         mqtt_update('i', msg);
         oldval = val;
@@ -128,8 +128,8 @@ void update_ch1(uint16_t val) {
 
 void update_hum(float val) {
     static float oldval = 0.0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "Hum = %f", val);
         mqtt_update('h', msg);
         oldval = val;
@@ -138,8 +138,8 @@ void update_hum(float val) {
 
 void update_temp(float val) {
     static float oldval = 0.0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "Temp = %f", val);
         mqtt_update('t', msg);
         oldval = val;
