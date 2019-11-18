@@ -1,5 +1,5 @@
-#include "devices.h"
-
+#include "tsl.h"
+#include "pinmap.h"
 #include "driver/i2c.h"
 
 // possible addresses are: 0x29, 0x39, 0x49.

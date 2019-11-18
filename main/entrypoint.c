@@ -9,7 +9,12 @@
 #include "driver/i2c.h"
 
 #include "pinmap.h"
-#include "devices.h"
+
+#include "hdc.h"
+#include "hpm.h"
+#include "tsl.h"
+#include "volume.h"
+#include "socomec.h"
 #include "mqtt-sn.h"
 
 unsigned long __stack_chk_guard;

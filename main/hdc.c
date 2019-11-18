@@ -1,4 +1,5 @@
-#include "devices.h"
+#include "hdc.h"
+#include "pinmap.h"
 #include "esp_err.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"

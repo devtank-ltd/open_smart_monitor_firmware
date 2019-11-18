@@ -1,4 +1,4 @@
-void heartbeart();
+void heartbeat();
 
 void update_pm25(uint16_t val);
 void update_pm10(uint16_t val);
