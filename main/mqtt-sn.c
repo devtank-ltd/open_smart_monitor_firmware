@@ -18,10 +18,10 @@
 #define BUFLEN 24
 
 
-void sendthebytes(const char * str, unsigned int len) {
+void sendthebytes(const char * str, size_t len) {
     while(len)
     {
-        esp_err_t err = uart_wait_tx_done(LORA_UART, 10);
+        esp_err_t err = uart_wait_tx_done(LORA_UART, 200);
         if(err == ESP_OK)
         {
             int sent = uart_tx_chars(LORA_UART, str, len);
@@ -29,8 +29,7 @@ void sendthebytes(const char * str, unsigned int len) {
             {
                 len -= sent;
                 str += sent;
-                if(len) printf("Only printed %d bytes, should have printed %d. Trying again.\n", len, sent);
-//                for(int i = 0; i <= sent; i++) printf("\n - 0x%02x", str[i]);
+                if(len) printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
             }
             else if (sent < 0)
             {
@@ -49,7 +48,7 @@ void sendthebytes(const char * str, unsigned int len) {
 void mqtt_sn_send(const char topic[2], const char * message, bool retain)
 {
     char header[7];
-    unsigned len = strlen(message);
+    size_t len = strlen(message);
 
     if (len > (255-7))
         len = 255-7;
@@ -89,8 +88,8 @@ void im_alive() {
 
 void update_pm25(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "PM2.5 = %u", (uint)val);
         mqtt_update('p', msg);
         oldval = val;
@@ -99,8 +98,8 @@ void update_pm25(uint16_t val) {
 
 void update_pm10(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "PM10 = %u", (uint)val);
         mqtt_update('P', msg);
         oldval = val;
@@ -109,8 +108,8 @@ void update_pm10(uint16_t val) {
 
 void update_ch0(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "CH0 = %u", (uint)val);
         mqtt_update('l', msg);
         oldval = val;
@@ -119,8 +118,8 @@ void update_ch0(uint16_t val) {
 
 void update_ch1(uint16_t val) {
     static uint16_t oldval = 0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
         mqtt_update('i', msg);
         oldval = val;
@@ -129,8 +128,8 @@ void update_ch1(uint16_t val) {
 
 void update_hum(float val) {
     static float oldval = 0.0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "Hum = %f", val);
         mqtt_update('h', msg);
         oldval = val;
@@ -139,10 +138,16 @@ void update_hum(float val) {
 
 void update_temp(float val) {
     static float oldval = 0.0;
-    char msg[BUFLEN];
     if(oldval != val) {
+        char msg[BUFLEN];
         snprintf(msg, BUFLEN - 1, "Temp = %f", val);
         mqtt_update('t', msg);
         oldval = val;
     }
+}
+
+void mqtt_announce_int(char * key, int val) {
+    char msg[BUFLEN];
+    snprintf(msg, BUFLEN - 1, "%s %d ", key, val);
+    mqtt_update('I', msg);
 }

@@ -26,7 +26,6 @@
 
 uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
-    esp_err_t err = ESP_OK;
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
@@ -39,7 +38,7 @@ uint8_t read_tsl_reg(uint8_t reg) {
     i2c_master_read_byte(cmd, &ret, ACK_CHECK_EN);
     i2c_master_stop(cmd);
 
-    err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
+    esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK) printf("Trouble2 %s reading from the TSL2561\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 

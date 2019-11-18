@@ -1,7 +1,7 @@
 #include "devices.h"
 #include "esp_err.h"
 #include "driver/i2c.h"
-
+#include "mqtt-sn.h"
 #define HDC2080_ADDR  0x40
 
 #define TMP_L         0x00
@@ -81,4 +81,7 @@ void hdc_query(float * temp_celsius, float * relative_humidity) {
     
     uint16_t humreading = q16(HUM_L, HUM_H);
     *relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
+
+    mqtt_announce_int("temperature", *temp_celsius);
+    mqtt_announce_int("humidity", *relative_humidity);
 }

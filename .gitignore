@@ -2,3 +2,4 @@ build/
 main/.*.swp
 .swp
 sdkconfig.old
+sdkconfig
