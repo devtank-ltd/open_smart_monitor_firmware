@@ -73,18 +73,19 @@ uint16_t q16(uint8_t reg_l, uint8_t reg_h) {
     return read_reg(reg_h) * 256 + read_reg(reg_l);
 }
 
-void hdc_query(float * temp_celsius, float * relative_humidity) {
+void hdc_query() {
 
-//    hdc_wait();
+    float temp_celsius, relative_humidity;
+
     hdc_init();
     hdc_wait();
    
     uint16_t tempreading = q16(TMP_L, TMP_H);
-    *temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
+    temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
     
     uint16_t humreading = q16(HUM_L, HUM_H);
-    *relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
+    relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
 
-    mqtt_announce_int("temperature", *temp_celsius);
-    mqtt_announce_int("humidity", *relative_humidity);
+    mqtt_announce_int("temperature", temp_celsius);
+    mqtt_announce_int("humidity", relative_humidity);
 }

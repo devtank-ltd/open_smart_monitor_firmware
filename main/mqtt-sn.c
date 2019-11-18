@@ -128,26 +128,6 @@ void update_ch1(uint16_t val) {
     }
 }
 
-void update_hum(float val) {
-    static float oldval = 0.0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "Hum = %f", val);
-        mqtt_update('h', msg);
-        oldval = val;
-    }
-}
-
-void update_temp(float val) {
-    static float oldval = 0.0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "Temp = %f", val);
-        mqtt_update('t', msg);
-        oldval = val;
-    }
-}
-
 void mqtt_announce_int(char * key, int val) {
     char msg[BUFLEN];
     snprintf(msg, BUFLEN - 1, "%s %d ", key, val);

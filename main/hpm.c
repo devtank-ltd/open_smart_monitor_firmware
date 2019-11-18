@@ -27,7 +27,8 @@ void hpm_uart_setup() {
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 }
 
-int hpm_query(uint16_t * pm25, uint16_t * pm10) {
+int hpm_query() {
+    uint16_t pm25, pm10;
     // The body of this function implements my understanding of the protocol laid out by table 4 in
     // the datasheet from Honeywell.
 
@@ -70,27 +71,30 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
         }
     }
 
-    if(length == 8) {
-        uint8_t head = data[0];
-        uint8_t len = data[1];
-        uint8_t cmd = data[2];
-        uint8_t df1 = data[3];
-        uint8_t df2 = data[4];
-        uint8_t df3 = data[5];
-        uint8_t df4 = data[6];
-        uint8_t checksum = data[7];
+    if(length != 8)
+        goto unknown_response;
+   
+    uint8_t head = data[0];
+    uint8_t len = data[1];
+    uint8_t cmd = data[2];
+    uint8_t df1 = data[3];
+    uint8_t df2 = data[4];
+    uint8_t df3 = data[5];
+    uint8_t df4 = data[6];
+    uint8_t checksum = data[7];
 
-        uint8_t cs = (65536 - (head + len + cmd + df1 + df2 + df3 + df4) % 256);
+    uint8_t cs = (65536 - (head + len + cmd + df1 + df2 + df3 + df4) % 256);
 
-        if(checksum != cs) {
-            printf("HPM checksum error; got 0x%02x but expected 0x%02x.\n", checksum, cs);
-            goto unknown_response;
-        }
-
-        * pm25 = df1 * 256 + df2;
-        * pm10 = df3 * 256 + df4;
-        return 0;
+    if(checksum != cs) {
+        printf("HPM checksum error; got 0x%02x but expected 0x%02x.\n", checksum, cs);
+        goto unknown_response;
     }
+
+    pm25 = df1 * 256 + df2;
+    pm10 = df3 * 256 + df4;
+
+    mqtt_announce_int("PM10",  pm10);
+    mqtt_announce_int("PM2.5", pm25);
 
 unknown_response:
     if(length > 128)

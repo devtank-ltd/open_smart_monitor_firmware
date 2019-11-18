@@ -89,24 +89,9 @@ void app_main(void)
         
         heartbeat();
 
-        // Query the particle sensor
-        uint16_t pm25, pm10;
-        if(!hpm_query(&pm25, &pm10)) {
-            update_pm25(pm25);
-            update_pm10(pm10);
-        }
-
-        float relative_humidity;
-        float temp_celsius;
-        hdc_query(&temp_celsius, &relative_humidity);
-        update_hum(relative_humidity);
-        update_temp(temp_celsius);
-        
-        uint16_t ch0 = 0;
-        uint16_t ch1 = 0;
-        tsl_query(&ch0, &ch1);
-        update_ch0(ch0);
-        update_ch1(ch1);
+        hpm_query();
+        hdc_query();
+        tsl_query();
 
         query_countis();
         qry_volume();
