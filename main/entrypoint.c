@@ -82,7 +82,7 @@ void app_main(void)
 
     for(;;) {
         
-        im_alive();
+        heartbeat();
 
         // Query the particle sensor
         uint16_t pm25, pm10;

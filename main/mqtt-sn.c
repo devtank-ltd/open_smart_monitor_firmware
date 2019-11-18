@@ -82,7 +82,7 @@ void mqtt_update(const char ident, const char * msg) {
     mqtt_sn_send(topic, msg, 1);
 }
 
-void im_alive() {
+void heartbeat() {
     mqtt_update('f', "I'm alive");
 }
 
