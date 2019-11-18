@@ -1,4 +1,5 @@
-#include "devices.h"
+#include "hdc.h"
+#include "pinmap.h"
 #include "esp_err.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
@@ -32,7 +33,8 @@ uint8_t read_reg(uint8_t reg) {
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
-    if(err != ESP_OK) printf("Trouble %s reading from the HDC2080\n", esp_err_to_name(err));
+    if(err != ESP_OK)
+        printf("Trouble %s reading from the HDC2080\n", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
@@ -45,7 +47,8 @@ void write_reg(uint8_t reg, uint8_t value) {
     i2c_master_write_byte(cmd, reg, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, value, ACK_CHECK_DIS);
     i2c_master_stop(cmd);
-    if(i2c_master_cmd_begin(I2CBUS, cmd, 50) != ESP_OK) printf("Trouble writing to the HDC2080\n");
+    if(i2c_master_cmd_begin(I2CBUS, cmd, 50) != ESP_OK)
+        printf("Trouble writing to the HDC2080\n");
     i2c_cmd_link_delete(cmd);
 }
 
@@ -70,18 +73,19 @@ uint16_t q16(uint8_t reg_l, uint8_t reg_h) {
     return read_reg(reg_h) * 256 + read_reg(reg_l);
 }
 
-void hdc_query(float * temp_celsius, float * relative_humidity) {
+void hdc_query() {
 
-//    hdc_wait();
+    float temp_celsius, relative_humidity;
+
     hdc_init();
     hdc_wait();
    
     uint16_t tempreading = q16(TMP_L, TMP_H);
-    *temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
+    temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
     
     uint16_t humreading = q16(HUM_L, HUM_H);
-    *relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
+    relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
 
-    mqtt_announce_int("temperature", *temp_celsius);
-    mqtt_announce_int("humidity", *relative_humidity);
+    mqtt_announce_int("temperature", temp_celsius);
+    mqtt_announce_int("humidity", relative_humidity);
 }

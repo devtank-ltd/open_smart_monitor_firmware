@@ -1,6 +1,7 @@
-#include "devices.h"
-
+#include "tsl.h"
+#include "pinmap.h"
 #include "driver/i2c.h"
+#include "mqtt-sn.h"
 
 // possible addresses are: 0x29, 0x39, 0x49.
 #define TSL2591_ADDR  0x39 // 0x39 is correct on the lashup.
@@ -69,8 +70,9 @@ void tsl_init() {
     printf("TSL2561 initialised %d \n", read_tsl_reg(CONTROL));
 }
 
-void tsl_query(uint16_t * c0, uint16_t * c1) {
-
+void tsl_query() {
+    uint16_t c0;
+    uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
     if(alive != 0x03) {
         printf("TSL2561 was found to be dead. %u\n", alive);
@@ -83,10 +85,12 @@ void tsl_query(uint16_t * c0, uint16_t * c1) {
 
     tmpl = read_tsl_reg(C0DATAL);
     tmph = read_tsl_reg(C0DATAH);
-    *c0 = tmph * 256 + tmpl;
-    printf("c0 = %u\n", *c0);
+    c0 = tmph * 256 + tmpl;
     tmpl = read_tsl_reg(C1DATAL);
     tmph = read_tsl_reg(C1DATAH);
-    *c1 = tmph * 256 + tmpl;
+    c1 = tmph * 256 + tmpl;
+
+    mqtt_announce_int("VisibleLight", c0 - c1);
+    mqtt_announce_int("InfraRed", c1);
 //    tsl_powerdown();
 }
