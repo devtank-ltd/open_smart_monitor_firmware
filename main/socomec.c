@@ -129,14 +129,22 @@ esp_err_t init_smart_meter() {
     char soco[8];
     sense_modbus_read_value(4, soco);
 
-    if(soco[0] != 'S')     goto unknown_device;
-    if(soco[1] !=    '\0') goto unknown_device;
-    if(soco[2] != 'O')     goto unknown_device;
-    if(soco[3] !=    '\0') goto unknown_device;
-    if(soco[4] != 'C')     goto unknown_device;
-    if(soco[5] !=    '\0') goto unknown_device;
-    if(soco[6] != 'O')     goto unknown_device;
-    if(soco[7] !=    '\0') goto unknown_device;
+    if(soco[0] != 'S')     
+        goto unknown_device;
+    if(soco[1] !=    '\0') 
+        goto unknown_device;
+    if(soco[2] != 'O')     
+        goto unknown_device;
+    if(soco[3] !=    '\0') 
+        goto unknown_device;
+    if(soco[4] != 'C')     
+        goto unknown_device;
+    if(soco[5] !=    '\0') 
+        goto unknown_device;
+    if(soco[6] != 'O')     
+        goto unknown_device;
+    if(soco[7] !=    '\0') 
+        goto unknown_device;
 
     // Try and identify the model number. This doesn't work because of
     // Endianness mismatch and also buffer overruns; Might take another look later.
@@ -149,15 +157,22 @@ esp_err_t init_smart_meter() {
     sense_modbus_read_value(6, &product_order_id);
     sense_modbus_read_value(7, &product_id);
     
-    if(product_order_id == 100) prodorder = "Countis";
-    if(product_order_id == 200) prodorder = "Protection";
-    if(product_order_id == 300) prodorder = "Atys";
-    if(product_order_id == 400) prodorder = "Diris";
+    if(product_order_id == 100) 
+        prodorder = "Countis";
+    if(product_order_id == 200) 
+        prodorder = "Protection";
+    if(product_order_id == 300) 
+        prodorder = "Atys";
+    if(product_order_id == 400) 
+        prodorder = "Diris";
 
-    if(!prodorder) goto unknown_device;
+    if(!prodorder) 
+        goto unknown_device;
 
-    if(product_id == 100) prod = "E53";
-    if(product_id == 1000) prod = "ATS3";
+    if(product_id == 100) 
+        prod = "E53";
+    if(product_id == 1000) 
+        prod = "ATS3";
 
     if(!prod) goto unknown_device;
 
@@ -175,7 +190,8 @@ unknown_device:
 
 void query_countis()
 {
-    if(!sococonnected) return;
+    if(!sococonnected)
+       return;
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;

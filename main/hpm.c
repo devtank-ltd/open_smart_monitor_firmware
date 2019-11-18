@@ -53,7 +53,8 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
         uart_get_buffered_data_len(HPM_UART, &length);
         vTaskDelay(1);
     }
-    if(length < 8) goto unknown_response;
+    if(length < 8)
+        goto unknown_response;
     
     uart_get_buffered_data_len(HPM_UART, &length);
     length = uart_read_bytes(HPM_UART, data, length, 2000);
@@ -92,10 +93,13 @@ int hpm_query(uint16_t * pm25, uint16_t * pm10) {
     }
 
 unknown_response:
-    if(length > 128) length = 128;
+    if(length > 128)
+        length = 128;
     printf("Unknown response from HPM module, length %zu, as follows:\n", length);
-    for(int i = 0; i < length; i++) printf("0x%02x ", data[i]);
-    if(length == 0) printf(" - is it even connected?");
+    for(int i = 0; i < length; i++)
+        printf("0x%02x ", data[i]);
+    if(length == 0)
+        printf(" - is it even connected?");
     printf("\n");
     return -1;
 }

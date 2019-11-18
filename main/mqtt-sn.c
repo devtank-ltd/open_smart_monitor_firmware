@@ -29,7 +29,8 @@ void sendthebytes(const char * str, size_t len) {
             {
                 len -= sent;
                 str += sent;
-                if(len) printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
+                if(len)
+                    printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
             }
             else if (sent < 0)
             {
@@ -62,7 +63,8 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
      * has been published, the broker will immediately send the message to the
      * subscriber.
      */
-    if (retain) header[2] |= MQTT_SN_FLAG_RETAIN;
+    if(retain)
+       header[2] |= MQTT_SN_FLAG_RETAIN;
 
     header[3] = topic[0];
     header[4] = topic[1];

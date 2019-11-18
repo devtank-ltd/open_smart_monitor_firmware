@@ -21,7 +21,8 @@ static void gpio_task_example(void* arg)
         if(xQueueReceive(gpio_evt_queue, &io_num, portMAX_DELAY)) {
             int nlvl = gpio_get_level(io_num);
             if(lvl != nlvl) {
-                if(lvl) volume++;
+                if(lvl)
+                    volume++;
                 lvl = nlvl;
             }
         }   
