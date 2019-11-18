@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
+#include "mac.h"
 
 #define MQTT_SN_MAX_PACKET_LENGTH     (255)
 #define MQTT_SN_TYPE_PUBLISH          (0x0C)
@@ -15,7 +16,7 @@
 
 #define SFNODE '9'
 
-#define BUFLEN 24
+#define BUFLEN 255
 
 
 void sendthebytes(const char * str, size_t len) {
@@ -74,13 +75,13 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
     sendthebytes(header, 7);
     sendthebytes(message, len);
 
-    printf("%c%c: %s\n", topic[0], topic[1], message);
 }
 
 void mqtt_update(const char ident, const char * msg) {
     char topic[2];
     topic[0] = SFNODE;
     topic[1] = ident;
+    printf("%c%c: %s\n", topic[0], topic[1], msg);
     mqtt_sn_send(topic, msg, 1);
 }
 
@@ -88,48 +89,8 @@ void heartbeat() {
     mqtt_update('f', "I'm alive");
 }
 
-void update_pm25(uint16_t val) {
-    static uint16_t oldval = 0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "PM2.5 = %u", (uint)val);
-        mqtt_update('p', msg);
-        oldval = val;
-    }
-}
-
-void update_pm10(uint16_t val) {
-    static uint16_t oldval = 0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "PM10 = %u", (uint)val);
-        mqtt_update('P', msg);
-        oldval = val;
-    }
-}
-
-void update_ch0(uint16_t val) {
-    static uint16_t oldval = 0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "CH0 = %u", (uint)val);
-        mqtt_update('l', msg);
-        oldval = val;
-    }
-}
-
-void update_ch1(uint16_t val) {
-    static uint16_t oldval = 0;
-    if(oldval != val) {
-        char msg[BUFLEN];
-        snprintf(msg, BUFLEN - 1, "CH1 = %u", (uint)val);
-        mqtt_update('i', msg);
-        oldval = val;
-    }
-}
-
 void mqtt_announce_int(char * key, int val) {
     char msg[BUFLEN];
-    snprintf(msg, BUFLEN - 1, "%s %d ", key, val);
+    snprintf(msg, BUFLEN - 1, "%s %s %d ", mac_addr, key, val);
     mqtt_update('I', msg);
 }
