@@ -40,5 +40,7 @@
 
 
 #define FLOWRATE_GPIO 5
+#define PULSE_IN_1  13
+#define PULSE_IN_2  12
 
 #define I2CBUS I2C_NUM_0
