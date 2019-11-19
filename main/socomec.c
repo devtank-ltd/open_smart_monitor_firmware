@@ -14,6 +14,8 @@
 #include "driver/uart.h"
 #include "esp_modbus_master.h"
 #include "mqtt-sn.h"
+#include "driver/gpio.h"
+#include "pinmap.h"
 
 #define UART_NUM UART_NUM_1
 #define HPM_UART_TX 17
@@ -192,6 +194,7 @@ void query_countis()
 {
     if(!sococonnected)
        return;
+    gpio_set_level(UART_MUX, 0);
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;

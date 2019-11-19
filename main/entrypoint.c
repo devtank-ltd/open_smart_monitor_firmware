@@ -87,8 +87,12 @@ void app_main(void)
     init_smart_meter();
     volume_setup();
 
+    gpio_config_t config;
+    config.pin_bit_mask = (1ULL << UART_MUX);
+    config.mode = GPIO_MODE_OUTPUT;
+    ESP_ERROR_CHECK(gpio_config(&config));
+
     for(;;) {
-        
         heartbeat();
 
         hpm_query();
