@@ -28,6 +28,7 @@ void hpm_uart_setup() {
 }
 
 int hpm_query() {
+    gpio_set_level(UART_MUX, 1);
     uint16_t pm25, pm10;
     // The body of this function implements my understanding of the protocol laid out by table 4 in
     // the datasheet from Honeywell.

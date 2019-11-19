@@ -27,6 +27,11 @@
 #define SOUND_ENVELOPE 33
 #define SOUND_GATE     25
 
+/*
+ * UART mux.
+ * We ran out of UARTs so we need to multiplex. This pin is brought high or low to choose the port
+ */
+#define UART_MUX 27
 
 /*
  * The LoRa module is connected to UART2. We cannot use pins 9 and 10 on the 
@@ -40,5 +45,7 @@
 
 
 #define FLOWRATE_GPIO 5
+#define PULSE_IN_1  13
+#define PULSE_IN_2  12
 
 #define I2CBUS I2C_NUM_0

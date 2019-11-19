@@ -16,6 +16,7 @@
 #include "volume.h"
 #include "socomec.h"
 #include "mqtt-sn.h"
+#include "mac.h"
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -78,6 +79,7 @@ void app_main(void)
     notification("ENTRYPOINT REACHED");
 
     notification("CONFIGURING UARTS AND I2C");
+    getmac();
     lora_uart_setup();
 //    hpm_uart_setup();
     i2c_setup();
@@ -85,8 +87,12 @@ void app_main(void)
     init_smart_meter();
     volume_setup();
 
+    gpio_config_t config;
+    config.pin_bit_mask = (1ULL << UART_MUX);
+    config.mode = GPIO_MODE_OUTPUT;
+    ESP_ERROR_CHECK(gpio_config(&config));
+
     for(;;) {
-        
         heartbeat();
 
         hpm_query();
