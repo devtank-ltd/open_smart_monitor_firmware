@@ -10,37 +10,37 @@
 static int count1 = 0;
 static int count2 = 0;
 
-static void IRAM_ATTR isr_p2(void * arg) {
-    // This pulse input is the only one I've actually made an effort to debounce, since I don't know exactly the characteristics of the other two.
-    static int lvl;
-    volatile static int64_t previous_edge = 0;
-
+static inline int debounce(int64_t * old_time, int * old_level, int new_level) {
     // esp_timer_get_time returns in microseconds, the time since startup.
     // As that's an int64_t there is a slight risk of missing one pulse every 292471 years when this timer wraps
     volatile int64_t now = esp_timer_get_time();
 
     // If the transitions are too close together they should not be counted
-    if((now <= previous_edge + DEBOUNCE_WAIT)) return;
+    if((now <= previous_edge + DEBOUNCE_WAIT)) return 0;
 
     // If the current level is the same as the previous one, then the transition should not be counted
     // (This eliminates peaks during the high-to-low transition and troughs during the low-to-high transition
-    int nlvl = gpio_get_level(PULSE_IN_2);
-    if(lvl == nlvl) return;
+    if(*old_level == new_level) return 0;
 
-    // We are counting this edge as being a genuine transition.
-    previous_edge = now;
-    lvl = nlvl;
-    
-    // If this edge was a falling one, then the count has gone up by one.
-    if(lvl) count2++;
+    // Otherwise we'll count this as a genuine transition
+    *old_time = now;
+    *old_level = new_level;
+    return 1;
+}
+
+
+static void IRAM_ATTR isr_p2(void * arg) {
+    static int level;
+    volatile static int64_t previous_edge = 0;
+    int new_level = gpio_get_level(PULSE_IN_2);
+    if(debounce(&previous_edge, &level, new_level) && new_level) count2++;
 }
 
 static void IRAM_ATTR isr_p1(void * arg) {
-    static int lvl;
-    if(lvl != gpio_get_level(PULSE_IN_1)) {
-        lvl = !lvl;
-        count1++;
-    }
+    static int level;
+    volatile static int64_t previous_edge = 0;
+    int new_level = gpio_get_level(PULSE_IN_1);
+    if(debounce(&previous_edge, &level, new_level) && new_level) count1++;
 }
 
 void freq_report(void * arg) {
