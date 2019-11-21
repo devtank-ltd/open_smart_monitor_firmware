@@ -7,11 +7,10 @@
 // 1000 microseconds is 1 millisecond.
 #define DEBOUNCE_WAIT 1000
 
-static int litres = 0;
-static int cnt2 = 0;
-static int cnt3 = 0;
+static int count1 = 0;
+static int count2 = 0;
 
-static void IRAM_ATTR isr_water(void * arg) {
+static void IRAM_ATTR isr_p2(void * arg) {
     // This pulse input is the only one I've actually made an effort to debounce, since I don't know exactly the characteristics of the other two.
     static int lvl;
     volatile static int64_t previous_edge = 0;
@@ -25,7 +24,7 @@ static void IRAM_ATTR isr_water(void * arg) {
 
     // If the current level is the same as the previous one, then the transition should not be counted
     // (This eliminates peaks during the high-to-low transition and troughs during the low-to-high transition
-    int nlvl = gpio_get_level(FLOWRATE_GPIO);
+    int nlvl = gpio_get_level(PULSE_IN_2);
     if(lvl == nlvl) return;
 
     // We are counting this edge as being a genuine transition.
@@ -33,36 +32,28 @@ static void IRAM_ATTR isr_water(void * arg) {
     lvl = nlvl;
     
     // If this edge was a falling one, then the count has gone up by one.
-    if(lvl) litres++;
+    if(lvl) count2++;
 }
 
 static void IRAM_ATTR isr_p1(void * arg) {
     static int lvl;
     if(lvl != gpio_get_level(PULSE_IN_1)) {
         lvl = !lvl;
-        cnt2++;
-    }
-}
-
-static void IRAM_ATTR isr_p2(void * arg) {
-    static int lvl;
-    if(lvl != gpio_get_level(PULSE_IN_2)) {
-        lvl = !lvl;
-        cnt3++;
+        count1++;
     }
 }
 
 void freq_report(void * arg) {
-    static int old_litres = 0;
-    printf("%d Hz\n", litres - old_litres);
-    old_litres = litres;
+    static int old_count2 = 0;
+    printf("%d Hz\n", count2 - old_count2);
+    old_count2 = count2;
 }
 
 void volume_setup() {
     printf("Setting the volume measurement gpio up\n");
     gpio_config_t io_conf;
     io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-    io_conf.pin_bit_mask = (1ULL << FLOWRATE_GPIO) | (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2);
+    io_conf.pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = 1;
 
@@ -78,12 +69,11 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(FLOWRATE_GPIO, isr_water, (void*)FLOWRATE_GPIO));
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_1, isr_p1, (void*) PULSE_IN_1));
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
 }
 
 void qry_volume() {
-    printf("volume = %d\n", litres);
+    printf("volume = %d\n", count2);
 //    printf("pulsecounts: %d, %d.\n", cnt2, cnt3);
 }
