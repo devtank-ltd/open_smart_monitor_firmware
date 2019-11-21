@@ -43,9 +43,7 @@
 #define LORA_UART_TX  18
 #define LORA_UART_CTS 23
 
-
-#define FLOWRATE_GPIO 5
-#define PULSE_IN_1  13
-#define PULSE_IN_2  12
+#define PULSE_IN_1  12
+#define PULSE_IN_2  5
 
 #define I2CBUS I2C_NUM_0

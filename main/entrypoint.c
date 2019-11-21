@@ -100,7 +100,8 @@ void app_main(void)
         tsl_query();
 
         query_countis();
-        qry_volume();
+        qry_pulsecount("WaterMeter", 10, 0);
+
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
