@@ -52,6 +52,12 @@ static void IRAM_ATTR isr_p2(void * arg) {
     }
 }
 
+void freq_report(void * arg) {
+    static int old_litres = 0;
+    printf("%d Hz\n", litres - old_litres);
+    old_litres = litres;
+}
+
 void volume_setup() {
     printf("Setting the volume measurement gpio up\n");
     gpio_config_t io_conf;
@@ -59,6 +65,15 @@ void volume_setup() {
     io_conf.pin_bit_mask = (1ULL << FLOWRATE_GPIO) | (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2);
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_up_en = 1;
+
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &freq_report,
+        .name = "freq_report"
+    };
+
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000)); // fire the timer every second
 
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
