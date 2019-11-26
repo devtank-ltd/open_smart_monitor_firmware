@@ -4,9 +4,10 @@
 #include "esp32/rom/uart.h"
 #include "pinmap.h"
 #include "mqtt-sn.h"
-
+#include "config.h"
 // Number of FreeRTOS ticks to wait while trying to receive
 #define TICKS_TO_WAIT 100
+static int enable = 0;
 
 void hpm_uart_setup() {
     /* UART setup */
@@ -25,9 +26,19 @@ void hpm_uart_setup() {
 
     const int uart_buffer_size = (1024 * 2);
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
+
+    get_config("HPM");
+    enable = value[0] != '0';
+}
+
+void hpm_init() {
+    get_config("HPM");
+    enable = value[0] = '0';
 }
 
 int hpm_query() {
+    if(!enable) return 0;
+
     gpio_set_level(UART_MUX, 1);
     uint16_t pm25, pm10;
     // The body of this function implements my understanding of the protocol laid out by table 4 in
@@ -96,6 +107,7 @@ int hpm_query() {
 
     mqtt_announce_int("PM10",  pm10);
     mqtt_announce_int("PM2.5", pm25);
+    return 0;
 
 unknown_response:
     if(length > 128)
