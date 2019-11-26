@@ -17,7 +17,7 @@
 #include "socomec.h"
 #include "mqtt-sn.h"
 #include "mac.h"
-
+#include "config.h"
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
 {
@@ -101,6 +101,8 @@ void app_main(void)
 
         query_countis();
         qry_pulsecount("WaterMeter", 10, 0);
+
+        configure();
 
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
