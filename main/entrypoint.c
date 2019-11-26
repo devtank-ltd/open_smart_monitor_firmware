@@ -84,6 +84,7 @@ void app_main(void)
 //    hpm_uart_setup();
     i2c_setup();
     tsl_init();
+    hpm_init();
     init_smart_meter();
     volume_setup();
 
