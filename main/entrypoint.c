@@ -11,6 +11,7 @@
 #include "pinmap.h"
 
 #include "hdc.h"
+#include "adc.h"
 #include "hpm.h"
 #include "tsl.h"
 #include "volume.h"
@@ -89,7 +90,7 @@ void app_main(void)
     volume_setup();
 
     gpio_config_t config;
-    config.pin_bit_mask = (1ULL << UART_MUX);
+    config.pin_bit_mask = (1ULL << SW_SEL);
     config.mode = GPIO_MODE_OUTPUT;
     ESP_ERROR_CHECK(gpio_config(&config));
 
@@ -102,10 +103,12 @@ void app_main(void)
 
         query_countis();
         qry_pulsecount("WaterMeter", 10, 0);
+        qry_pulsecount("Light", 10, 1);
+        adc_get(SOUND_OUTPUT);
+        adc_get(SOUND_ENVELOPE);
+//        configure();
 
-        configure();
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);
