@@ -19,6 +19,8 @@
 #include "mqtt-sn.h"
 #include "mac.h"
 #include "config.h"
+#include "status_led.h"
+
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
 {
@@ -96,6 +98,7 @@ void app_main(void)
 
     for(;;) {
         heartbeat();
+        status_led_toggle();
 
         hpm_query();
         hdc_query();

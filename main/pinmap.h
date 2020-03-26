@@ -1,3 +1,9 @@
+/*
+ * There's a status LED on GPIO33.
+ * For now we're just going to toggle it with every iteration of the main loop.
+ */
+#define STATUS_LED 33
+
 /* 
  * The Honeywell Particulate Matter sensor will be connected to UART1. But the
  * default pins for UART2 are 9 and 10, but these are also used by the flash
