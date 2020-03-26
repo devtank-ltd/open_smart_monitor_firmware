@@ -20,7 +20,6 @@
 #define UART_NUM UART_NUM_1
 #define HPM_UART_TX 17
 #define HPM_UART_RX 16
-#define RS485_DE 14
 
 #define E53_ADDR 5
 #define HOURMETER 50512
@@ -194,7 +193,7 @@ void query_countis()
 {
     if(!sococonnected)
        return;
-    gpio_set_level(UART_MUX, 0);
+    gpio_set_level(SW_SEL, 0);
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;
@@ -213,7 +212,7 @@ void query_countis()
 
     // The volt reads as:
     // high byte, low byte, zero, zero
-    // all inside a uint32_t. The two upper bits encode a number a hundred times the actual voltage.
+    // all inside a uint32_t. The two upper bytes encode a number a hundred times the actual voltage.
     int mV = (volt >> 16) * 100;
     // I suspect a similar thing goes for the ampage.
     int mA = (current >> 16) * 100;
