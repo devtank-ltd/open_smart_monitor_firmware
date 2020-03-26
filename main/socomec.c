@@ -193,7 +193,7 @@ void query_countis()
 {
     if(!sococonnected)
        return;
-    gpio_set_level(SW_SEL, 0);
+    gpio_set_level(SW_SEL, 1);
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;
