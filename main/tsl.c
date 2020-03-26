@@ -4,7 +4,11 @@
 #include "mqtt-sn.h"
 
 // possible addresses are: 0x29, 0x39, 0x49.
-#define TSL2591_ADDR  0x39 // 0x39 is correct on the lashup.
+// The address selection pin may be:
+// floating    - 0x29
+// grounded    - 0x39
+// tied to Vin - 0x49
+#define TSL2591_ADDR  0x29 // 0x39 is correct on the lashup.
 
 #define C0DATAL       0x0c
 #define C0DATAH       0x0d
