@@ -24,15 +24,16 @@
  * Pin assignments for the sound detector
  */
 
-#define SOUND_ENVELOPE 33
-#define SOUND_GATE     25
-
+#define SOUND_ENVELOPE  ADC1_CHANNEL_3
+#define SOUND_OUTPUT    ADC1_CHANNEL_6
+#define SOUND_GATE      36
 /*
  * UART mux.
  * We ran out of UARTs so we need to multiplex. This pin is brought high or low to choose the port
  */
-#define UART_MUX 27
-
+#define SW_SEL 27
+#define SW_EN 13
+#define RS485_DE 25
 /*
  * The LoRa module is connected to UART2. We cannot use pins 9 and 10 on the 
  * prototype, because these are involved in SPI bus that connects the flash
@@ -43,7 +44,11 @@
 #define LORA_UART_TX  18
 #define LORA_UART_CTS 23
 
-#define PULSE_IN_1  12
-#define PULSE_IN_2  5
-
+#define PULSE_IN_1  32
+#define PULSE_IN_2  14
+#define LIGHT_INT   4
+#define TEMP_INT    26
 #define I2CBUS I2C_NUM_0
+
+#define BAT_MON ADC2_CHANNEL_4
+#define POWER_INT 14
