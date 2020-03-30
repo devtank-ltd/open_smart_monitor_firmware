@@ -18,8 +18,6 @@
 #include "pinmap.h"
 
 #define UART_NUM UART_NUM_1
-#define HPM_UART_TX 17
-#define HPM_UART_RX 16
 
 #define E53_ADDR 5
 #define HOURMETER 50512
