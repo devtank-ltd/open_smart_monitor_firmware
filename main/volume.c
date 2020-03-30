@@ -60,11 +60,12 @@ static void freq_compute(void * arg) {
 
 void volume_setup() {
     printf("Setting the volume measurement gpio up\n");
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-    io_conf.pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2);
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = 1;
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_PIN_INTR_ANYEDGE,
+        .pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 1
+    };
 
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = &freq_compute,
