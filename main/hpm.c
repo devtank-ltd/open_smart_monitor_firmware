@@ -33,7 +33,7 @@ void hpm_uart_setup() {
 
 void hpm_init() {
     get_config("HPM");
-    enable = value[0] = '0';
+    enable = value[0] == '0';
 }
 
 int hpm_query() {
