@@ -55,7 +55,7 @@ int hpm_query() {
     }
 
     // One of two possibilities:
-    // The device responds with a positive acknowledgment, which includes the measurement itself, 
+    // The device responds with a positive acknowledgment, which includes the measurement itself,
     // OR the device responds with a negative ACK which doesn't.
     uint8_t data[128];
     size_t length = 0;
@@ -68,7 +68,7 @@ int hpm_query() {
     }
     if(length < 8)
         goto unknown_response;
-    
+
     uart_get_buffered_data_len(HPM_UART, &length);
     length = uart_read_bytes(HPM_UART, data, length, 2000);
 
@@ -85,7 +85,7 @@ int hpm_query() {
 
     if(length != 8)
         goto unknown_response;
-   
+
     uint8_t head = data[0];
     uint8_t len = data[1];
     uint8_t cmd = data[2];

@@ -38,7 +38,7 @@
 
 int sococonnected = 0;
 
-// The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially, 
+// The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially,
 // each element needs a Cid equal to the subscript that identifies it, which makes adding ro removing parameters very tricky. Therefore, I recomment you only add them
 // to the end of the list. Even though it means that the order of items ends up making no sense.
 const mb_parameter_descriptor_t countis_e53[] = { \
@@ -51,7 +51,7 @@ const mb_parameter_descriptor_t countis_e53[] = { \
     { 5,   (const char *)"Vendor name",    (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50042,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
     { 6,   (const char *)"ProductOrderID", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50004,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
     { 7,   (const char *)"ProductID",      (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50005,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
-    { 8,   (const char *)"Voltage",        (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }, 
+    { 8,   (const char *)"Voltage",        (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 9,   (const char *)"Frequency",      (const char *)"Hz",              E53_ADDR, MB_PARAM_HOLDING, 50606,   4,   0, PARAM_TYPE_FLOAT, 4, NOOPTS, PAR_PERMS_READ },
     { 10,  (const char *)"Current",        (const char *)"A",               E53_ADDR, MB_PARAM_HOLDING, 50528,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
     { 11,  (const char *)"ActivePower",    (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
@@ -92,12 +92,12 @@ esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
 
 esp_err_t init_smart_meter() {
 
-    mb_communication_info_t comm = { 
+    mb_communication_info_t comm = {
             .port = UART_NUM_1,
             .mode = MB_MODE_RTU,
             .baudrate = 9600,
             .parity = UART_PARITY_DISABLE
-    };  
+    };
     void* master_handler = NULL;
 
     esp_err_t err = mbc_master_init(MB_PORT_SERIAL_MASTER, &master_handler);
@@ -130,26 +130,26 @@ esp_err_t init_smart_meter() {
     char soco[8];
     sense_modbus_read_value(4, soco);
 
-    if(soco[0] != 'S')     
+    if(soco[0] != 'S')
         goto unknown_device;
-    if(soco[1] !=    '\0') 
+    if(soco[1] != '\0')
         goto unknown_device;
-    if(soco[2] != 'O')     
+    if(soco[2] != 'O')
         goto unknown_device;
-    if(soco[3] !=    '\0') 
+    if(soco[3] != '\0')
         goto unknown_device;
-    if(soco[4] != 'C')     
+    if(soco[4] != 'C')
         goto unknown_device;
-    if(soco[5] !=    '\0') 
+    if(soco[5] != '\0')
         goto unknown_device;
-    if(soco[6] != 'O')     
+    if(soco[6] != 'O')
         goto unknown_device;
-    if(soco[7] !=    '\0') 
+    if(soco[7] != '\0')
         goto unknown_device;
 
     // Try and identify the model number. This doesn't work because of
     // Endianness mismatch and also buffer overruns; Might take another look later.
-    
+
     uint16_t product_order_id;
     uint16_t product_id;
     const char * prod = 0;
@@ -157,22 +157,22 @@ esp_err_t init_smart_meter() {
 
     sense_modbus_read_value(6, &product_order_id);
     sense_modbus_read_value(7, &product_id);
-    
-    if(product_order_id == 100) 
+
+    if(product_order_id == 100)
         prodorder = "Countis";
-    if(product_order_id == 200) 
+    if(product_order_id == 200)
         prodorder = "Protection";
-    if(product_order_id == 300) 
+    if(product_order_id == 300)
         prodorder = "Atys";
-    if(product_order_id == 400) 
+    if(product_order_id == 400)
         prodorder = "Diris";
 
-    if(!prodorder) 
+    if(!prodorder)
         goto unknown_device;
 
-    if(product_id == 100) 
+    if(product_id == 100)
         prod = "E53";
-    if(product_id == 1000) 
+    if(product_id == 1000)
         prod = "ATS3";
 
     if(!prod) goto unknown_device;
@@ -180,7 +180,7 @@ esp_err_t init_smart_meter() {
     printf("Connected to a Socomec %s %s.\n", prodorder, prod);
     sococonnected = 1;
     return err;
-    
+
 unknown_device:
     printf("product_order_id = %d\nproduct_id = %d\n", product_order_id, product_id);
     for(int i = 0; i < 8; i++) printf("soco[%d] == '%c';\n", i, soco[i]);
@@ -223,7 +223,7 @@ void query_countis()
 
     printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
     printf("%dmV, %dmA\n", mV, mA);
-   
+
     for(int i = 8; i <= 26; i++) {
         int32_t v = 0;
         sense_modbus_read_value(i, &v);

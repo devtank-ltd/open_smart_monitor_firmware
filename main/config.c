@@ -73,14 +73,14 @@ keep_listening:
     if(length > BUFLEN)             goto procline; // buffer overrun
     if(message[length - 1] == 0x0d) goto procline; // carriage return
     if(message[length - 1] == 0x7f) length -= 2;   // backspace
-    
+
     vTaskDelay(1);
     goto keep_listening;
 
     char * mac;
     char * key;
     char * val;
-    
+
 procline:
     mac = message;
     key = getfield(mac);

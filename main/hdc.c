@@ -3,7 +3,7 @@
 #include "esp_err.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
-#define HDC2080_ADDR  0x40
+#define HDC2080_ADDR  0x41
 
 #define TMP_L         0x00
 #define TMP_H         0x01
@@ -79,10 +79,10 @@ void hdc_query() {
 
     hdc_init();
     hdc_wait();
-   
+
     uint16_t tempreading = q16(TMP_L, TMP_H);
     temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
-    
+
     uint16_t humreading = q16(HUM_L, HUM_H);
     relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
 

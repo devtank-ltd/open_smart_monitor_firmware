@@ -44,7 +44,7 @@ void sendthebytes(const char * str, size_t len) {
 }
 
 
-// This funcion was shamelessly stolen from 
+// This function was shamelessly stolen from
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
 // and changed to Actual C by me.
 void mqtt_sn_send(const char topic[2], const char * message, bool retain)
