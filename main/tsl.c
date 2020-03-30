@@ -29,7 +29,7 @@
 #define ACK_CHECK_EN  0x01
 #define ACK_CHECK_DIS 0x00
 
-uint8_t read_tsl_reg(uint8_t reg) {
+static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -50,7 +50,7 @@ uint8_t read_tsl_reg(uint8_t reg) {
     return ret;
 }
 
-void write_tsl_reg(uint8_t reg, uint8_t value) {
+static void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
@@ -64,7 +64,7 @@ void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_link_delete(cmd);
 }
 
-void tsl_powerdown() {
+static void tsl_powerdown() {
     write_tsl_reg(CONTROL, CONTROL_OFF);
 }
 

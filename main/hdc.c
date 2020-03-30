@@ -20,7 +20,7 @@
  */
 #define MEAS_TRIG     0x01
 
-uint8_t read_reg(uint8_t reg) {
+static uint8_t read_reg(uint8_t reg) {
     uint8_t ret = 0;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
@@ -40,7 +40,7 @@ uint8_t read_reg(uint8_t reg) {
     return ret;
 }
 
-void write_reg(uint8_t reg, uint8_t value) {
+static void write_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (HDC2080_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
@@ -52,11 +52,11 @@ void write_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_link_delete(cmd);
 }
 
-void hdc_init() {
+static void hdc_init() {
     write_reg(CONFIG, MEAS_TRIG);
 }
 
-void hdc_wait() {
+static void hdc_wait() {
     int i;
     for(i = 50; !i; i--) {
         if(read_reg(CONFIG) && MEAS_TRIG) {

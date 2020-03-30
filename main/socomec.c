@@ -77,7 +77,7 @@ const mb_parameter_descriptor_t countis_e53[] = { \
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
 
 // Read characteristic value from Modbus parameter according to description table
-esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
+static esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
 {
     uint8_t type = 0;
     mb_parameter_descriptor_t cid_info = countis_e53[cid];

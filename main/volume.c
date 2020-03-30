@@ -47,7 +47,7 @@ static void IRAM_ATTR isr_p1(void * arg) {
     if(debounce(&previous_edge, &level, new_level) && new_level) count1++;
 }
 
-void freq_compute(void * arg) {
+static void freq_compute(void * arg) {
     // Have this function run every second, and it will compute the
     // frequency of both pulses. In hertz.
     static int old_count1 = 0;
