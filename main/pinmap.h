@@ -1,3 +1,4 @@
+#pragma once
 /*
  * There's a status LED on GPIO33.
  * For now we're just going to toggle it with every iteration of the main loop.

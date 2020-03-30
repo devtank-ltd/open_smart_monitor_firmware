@@ -1,5 +1,3 @@
-#ifndef __SOCOMEC_H
+#pragma once
 void init_smart_meter();
 void query_countis();
-#define __SOCOMEC_H
-#endif
