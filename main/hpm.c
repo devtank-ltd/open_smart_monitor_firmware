@@ -10,6 +10,11 @@
 static int enable = 0;
 
 void hpm_uart_setup() {
+    get_config("HPM");
+    enable = value[0] != '0';
+
+    if(!enable) return;
+
     /* UART setup */
     uart_config_t hpm = {
         /* UART baud rate */            .baud_rate = 9600,
@@ -27,13 +32,6 @@ void hpm_uart_setup() {
     const int uart_buffer_size = (1024 * 2);
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
 
-    get_config("HPM");
-    enable = value[0] != '0';
-}
-
-void hpm_init() {
-    get_config("HPM");
-    enable = value[0] == '0';
 }
 
 int hpm_query() {
