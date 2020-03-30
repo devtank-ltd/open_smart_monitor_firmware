@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "logging.h"
 
 // 1000 microseconds is 1 millisecond.
 #define DEBOUNCE_WAIT 1000
@@ -59,7 +60,7 @@ static void freq_compute(void * arg) {
 }
 
 void volume_setup() {
-    printf("Setting the volume measurement gpio up\n");
+    DEBUG_PRINTF("Setting the volume measurement gpio up\n");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
         .pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2),

@@ -5,6 +5,8 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "config.h"
+#include "logging.h"
+
 char value[VALLEN];
 
 
@@ -39,7 +41,7 @@ void store_config(char * key, char * val) {
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ERROR_PRINTF("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
         return;
     }
 
@@ -52,12 +54,12 @@ void get_config(const char * key) {
     size_t len = VALLEN;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
-        printf("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
+        ERROR_PRINTF("Error (%s) opening NVS handle!\n", esp_err_to_name(err));
         value[0] = '\0';
         return;
     }
     nvs_get_str(my_handle, key, value, &len);
-    printf("%s %s %s\n", mac_addr, key, value);
+    INFO_PRINTF("%s %s %s\n", mac_addr, key, value);
     return;
 }
 
@@ -89,9 +91,9 @@ procline:
 
     if(strcmp(mac, mac_addr)) return;
 
-    printf("mac %d %s\n", strlen(mac), mac);
-    printf("key %d %s\n", strlen(key), key);
-    printf("val %d %s\n", strlen(val), val);
+    INFO_PRINTF("mac %d %s\n", strlen(mac), mac);
+    INFO_PRINTF("key %d %s\n", strlen(key), key);
+    INFO_PRINTF("val %d %s\n", strlen(val), val);
     store_config(key, val);
     return;
 }

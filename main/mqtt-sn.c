@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-
+#include "logging.h"
 #include "pinmap.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
@@ -31,14 +31,14 @@ static void sendthebytes(const char * str, size_t len) {
                 len -= sent;
                 str += sent;
                 if(len)
-                    printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
+                    DEBUG_PRINTF("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
             }
             else if (sent < 0)
             {
-                printf("Error writing to UART\n");
+                ERROR_PRINTF("Error writing to UART\n");
             }
         } else {
-            printf("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
+            ERROR_PRINTF("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
         }
     }
 }
