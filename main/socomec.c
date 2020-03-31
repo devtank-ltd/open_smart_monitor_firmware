@@ -119,7 +119,7 @@ esp_err_t init_smart_meter() {
                                 (uint32_t)err);
 
     if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        ERROR_PRINTF("Error in uart_set_pin!\n");
+        ERROR_PRINTF("Error in uart_set_pin!");
     uart_set_mode(UART_NUM, UART_MODE_RS485_HALF_DUPLEX);
 
 
@@ -175,16 +175,16 @@ esp_err_t init_smart_meter() {
 
     if(!prod) goto unknown_device;
 
-    INFO_PRINTF("Connected to a Socomec %s %s.\n", prodorder, prod);
+    INFO_PRINTF("Connected to a Socomec %s %s.", prodorder, prod);
     sococonnected = 1;
     return err;
 
 unknown_device:
-    ERROR_PRINTF("product_order_id = %d\nproduct_id = %d\n", product_order_id, product_id);
+    ERROR_PRINTF("product_order_id = %d\nproduct_id = %d", product_order_id, product_id);
     for(int i = 0; i < 8; i++) {
-        DEBUG_PRINTF("soco[%d] == '%c';\n", i, soco[i]);
+        DEBUG_PRINTF("soco[%d] == '%c';", i, soco[i]);
     }
-    ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.\n");
+    ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
     return err;
 
 }
@@ -219,15 +219,15 @@ void query_countis()
 
     const char * ntnames[] = { "1bl", "2bl", "3bl", "3nbl", "4bl", "4nbl" };
 
-    INFO_PRINTF("network type: %s\n", ntnames[networktype]);
+    INFO_PRINTF("network type: %s", ntnames[networktype]);
 
-    INFO_PRINTF("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
-    INFO_PRINTF("%dmV, %dmA\n", mV, mA);
+    INFO_PRINTF("hourmeter = i%u f%f\napparent_power = %u", hourmeter, fhourmeter, apparentpower);
+    INFO_PRINTF("%dmV, %dmA", mV, mA);
 
     for(int i = 8; i <= 26; i++) {
         int32_t v = 0;
         sense_modbus_read_value(i, &v);
         mqtt_announce_int(countis_e53[i].param_key, v >> 16);
-        INFO_PRINTF("%s = %d\n", countis_e53[i].param_key, v);
+        INFO_PRINTF("%s = %d", countis_e53[i].param_key, v);
     }
 }

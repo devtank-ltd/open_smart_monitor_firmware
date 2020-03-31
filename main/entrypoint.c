@@ -49,7 +49,7 @@ void lora_uart_setup() {
 
     esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, LORA_UART_CTS);
     if(err != ESP_OK) {
-        ERROR_PRINTF("Trouble %s setting the pins up!\n", esp_err_to_name(err));
+        ERROR_PRINTF("Trouble %s setting the pins up!", esp_err_to_name(err));
         while(1);
     }
 

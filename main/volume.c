@@ -60,7 +60,7 @@ static void freq_compute(void * arg) {
 }
 
 void volume_setup() {
-    DEBUG_PRINTF("Setting the volume measurement gpio up\n");
+    DEBUG_PRINTF("Setting the volume measurement gpio up");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
         .pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2),

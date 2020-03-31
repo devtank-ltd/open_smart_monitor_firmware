@@ -45,7 +45,7 @@ static uint8_t read_tsl_reg(uint8_t reg) {
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
-    if(err != ESP_OK) ERROR_PRINTF("Trouble2 %s reading from the TSL2561\n", esp_err_to_name(err));
+    if(err != ESP_OK) ERROR_PRINTF("Trouble %s reading from the TSL2561", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
@@ -61,7 +61,7 @@ static void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
-    if(err != ESP_OK) ERROR_PRINTF("Trouble %s writing to the TSL2561\n", esp_err_to_name(err));
+    if(err != ESP_OK) ERROR_PRINTF("Trouble %s writing to the TSL2561", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 }
 
@@ -72,7 +72,7 @@ static void tsl_powerdown() {
 void tsl_init() {
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
-    INFO_PRINTF("TSL2561 initialised %d \n", read_tsl_reg(CONTROL));
+    INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
 }
 
 void tsl_query() {
@@ -80,7 +80,7 @@ void tsl_query() {
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
     if(alive != 0x03) {
-        ERROR_PRINTF("TSL2561 was found to be dead. %u\n", alive);
+        ERROR_PRINTF("TSL2561 was found to be dead. %u", alive);
     }
 
     // The datasheet recommends that all four bytes of ALS data are read as a single transaction to minimise skew between the two channels.

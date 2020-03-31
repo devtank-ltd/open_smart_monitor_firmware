@@ -29,7 +29,7 @@ void hpm_init() {
 
     //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
     if(uart_set_pin(HPM_UART, HPM_UART_TX, HPM_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        ERROR_PRINTF("Error in uart_set_pin!\n");
+        ERROR_PRINTF("Error in uart_set_pin!");
 
     const int uart_buffer_size = (1024 * 2);
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
@@ -50,7 +50,7 @@ int hpm_query() {
     // Send the request for the measurement
     static char hpm_send[4] = {0x68, 0x01, 0x04, 0x93};
     if(uart_tx_chars(HPM_UART, hpm_send, 4) != 4) {
-        ERROR_PRINTF("Error querying the HPM module\n");
+        ERROR_PRINTF("Error querying the HPM module");
         return -1;
     }
 
@@ -98,7 +98,7 @@ int hpm_query() {
     uint8_t cs = (65536 - (head + len + cmd + df1 + df2 + df3 + df4) % 256);
 
     if(checksum != cs) {
-        ERROR_PRINTF("HPM checksum error; got 0x%02x but expected 0x%02x.\n", checksum, cs);
+        ERROR_PRINTF("HPM checksum error; got 0x%02x but expected 0x%02x.", checksum, cs);
         goto unknown_response;
     }
 
@@ -112,13 +112,12 @@ int hpm_query() {
 unknown_response:
     if(length > 128)
         length = 128;
-    ERROR_PRINTF("Unknown response from HPM module, length %zu, as follows:\n", length);
+    ERROR_PRINTF("Unknown response from HPM module, length %zu, as follows:", length);
     for(int i = 0; i < length; i++) {
         ERROR_PRINTF("0x%02x ", data[i]);
     }
     if(length == 0) {
         ERROR_PRINTF(" - is it even connected?");
     }
-    ERROR_PRINTF("\n");
     return -1;
 }

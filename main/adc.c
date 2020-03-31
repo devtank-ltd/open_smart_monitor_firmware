@@ -10,14 +10,14 @@ void adc_setup() {
 
 float adc_get(adc1_channel_t channel) {
 
-    DEBUG_PRINTF("Gate = %d\n", gpio_get_level(SOUND_GATE));
+    DEBUG_PRINTF("Gate = %d", gpio_get_level(SOUND_GATE));
 
     esp_err_t r = adc1_get_raw(channel);
     if(r < 0) {
-        ERROR_PRINTF("An error occurred when querying the ADC.\n");
+        ERROR_PRINTF("An error occurred when querying the ADC.");
         return 0;
     }
 
-    INFO_PRINTF("Raw reading from ADC1: %d\n", r);
+    INFO_PRINTF("Raw reading from ADC1: %d", r);
     return (r / 4096);
 }

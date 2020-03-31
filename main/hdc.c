@@ -36,7 +36,7 @@ static uint8_t read_reg(uint8_t reg) {
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK)
-        ERROR_PRINTF("Trouble %s reading from the HDC2080\n", esp_err_to_name(err));
+        ERROR_PRINTF("Trouble %s reading from the HDC2080", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
@@ -50,7 +50,7 @@ static void write_reg(uint8_t reg, uint8_t value) {
     i2c_master_write_byte(cmd, value, ACK_CHECK_DIS);
     i2c_master_stop(cmd);
     if(i2c_master_cmd_begin(I2CBUS, cmd, 50) != ESP_OK)
-        ERROR_PRINTF("Trouble writing to the HDC2080\n");
+        ERROR_PRINTF("Trouble writing to the HDC2080");
     i2c_cmd_link_delete(cmd);
 }
 
@@ -62,10 +62,10 @@ static void hdc_wait() {
     int i;
     for(i = 50; !i; i--) {
         if(read_reg(CONFIG) && MEAS_TRIG) {
-            INFO_PRINTF("Waiting %d for HDC2080\n", i);
+            INFO_PRINTF("Waiting %d for HDC2080", i);
             vTaskDelay(500);
         } else {
-            INFO_PRINTF("HDC2080 reports being ready\n");
+            INFO_PRINTF("HDC2080 reports being ready");
             return;
         }
     }

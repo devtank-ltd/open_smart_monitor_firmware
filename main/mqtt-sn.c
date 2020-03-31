@@ -31,14 +31,14 @@ static void sendthebytes(const char * str, size_t len) {
                 len -= sent;
                 str += sent;
                 if(len)
-                    DEBUG_PRINTF("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
+                    DEBUG_PRINTF("Only printed %d bytes, should have printed %zu. Trying again.", sent, len);
             }
             else if (sent < 0)
             {
-                ERROR_PRINTF("Error writing to UART\n");
+                ERROR_PRINTF("Error writing to UART");
             }
         } else {
-            ERROR_PRINTF("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
+            ERROR_PRINTF("Trouble %s writing to the LoRa UART.", esp_err_to_name(err));
         }
     }
 }
