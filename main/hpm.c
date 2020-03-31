@@ -33,7 +33,8 @@ void hpm_init() {
 
     const int uart_buffer_size = (1024 * 2);
     ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
-
+    gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
+    gpio_set_level(SW_SEL, 0);
 }
 
 int hpm_query() {
