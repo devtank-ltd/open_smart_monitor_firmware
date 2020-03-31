@@ -86,7 +86,6 @@ void app_main(void)
     getmac();
     lora_uart_setup();
     adc_setup();
-//    hpm_uart_setup();
     i2c_setup();
     tsl_init();
     hpm_init();
