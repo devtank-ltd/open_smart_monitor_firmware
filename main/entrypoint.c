@@ -8,6 +8,8 @@
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
 
+#include "git_commit.h"
+
 #include "pinmap.h"
 
 #include "hdc.h"
@@ -107,6 +109,9 @@ void app_main(void)
     notification("ENTRYPOINT REACHED");
 
     notification("CONFIGURING UARTS AND I2C");
+
+    notification(build_git_commit);
+
     getmac();
     lora_uart_setup();
     device_uart_setup();
