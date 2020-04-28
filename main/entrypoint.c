@@ -95,13 +95,15 @@ void i2c_setup() {
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = 10000;
 
-    if (i2c_param_config(I2CBUS, &conf) != ESP_OK)
-    	return false;
+    if (i2c_param_config(I2CBUS, &conf) != ESP_OK) {
+        ERROR_PRINTF("Error configuring I2C.");
+        return;
+    }
 
-    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK)
-		return false;
-
-    return true;
+    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK) {
+        ERROR_PRINTF("Error setting I2C to master.");
+        return;
+    }
 }
 
 void app_main(void)
