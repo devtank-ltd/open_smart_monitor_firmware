@@ -45,6 +45,7 @@ void lora_uart_setup() {
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
         /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_CTS,
     };
+    DEBUG_PRINTF("Init lora uart.");
     ESP_ERROR_CHECK(uart_param_config(LORA_UART, &lora));
 
     esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, LORA_UART_CTS);
@@ -67,17 +68,13 @@ void device_uart_setup() {
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
         /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
+    DEBUG_PRINTF("Init multiplex uart.");
     ESP_ERROR_CHECK(uart_param_config(DEVS_UART, &hpm));
+    gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
+    gpio_set_level(SW_SEL, 1);
 
     //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
-    if(uart_set_pin(DEVS_UART, DEVS_UART_TX, DEVS_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        ERROR_PRINTF("Error in uart_set_pin!");
-
-    uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX);
-
-    const int uart_buffer_size = (1024 * 2);
-    ESP_ERROR_CHECK(uart_driver_install(DEVS_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
-    gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
+    ESP_ERROR_CHECK(uart_set_pin(DEVS_UART, DEVS_UART_TX, DEVS_UART_RX, RS485_DE, UART_PIN_NO_CHANGE));
 }
 
 

@@ -91,12 +91,12 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
 static void smart_switch_switch() {
     // Switch UART to Smart Meter
     gpio_set_level(SW_SEL, 1);
-    // Flush the input buffer
-    uart_flush(DEVS_UART);
 }
 
 
 esp_err_t init_smart_meter() {
+
+    DEBUG_PRINTF("Init Smart Meter");
 
     smart_switch_switch();
 

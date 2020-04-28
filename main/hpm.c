@@ -12,6 +12,7 @@
 static int enable = 0;
 
 void hpm_init() {
+    DEBUG_PRINTF("Init HPM");
     const char *value = get_config("HPM");
     enable = value[0] != '0';
 }
@@ -91,6 +92,8 @@ int hpm_query() {
 
     pm25 = df1 * 256 + df2;
     pm10 = df3 * 256 + df4;
+
+    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10, (unsigned)pm25);
 
     mqtt_announce_int("PM10",  pm10);
     mqtt_announce_int("PM2.5", pm25);
