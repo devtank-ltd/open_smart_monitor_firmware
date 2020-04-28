@@ -12,7 +12,7 @@
 static int enable = 0;
 
 void hpm_init() {
-    get_config("HPM");
+    const char *value = get_config("HPM");
     enable = value[0] != '0';
 
     if(!enable) return;
