@@ -14,43 +14,29 @@ static int enable = 0;
 void hpm_init() {
     const char *value = get_config("HPM");
     enable = value[0] != '0';
-
-    if(!enable) return;
-
-    /* UART setup */
-    uart_config_t hpm = {
-        /* UART baud rate */            .baud_rate = 9600,
-        /* UART byte size */            .data_bits = UART_DATA_8_BITS,
-        /* UART parity mode */          .parity = UART_PARITY_DISABLE,
-        /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
-        /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-    };
-    ESP_ERROR_CHECK(uart_param_config(HPM_UART, &hpm));
-
-    //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
-    if(uart_set_pin(HPM_UART, HPM_UART_TX, HPM_UART_RX, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        ERROR_PRINTF("Error in uart_set_pin!");
-
-    const int uart_buffer_size = (1024 * 2);
-    ESP_ERROR_CHECK(uart_driver_install(HPM_UART, uart_buffer_size, uart_buffer_size, 10, NULL, 0));
-    gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
-    gpio_set_level(SW_SEL, 0);
 }
+
+
+static void hmp_switch() {
+    // Switch UART to HPM
+    gpio_set_level(SW_SEL, 0);
+    // Flush the input buffer
+    uart_flush(DEVS_UART);
+}
+
 
 int hpm_query() {
     if(!enable) return 0;
 
-    gpio_set_level(SW_SEL, 0);
+    hmp_switch();
+
     uint16_t pm25, pm10;
     // The body of this function implements my understanding of the protocol laid out by table 4 in
     // the datasheet from Honeywell.
 
-    // Flush the input buffer
-    uart_flush(HPM_UART);
-
     // Send the request for the measurement
     static char hpm_send[4] = {0x68, 0x01, 0x04, 0x93};
-    if(uart_tx_chars(HPM_UART, hpm_send, 4) != 4) {
+    if(uart_tx_chars(DEVS_UART, hpm_send, 4) != 4) {
         ERROR_PRINTF("Error querying the HPM module");
         return -1;
     }
@@ -64,14 +50,14 @@ int hpm_query() {
     // Wait for at least eight bytes from the particle sensor.
     int i;
     for(i = 0; i < TICKS_TO_WAIT && length < 8; i++) {
-        uart_get_buffered_data_len(HPM_UART, &length);
+        uart_get_buffered_data_len(DEVS_UART, &length);
         vTaskDelay(1);
     }
     if(length < 8)
         goto unknown_response;
 
-    uart_get_buffered_data_len(HPM_UART, &length);
-    length = uart_read_bytes(HPM_UART, data, length, 2000);
+    uart_get_buffered_data_len(DEVS_UART, &length);
+    length = uart_read_bytes(DEVS_UART, data, length, 2000);
 
     // Check if we got a negative ACK and bail out if so.
     // The negative ACK is two bytes long and reads: 0x96 0x96

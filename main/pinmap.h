@@ -11,9 +11,9 @@
  * memory. So to stick with the defaults will give rise to a IllegalInstruction
  * exception (or LoadProhibited, or the device will not flash, or ...)
  */
-#define HPM_UART    UART_NUM_1
-#define HPM_UART_RX 17
-#define HPM_UART_TX 16
+#define DEVS_UART    UART_NUM_1
+#define DEVS_UART_RX 17
+#define DEVS_UART_TX 16
 
 /*
  * The TSL2591 ambient light sensor, which is connected to the I2C bus as a

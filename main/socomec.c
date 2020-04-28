@@ -17,7 +17,6 @@
 #include "driver/gpio.h"
 #include "pinmap.h"
 #include "logging.h"
-#define UART_NUM UART_NUM_1
 
 #define E53_ADDR 5
 #define HOURMETER 50512
@@ -88,10 +87,21 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
     return error;
 }
 
+
+static void smart_switch_switch() {
+    // Switch UART to Smart Meter
+    gpio_set_level(SW_SEL, 1);
+    // Flush the input buffer
+    uart_flush(DEVS_UART);
+}
+
+
 esp_err_t init_smart_meter() {
 
+    smart_switch_switch();
+
     mb_communication_info_t comm = {
-            .port = UART_NUM_1,
+            .port = DEVS_UART,
             .mode = MB_MODE_RTU,
             .baudrate = 9600,
             .parity = UART_PARITY_DISABLE
@@ -117,11 +127,6 @@ esp_err_t init_smart_meter() {
     SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
                                 "mb controller set descriptor fail, returns(0x%x).",
                                 (uint32_t)err);
-
-    if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        ERROR_PRINTF("Error in uart_set_pin!");
-    uart_set_mode(UART_NUM, UART_MODE_RS485_HALF_DUPLEX);
-
 
     // Make sure we're actually connected to a SOCOMEC smart meter!
     // This function really returns a null byte between each character, "S\0O\0C\0O\0".
@@ -193,7 +198,8 @@ void query_countis()
 {
     if(!sococonnected)
        return;
-    gpio_set_level(SW_SEL, 1);
+    smart_switch_switch();
+
     uint32_t hourmeter = 0;
     uint32_t apparentpower = 0;
     float fhourmeter = 0.0;
