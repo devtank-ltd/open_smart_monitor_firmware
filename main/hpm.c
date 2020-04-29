@@ -58,6 +58,7 @@ int hpm_query() {
         goto unknown_response;
 
     uart_get_buffered_data_len(DEVS_UART, &length);
+    length = (length > sizeof(data))?sizeof(data):length;
     length = uart_read_bytes(DEVS_UART, data, length, 2000);
 
     // Check if we got a negative ACK and bail out if so.
