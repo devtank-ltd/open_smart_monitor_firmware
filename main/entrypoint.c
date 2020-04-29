@@ -71,10 +71,14 @@ void device_uart_setup() {
     DEBUG_PRINTF("Init multiplex uart.");
     ESP_ERROR_CHECK(uart_param_config(DEVS_UART, &hpm));
     gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
-    gpio_set_level(SW_SEL, 1);
 
     //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
     ESP_ERROR_CHECK(uart_set_pin(DEVS_UART, DEVS_UART_TX, DEVS_UART_RX, RS485_DE, UART_PIN_NO_CHANGE));
+
+    const int uart_buffer_size = 2 * 1024;
+    ESP_ERROR_CHECK(uart_driver_install(DEVS_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
+
+    ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX));
 }
 
 
