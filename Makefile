@@ -7,7 +7,7 @@ PROJECT_NAME := smart-factory
 
 include $(IDF_PATH)/make/project.mk
 
-flash: cppcheck
+flash:
 
 cppcheck:
 	cppcheck --enable=all --inconclusive --std=posix . -v
