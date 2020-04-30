@@ -21,7 +21,6 @@
 
 #define READ_HOLDING_FUNC 3
 #define MODBUS_ERROR_MASK 0x80
-#define READ_HOLDING_BASE 40001
 
 #define E53_ADDR 5
 
