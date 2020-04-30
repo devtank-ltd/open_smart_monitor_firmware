@@ -105,7 +105,7 @@ const dev_parameter_descriptor_t countis_e53[] = { \
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
 
-uint16_t modbus_crc(uint8_t * buf, int length) {
+uint16_t modbus_crc(uint8_t * buf, unsigned length) {
     static const uint16_t crctable[] = {
     0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
     0XC601, 0X06C0, 0X0780, 0XC741, 0X0500, 0XC5C1, 0XC481, 0X0440,
@@ -156,8 +156,8 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
 {
     dev_parameter_descriptor_t cid_info = countis_e53[cid];
 
-    if (value_size != cid_info.param_size) {
-        ERROR_PRINTF("Parameter %s is %"PRIu8" not %"PRIu8, cid_info.param_key, cid_info.param_size, value_size);
+    if (value_size > cid_info.param_size) {
+        ERROR_PRINTF("Parameter %s is too small %"PRIu8" for %"PRIu8, cid_info.param_key, cid_info.param_size, value_size);
         return ESP_FAIL;
     }
 
@@ -184,22 +184,14 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
     packet[6] = crc & 0xFF;
     packet[7] = crc >> 8;
 
-
-    if (uart_write_bytes(DEVS_UART, (char*)packet, sizeof(packet)) != sizeof(packet)) {
+    /* 28 bit break after writing*/
+    if (uart_write_bytes_with_break(DEVS_UART, (char*)packet, sizeof(packet), 28) != sizeof(packet)) {
         ERROR_PRINTF("Failed to write out Modbus packet.");
         return ESP_FAIL;
     }
 
-    for(unsigned n = 0; n < READ_HOLDING_REQ_PACKET_SIZE; n++)
-        INFO_PRINTF(">> Modbus 0x%02"PRIx8, packet[n]);
-
-    err = uart_flush(DEVS_UART);
-    if (err != ESP_OK) {
-        ERROR_PRINTF("Failed to flush modbus uart : %s(%u)", esp_err_to_name(err), (unsigned)err);
-        return err;
-    }
-
-    vTaskDelay(200 / portTICK_PERIOD_MS);
+    /* Give 50ms (bit long, maybe should be async) for the answer to come.*/
+    vTaskDelay(50 / portTICK_PERIOD_MS);
 
     size_t length = 0;
     err = uart_get_buffered_data_len(DEVS_UART, &length);
@@ -230,11 +222,15 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         return ESP_FAIL;
     }
 
-    INFO_PRINTF("Got %d over Modbus", r);
+    // Skip over any leading zeros
+    unsigned start = 0;
     for(unsigned n = 0; n < length; n++)
-        INFO_PRINTF("<< Modbus 0x%02"PRIx8, reply[n]);
+        if (reply[n]) {
+            start = n;
+            break;
+        }
 
-    crc = modbus_crc(reply, length - 2);
+    crc = modbus_crc(reply + start, length - start - 2);
 
     if ( (reply[length-1] != (crc >> 8)) ||
          (reply[length-2] != (crc & 0xFF)) ) {
@@ -242,7 +238,7 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         return ESP_FAIL;
     }
 
-    uint8_t func = reply[1];
+    uint8_t func = reply[start + 1];
 
     if (func == READ_HOLDING_FUNC) {
         /* Yer! */
@@ -251,7 +247,7 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
          *  https://en.wikipedia.org/wiki/Modbus#Modbus_RTU_frame_format_(primarily_used_on_asynchronous_serial_data_lines_like_RS-485/EIA-485)
          *  http://www.simplymodbus.ca/FC03.htm
          */
-        uint8_t bytes_count = reply[2];
+        uint8_t bytes_count = reply[ start + 2];
         if ((bytes_count / 2) != count) {
             ERROR_PRINTF("Modbus responsed with different count of values than requested.");
             return ESP_FAIL;
@@ -261,24 +257,24 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
 
         if (cid_info.param_type == PARAM_TYPE_U8) {
             // Take it the order it comes
-            for(unsigned n = 0; n < value_size; n ++)
-                dst_value[n] = reply[3 + n];
+            for(unsigned n = 0; n < bytes_count; n ++)
+                dst_value[n] = reply[start + 3 + n];
         }
         else if (cid_info.param_type == PARAM_TYPE_ASCII) {
             for(unsigned n = 0; n < bytes_count; n+=2) {
-                dst_value[n] = reply[3 + n + 1];
-                dst_value[n+1] = reply[3 + n];
+                dst_value[n] = reply[start + 3 + n + 1];
+                dst_value[n+1] = reply[start + 3 + n];
             }
         }
         else {
             // Change to little endian from big.
-            for(unsigned n = 0; n < value_size; n ++)
-                dst_value[n] = reply[3 + (value_size - n - 1)];
+            for(unsigned n = 0; n < bytes_count; n ++)
+                dst_value[n] = reply[start + 3 + (value_size - n - 1)];
         }
     }
     else if (func == (READ_HOLDING_FUNC | MODBUS_ERROR_MASK)) {
         if (length > MIN_MODBUS_PACKET_SIZE) {
-            ERROR_PRINTF("Slave responsed with modbus exception : %"PRIu8, reply[2]);
+            ERROR_PRINTF("Slave responsed with modbus exception : %"PRIu8, reply[start + 2]);
             return ESP_FAIL;
         }
         else {
@@ -340,11 +336,15 @@ esp_err_t init_smart_meter() {
     const char * prodorder = 0;
 
     err = sense_modbus_read_value(6, &product_order_id, sizeof(product_order_id));
-    if (err != ESP_OK)
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Failed to read Product Order ID.");
         return ESP_FAIL;
+    }
     err = sense_modbus_read_value(7, &product_id,       sizeof(product_id));
-    if (err != ESP_OK)
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Failed to read Product ID.");
         return ESP_FAIL;
+    }
 
     if(product_order_id == 100)
         prodorder = "Countis";
