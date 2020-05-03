@@ -37,8 +37,8 @@ int hpm_query() {
     // the datasheet from Honeywell.
 
     // Send the request for the measurement
-    static char hpm_send[4] = {0x68, 0x01, 0x04, 0x93};
-    if(uart_tx_chars(DEVS_UART, hpm_send, 4) != 4) {
+    static uint8_t hpm_send[] = {0x68, 0x01, 0x04, 0x93};
+    if(uart_write_bytes(DEVS_UART, (char*)hpm_send, sizeof(hpm_send)) != sizeof(hpm_send)) {
         ERROR_PRINTF("Error querying the HPM module");
         return -1;
     }
