@@ -300,6 +300,9 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
 static void smart_switch_switch() {
     // Switch UART to Smart Meter
     gpio_set_level(SW_SEL, 1);
+    ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX));
+    // Flush the input buffer from anything from other device.
+    uart_flush(DEVS_UART);
 }
 
 

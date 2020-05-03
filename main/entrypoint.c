@@ -77,8 +77,6 @@ void device_uart_setup() {
 
     const int uart_buffer_size = 2 * 1024;
     ESP_ERROR_CHECK(uart_driver_install(DEVS_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
-
-    ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX));
 }
 
 

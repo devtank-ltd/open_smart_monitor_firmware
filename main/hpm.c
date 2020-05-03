@@ -21,7 +21,8 @@ void hpm_init() {
 static void hmp_switch() {
     // Switch UART to HPM
     gpio_set_level(SW_SEL, 0);
-    // Flush the input buffer
+    ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_UART));
+    // Flush the input buffer from anything from other device.
     uart_flush(DEVS_UART);
 }
 
