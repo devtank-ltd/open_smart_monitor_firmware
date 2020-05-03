@@ -281,11 +281,11 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
     }
     else if (func == (READ_HOLDING_FUNC | MODBUS_ERROR_MASK)) {
         if (length > MIN_MODBUS_PACKET_SIZE) {
-            ERROR_PRINTF("Slave responsed with modbus exception : %"PRIu8, reply[start + 2]);
+            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus exception : %"PRIu8, addr, reply[start + 2]);
             return ESP_FAIL;
         }
         else {
-            ERROR_PRINTF("Slave responsed with modbus error but no exception code.");
+            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus error but no exception code.", addr);
             return ESP_FAIL;
         }
     }
