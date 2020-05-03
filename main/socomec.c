@@ -26,12 +26,11 @@
 
 /*         <               ADU                         >
             addr(1), func(1), reg(2), count(2) , crc(2)
-                             <      PDU       >
+                     <             PDU       >
 
     For reading a holding, PDU is 16bit register address and 16bit register count.
     https://en.wikipedia.org/wiki/Modbus#Modbus_RTU_frame_format_(primarily_used_on_asynchronous_serial_data_lines_like_RS-485/EIA-485)
 */
-#define READ_HOLDING_REQ_PACKET_SIZE  (1 + 1 + 2 + 2 + 2)
 #define MIN_MODBUS_PACKET_SIZE    4 /*addr, func, crc*/
 #define MAX_MODBUS_PACKET_SIZE    127
 
@@ -159,7 +158,6 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         return ESP_FAIL;
     }
 
-    uint8_t packet[READ_HOLDING_REQ_PACKET_SIZE];
     uint16_t addr = cid_info.mb_reg_start;
     uint8_t count = value_size / 2;
     esp_err_t err;
@@ -167,20 +165,22 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
     if (!count)
         count = 1;
 
-    /* ADU Header (Application Data Unit) */
-    packet[0] = E53_ADDR;
+    uint8_t packet[] = {/* ADU Header (Application Data Unit) */
+                        E53_ADDR,
+                        /* ====================================== */
+                        /* PDU payload (Protocol Data Unit) */
+                        READ_HOLDING_FUNC, /*Holding*/
+                        addr >> 8,   /*Register read address */
+                        addr & 0xFF,
+                        0, /*Register read count */
+                        count,
+                        /* ====================================== */
+                        /* ADU Tail */
+                        0, 0 };
 
-    /* PDU payload (Protocol Data Unit) */
-    packet[1] = READ_HOLDING_FUNC; /*Holding*/
-    packet[2] = addr >> 8;   /*Register read address */
-    packet[3] = addr & 0xFF;
-    packet[4] = 0; /*Register read count */
-    packet[5] = count;
-
-    /* ADU Tail */
     uint16_t crc = modbus_crc(packet, sizeof(packet) - 2);
-    packet[6] = crc & 0xFF;
-    packet[7] = crc >> 8;
+    packet[sizeof(packet)-2] = crc & 0xFF;
+    packet[sizeof(packet)-1] = crc >> 8;
 
     if (uart_write_bytes(DEVS_UART, (char*)packet, sizeof(packet)) != sizeof(packet)) {
         ERROR_PRINTF("Failed to write out Modbus packet.");
