@@ -231,8 +231,16 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
 
     crc = modbus_crc(reply + start, length - start - 2);
 
-    if ( (reply[length-1] != (crc >> 8)) ||
-         (reply[length-2] != (crc & 0xFF)) ) {
+    while(1) {
+        if ( (reply[length-1] == (crc >> 8)) &&
+             (reply[length-2] == (crc & 0xFF)) )
+             break;
+
+        if (!reply[length-1] && (length > MIN_MODBUS_PACKET_SIZE) ) {
+            INFO_PRINTF("Trimming zero trailing message.");
+            length -= 1;
+            continue;
+        }
         ERROR_PRINTF("CRC error with reply.");
         return ESP_FAIL;
     }
