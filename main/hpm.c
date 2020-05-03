@@ -49,8 +49,7 @@ int hpm_query() {
     size_t length = 0;
 
     // Wait for at least eight bytes from the particle sensor.
-    int i;
-    for(i = 0; i < TICKS_TO_WAIT && length < 8; i++) {
+    for(unsigned i = 0; i < TICKS_TO_WAIT && length < 8; i++) {
         uart_get_buffered_data_len(DEVS_UART, &length);
         vTaskDelay(1);
     }

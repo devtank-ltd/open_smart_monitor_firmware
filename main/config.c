@@ -66,6 +66,9 @@ const char* get_config(const char * key) {
 void configure() {
     char message[BUFLEN];
     size_t length = 0;
+    char * mac = NULL;
+    char * key = NULL;
+    char * val = NULL;
     uart_get_buffered_data_len(LORA_UART, &length);
     if(!length) return;
     length = 0;
@@ -79,10 +82,6 @@ keep_listening:
     vTaskDelay(1);
     goto keep_listening;
 
-    char * mac;
-    char * key;
-    char * val;
-
 procline:
     mac = message;
     key = getfield(mac);
@@ -91,9 +90,9 @@ procline:
 
     if(strcmp(mac, mac_addr)) return;
 
-    INFO_PRINTF("mac %d %s", strlen(mac), mac);
-    INFO_PRINTF("key %d %s", strlen(key), key);
-    INFO_PRINTF("val %d %s", strlen(val), val);
+    INFO_PRINTF("mac %zu %s", strlen(mac), mac);
+    INFO_PRINTF("key %zu %s", strlen(key), key);
+    INFO_PRINTF("val %zu %s", strlen(val), val);
     store_config(key, val);
     return;
 }
