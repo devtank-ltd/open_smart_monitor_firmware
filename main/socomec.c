@@ -182,20 +182,21 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
     packet[6] = crc & 0xFF;
     packet[7] = crc >> 8;
 
-    /* 28 bit break after writing*/
-    if (uart_write_bytes_with_break(DEVS_UART, (char*)packet, sizeof(packet), 28) != sizeof(packet)) {
+    if (uart_write_bytes(DEVS_UART, (char*)packet, sizeof(packet)) != sizeof(packet)) {
         ERROR_PRINTF("Failed to write out Modbus packet.");
         return ESP_FAIL;
     }
 
-    /* Give 50ms (bit long, maybe should be async) for the answer to come.*/
-    vTaskDelay(50 / portTICK_PERIOD_MS);
-
+    unsigned expected_length = MIN_MODBUS_PACKET_SIZE + 1 + cid_info.param_size;
     size_t length = 0;
-    err = uart_get_buffered_data_len(DEVS_UART, &length);
-    if (err != ESP_OK) {
-        ERROR_PRINTF("Failed to read anything from modbus : %s(%u)", esp_err_to_name(err), (unsigned)err);
-        return err;
+
+    for(unsigned i = 0; i < 50 && length < expected_length; i++) {
+        err = uart_get_buffered_data_len(DEVS_UART, &length);
+        if (err != ESP_OK) {
+            ERROR_PRINTF("Failed to read anything from modbus : %s(%u)", esp_err_to_name(err), (unsigned)err);
+            return err;
+        }
+        vTaskDelay(1);
     }
 
     if (length < MIN_MODBUS_PACKET_SIZE) {
