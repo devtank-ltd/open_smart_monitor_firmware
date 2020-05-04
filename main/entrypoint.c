@@ -129,8 +129,10 @@ void app_main(void)
         smart_meter_query();
         water_volume_query();
         light_volume_query();
-        adc_get(SOUND_OUTPUT);
-        adc_get(SOUND_ENVELOPE);
+
+        sound_output_query();
+        sound_envelope_query();
+
 //        configure();
 
         vTaskDelay(50 / portTICK_PERIOD_MS);
