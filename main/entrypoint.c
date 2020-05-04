@@ -122,9 +122,9 @@ void app_main(void)
         heartbeat();
         status_led_toggle();
 
-        hpm_query();
-        hdc_query();
-        tsl_query();
+        hpm_query(); /* (Honeywell) particle meter */
+        hdc_query(); /* humidity sensor with temperature sensor */
+        tsl_query(); /* Lux/light sensor */
 
         smart_meter_query();
         water_volume_query();
