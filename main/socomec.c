@@ -148,6 +148,9 @@ uint16_t modbus_crc(uint8_t * buf, unsigned length) {
 }
 
 
+static uint8_t modbuspacket[MAX_MODBUS_PACKET_SIZE];
+
+
 // Read characteristic value from Modbus parameter according to description table
 static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t value_size)
 {
@@ -160,43 +163,66 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
 
     uint16_t addr = cid_info.mb_reg_start;
     uint8_t count = value_size / 2;
-    esp_err_t err;
 
     if (!count)
         count = 1;
 
-    uint8_t packet[] = {/* ADU Header (Application Data Unit) */
-                        E53_ADDR,
-                        /* ====================================== */
-                        /* PDU payload (Protocol Data Unit) */
-                        READ_HOLDING_FUNC, /*Holding*/
-                        addr >> 8,   /*Register read address */
-                        addr & 0xFF,
-                        0, /*Register read count */
-                        count,
-                        /* ====================================== */
-                        /* ADU Tail */
-                        0, 0 };
+    /* ADU Header (Application Data Unit) */
+    modbuspacket[0] = E53_ADDR;
+    /* ====================================== */
+    /* PDU payload (Protocol Data Unit) */
+    modbuspacket[1] = READ_HOLDING_FUNC; /*Holding*/
+    modbuspacket[2] = addr >> 8;   /*Register read address */
+    modbuspacket[3] = addr & 0xFF;
+    modbuspacket[4] = 0; /*Register read count */
+    modbuspacket[5] = count;
+    /* ====================================== */
+    /* ADU Tail */
+    uint16_t crc = modbus_crc(modbuspacket, 6);
+    modbuspacket[6] = crc & 0xFF;
+    modbuspacket[7] = crc >> 8;
 
-    uint16_t crc = modbus_crc(packet, sizeof(packet) - 2);
-    packet[sizeof(packet)-2] = crc & 0xFF;
-    packet[sizeof(packet)-1] = crc >> 8;
-
-    if (uart_write_bytes(DEVS_UART, (char*)packet, sizeof(packet)) != sizeof(packet)) {
+    if (uart_write_bytes(DEVS_UART, (char*)modbuspacket, 8) != 8) {
         ERROR_PRINTF("Failed to write out Modbus packet.");
         return ESP_FAIL;
     }
 
-    unsigned expected_length = MIN_MODBUS_PACKET_SIZE + 1 + cid_info.param_size;
     size_t length = 0;
 
-    for(unsigned i = 0; i < 50 && length < expected_length; i++) {
-        err = uart_get_buffered_data_len(DEVS_UART, &length);
-        if (err != ESP_OK) {
-            ERROR_PRINTF("Failed to read anything from modbus : %s(%u)", esp_err_to_name(err), (unsigned)err);
-            return err;
+    for(unsigned i = 0; i < 100 && length < MAX_MODBUS_PACKET_SIZE; i++) {
+        if (length) {
+            uint8_t v;
+            int r = uart_read_bytes(DEVS_UART, &v, 1, 0);
+            if (r < 0) {
+                ERROR_PRINTF("Failed to read (%zu) data from modbus", length);
+                return ESP_FAIL;
+            }
+            else if (r > 0 && v) {
+                // Ok, non zero, so it's should be a frame start.
+                modbuspacket[length++] = v;
+                i = 80;
+            }
         }
-        vTaskDelay(1);
+        else {
+            size_t toread;
+            esp_err_t err = uart_get_buffered_data_len(DEVS_UART, &toread);
+            if (err != ESP_OK) {
+                ERROR_PRINTF("Failed to read length from modbus : %s(%u)", esp_err_to_name(err), (unsigned)err);
+                return err;
+            }
+
+            if (toread) {
+                toread = (toread > (MAX_MODBUS_PACKET_SIZE - length))?(MAX_MODBUS_PACKET_SIZE - length):toread;
+                int r = uart_read_bytes(DEVS_UART, &modbuspacket[length], toread, 0);
+                if (r < 0) {
+                    ERROR_PRINTF("Failed to read (%zu) data from modbus", length);
+                    return ESP_FAIL;
+                }
+                else if ( r > 0 )
+                    length += toread;
+            }
+            else vTaskDelay(1);
+        }
     }
 
     if (length < MIN_MODBUS_PACKET_SIZE) {
@@ -209,34 +235,14 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         return ESP_FAIL;
     }
 
-    uint8_t reply[length];
-
-    int r = uart_read_bytes(DEVS_UART, reply, length, 0);
-    if (r < 0) {
-        ERROR_PRINTF("Failed to read (%zu) data from modbus", length);
-        return ESP_FAIL;
-    }
-    else if (r != length) {
-        ERROR_PRINTF("Read length(%d) from modbus isn't expected length(%zu)", r, length);
-        return ESP_FAIL;
-    }
-
-    // Skip over any leading zeros
-    unsigned start = 0;
-    for(unsigned n = 0; n < length; n++)
-        if (reply[n]) {
-            start = n;
-            break;
-        }
-
-    crc = modbus_crc(reply + start, length - start - 2);
+    crc = modbus_crc(modbuspacket, length - 2);
 
     while(1) {
-        if ( (reply[length-1] == (crc >> 8)) &&
-             (reply[length-2] == (crc & 0xFF)) )
+        if ( (modbuspacket[length-1] == (crc >> 8)) &&
+             (modbuspacket[length-2] == (crc & 0xFF)) )
              break;
 
-        if (!reply[length-1] && (length > MIN_MODBUS_PACKET_SIZE) ) {
+        if (!modbuspacket[length-1] && (length > MIN_MODBUS_PACKET_SIZE) ) {
             INFO_PRINTF("Trimming zero trailing message.");
             length -= 1;
             continue;
@@ -245,7 +251,7 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         return ESP_FAIL;
     }
 
-    uint8_t func = reply[start + 1];
+    uint8_t func = modbuspacket[1];
 
     if (func == READ_HOLDING_FUNC) {
         /* Yer! */
@@ -254,7 +260,7 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
          *  https://en.wikipedia.org/wiki/Modbus#Modbus_RTU_frame_format_(primarily_used_on_asynchronous_serial_data_lines_like_RS-485/EIA-485)
          *  http://www.simplymodbus.ca/FC03.htm
          */
-        uint8_t bytes_count = reply[ start + 2];
+        uint8_t bytes_count = modbuspacket[2];
         if ((bytes_count / 2) != count) {
             ERROR_PRINTF("Modbus responsed with different count of values than requested.");
             return ESP_FAIL;
@@ -265,23 +271,23 @@ static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t valu
         if (cid_info.param_type == PARAM_TYPE_U8) {
             // Take it the order it comes
             for(unsigned n = 0; n < bytes_count; n ++)
-                dst_value[n] = reply[start + 3 + n];
+                dst_value[n] = modbuspacket[3 + n];
         }
         else if (cid_info.param_type == PARAM_TYPE_ASCII) {
             for(unsigned n = 0; n < bytes_count; n+=2) {
-                dst_value[n] = reply[start + 3 + n + 1];
-                dst_value[n+1] = reply[start + 3 + n];
+                dst_value[n] = modbuspacket[3 + n + 1];
+                dst_value[n+1] = modbuspacket[3 + n];
             }
         }
         else {
             // Change to little endian from big.
             for(unsigned n = 0; n < bytes_count; n ++)
-                dst_value[n] = reply[start + 3 + (value_size - n - 1)];
+                dst_value[n] = modbuspacket[3 + (value_size - n - 1)];
         }
     }
     else if (func == (READ_HOLDING_FUNC | MODBUS_ERROR_MASK)) {
         if (length > MIN_MODBUS_PACKET_SIZE) {
-            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus exception : %"PRIu8, addr, reply[start + 2]);
+            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus exception : %"PRIu8, addr, modbuspacket[2]);
             return ESP_FAIL;
         }
         else {
