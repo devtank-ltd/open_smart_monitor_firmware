@@ -118,11 +118,6 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
-    gpio_config_t config;
-    config.pin_bit_mask = (1ULL << SW_SEL);
-    config.mode = GPIO_MODE_OUTPUT;
-    ESP_ERROR_CHECK(gpio_config(&config));
-
     for(;;) {
         heartbeat();
         status_led_toggle();
