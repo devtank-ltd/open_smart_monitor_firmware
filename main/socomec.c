@@ -313,7 +313,7 @@ static void smart_switch_switch() {
 }
 
 
-esp_err_t init_smart_meter() {
+esp_err_t smart_meter_setup() {
 
     DEBUG_PRINTF("Init Smart Meter");
 
@@ -395,7 +395,7 @@ unknown_device:
 
 }
 
-void query_countis()
+void smart_meter_query()
 {
     if(!sococonnected)
        return;

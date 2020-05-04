@@ -1,3 +1,3 @@
 #pragma once
-void init_smart_meter();
-void query_countis();
+void smart_meter_setup();
+void smart_meter_query();

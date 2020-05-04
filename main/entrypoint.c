@@ -113,9 +113,9 @@ void app_main(void)
     device_uart_setup();
     adc_setup();
     i2c_setup();
-    tsl_init();
-    hpm_init();
-    init_smart_meter();
+    tsl_setup();
+    hpm_setup();
+    smart_meter_setup();
     volume_setup();
 
     gpio_config_t config;
@@ -131,9 +131,9 @@ void app_main(void)
         hdc_query();
         tsl_query();
 
-        query_countis();
-        qry_pulsecount("WaterMeter", 10, 0);
-        qry_pulsecount("Light", 10, 1);
+        smart_meter_query();
+        water_volume_query();
+        light_volume_query();
         adc_get(SOUND_OUTPUT);
         adc_get(SOUND_ENVELOPE);
 //        configure();

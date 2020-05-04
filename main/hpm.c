@@ -11,7 +11,7 @@
 #define TICKS_TO_WAIT 100
 static int enable = 0;
 
-void hpm_init() {
+void hpm_setup() {
     DEBUG_PRINTF("Init HPM");
     const char *value = get_config("HPM");
     enable = value[0] != '0';

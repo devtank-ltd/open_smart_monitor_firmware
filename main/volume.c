@@ -84,10 +84,18 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
 }
 
-void qry_frequency(const char * key, int which) {
+static void qry_frequency(const char * key, int which) {
     mqtt_announce_int(key, (which ? freq1 : freq2));
 }
 
-void qry_pulsecount(const char * key, int multiplier, int which) {
+static void qry_pulsecount(const char * key, int multiplier, int which) {
     mqtt_announce_int(key, (which ? count1 : count2) * multiplier);
+}
+
+void water_volume_query() {
+    qry_pulsecount("WaterMeter", 10, 0);
+}
+
+void light_volume_query() {
+    qry_pulsecount("Light", 10, 1);
 }
