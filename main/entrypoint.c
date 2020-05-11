@@ -130,8 +130,7 @@ void app_main(void)
         water_volume_query();
         light_volume_query();
 
-        sound_output_query();
-        sound_envelope_query();
+        sound_query();
 
 //        configure();
 

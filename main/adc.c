@@ -2,6 +2,7 @@
 #include "adc.h"
 #include "pinmap.h"
 #include "logging.h"
+#include "mqtt-sn.h"
 
 void adc_setup() {
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -9,7 +10,7 @@ void adc_setup() {
 }
 
 
-static float adc_get(adc1_channel_t channel) {
+static int adc_get(adc1_channel_t channel) {
 
     DEBUG_PRINTF("Gate = %d", gpio_get_level(SOUND_GATE));
 
@@ -20,17 +21,15 @@ static float adc_get(adc1_channel_t channel) {
     }
 
     DEBUG_PRINTF("Raw reading from ADC1(%u): %d", (unsigned)channel, r);
-    return (r / 4095.0f);
+    return (r * 1000) / 4095;
 }
 
 
-void sound_output_query() {
-    float v = adc_get(SOUND_OUTPUT);
-    INFO_PRINTF("Sound output : %G", v);
-}
-
-
-void sound_envelope_query() {
-    float v = adc_get(SOUND_ENVELOPE);
-    INFO_PRINTF("Sound envelope : %G", v);
+void sound_query() {
+    int v = adc_get(SOUND_OUTPUT);
+    INFO_PRINTF("Sound output : %d", v);
+    mqtt_announce_int("Snd Level", (int)(v * 1000));
+    v = adc_get(SOUND_ENVELOPE);
+    INFO_PRINTF("Sound envelope : %d", v);
+    mqtt_announce_int("Snd Envlp", (int)(v * 1000));
 }

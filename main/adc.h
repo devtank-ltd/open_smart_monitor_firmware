@@ -3,5 +3,4 @@
 
 void adc_setup();
 
-void sound_output_query();
-void sound_envelope_query();
+void sound_query();
