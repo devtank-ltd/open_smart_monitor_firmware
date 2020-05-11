@@ -142,9 +142,6 @@ int hpm_query() {
 
     hmp_switch();
 
-    // The body of this function implements my understanding of the protocol laid out by table 4 in
-    // the datasheet from Honeywell.
-
     // Send the request for the measurement
     static uint8_t hpm_send[] = {0x68, 0x01, 0x04, 0x93};
     if(uart_write_bytes(DEVS_UART, (char*)hpm_send, sizeof(hpm_send)) != sizeof(hpm_send)) {
@@ -161,6 +158,8 @@ int hpm_query() {
     // Wait for at least eight bytes from the particle sensor.
     for(unsigned i = 0; i < TICKS_TO_WAIT && !length; i++) {
         uart_get_buffered_data_len(DEVS_UART, &length);
+        if (length)
+            break;
         vTaskDelay(1);
     }
 
@@ -170,6 +169,7 @@ int hpm_query() {
 
         if (read_bytes > 0) {
             if (header) {
+                bool found = false;
                 for(hpm_response_t * respond = responses; respond->id; respond++)
                     if (header == respond->id) {
                         data[0] = header;
@@ -179,6 +179,11 @@ int hpm_query() {
                             if (r < 0) {
                                 goto unknown_response;
                             }
+                            if (length > read_bytes) {
+                                length -= read_bytes;
+                                found = true;
+                                break;
+                            }
                             return 0;
                         }
                         else {
@@ -186,16 +191,17 @@ int hpm_query() {
                             goto unknown_response;
                         }
                     }
-
-                ERROR_PRINTF("Unknown HPM message header 0x%02"PRIx8, header);
-                length = (length > sizeof(data))?sizeof(data):length;
-                read_bytes = uart_read_bytes(DEVS_UART, data, length-1, 2000);
-                if (read_bytes > 0) {
-                    for(unsigned n = 0; n < read_bytes; n++) {
-                        ERROR_PRINTF("0x%02"PRIx8, data[n]);
+                if (!found) {
+                    ERROR_PRINTF("Unknown HPM message header 0x%02"PRIx8, header);
+                    length = (length > sizeof(data))?sizeof(data):length;
+                    read_bytes = uart_read_bytes(DEVS_UART, data, length-1, 2000);
+                    if (read_bytes > 0) {
+                        for(unsigned n = 0; n < read_bytes; n++) {
+                            ERROR_PRINTF("0x%02"PRIx8, data[n]);
+                        }
                     }
+                    goto unknown_response;
                 }
-                goto unknown_response;
             } else if (header == 0xFF) {
                 /* The odd stray high isn't unreasonable, it can happen. */
                 length--;
@@ -205,8 +211,11 @@ int hpm_query() {
                 length--;
             }
         }
+        else {
+            ERROR_PRINTF("Unable to read HPM message header.");
+            return -1;
+        }
     }
-    ERROR_PRINTF("Unable to read HPM message header.");
 
     return 0;
 
