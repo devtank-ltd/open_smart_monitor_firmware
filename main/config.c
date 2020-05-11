@@ -76,8 +76,8 @@ keep_listening:
     length += uart_read_bytes(LORA_UART, (uint8_t *)message + length, BUFLEN - length, 1);
     message[length] = '\0';
     if(length > BUFLEN)             goto procline; // buffer overrun
-    if(message[length - 1] == 0x0d) goto procline; // carriage return
-    if(message[length - 1] == 0x7f) length -= 2;   // backspace
+    if(message[length - 1] == '\r') goto procline; // carriage return
+    if(message[length - 1] == '\b') length -= 2;   // backspace
 
     vTaskDelay(1);
     goto keep_listening;
