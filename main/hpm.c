@@ -8,7 +8,7 @@
 #include "logging.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
-#define TICKS_TO_WAIT 100
+#define TICKS_TO_WAIT 250
 static int enable = 0;
 
 void hpm_setup() {
@@ -23,6 +23,7 @@ static void hmp_switch() {
     gpio_set_level(SW_SEL, 0);
     ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_UART));
     // Flush the input buffer from anything from other device.
+    vTaskDelay(1 / portTICK_PERIOD_MS);
     uart_flush(DEVS_UART);
 }
 
@@ -163,6 +164,11 @@ int hpm_query() {
         vTaskDelay(1);
     }
 
+    if(!length) {
+        ERROR_PRINTF("No HPM response - is it even connected?");
+        goto unknown_response;
+    }
+
     while (length) {
         uint8_t header;
         size_t read_bytes = uart_read_bytes(DEVS_UART, &header, 1, 2000);
@@ -221,9 +227,6 @@ int hpm_query() {
 
 unknown_response:
 
-    if(length == 0)
-        ERROR_PRINTF(" - is it even connected?");
-    else
-        uart_flush_input(DEVS_UART); /* Bin everything in hope to sync back up. */
+    uart_flush_input(DEVS_UART); /* Bin everything in hope to sync back up. */
     return -1;
 }

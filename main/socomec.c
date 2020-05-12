@@ -309,6 +309,7 @@ static void smart_switch_switch() {
     gpio_set_level(SW_SEL, 1);
     ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX));
     // Flush the input buffer from anything from other device.
+    vTaskDelay(1 / portTICK_PERIOD_MS);
     uart_flush(DEVS_UART);
 }
 
