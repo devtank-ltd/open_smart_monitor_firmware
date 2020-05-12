@@ -8,7 +8,7 @@
 #include "logging.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
-#define TICKS_TO_WAIT 250
+#define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
 static int enable = 0;
 
 void hpm_setup() {
@@ -143,17 +143,14 @@ int hpm_query() {
 
     hmp_switch();
 
-    // Send the request for the measurement
+    // Send the request for the measurement, though it does send measurements on power up, and we power it up/down each time.
     static uint8_t hpm_send[] = {0x68, 0x01, 0x04, 0x93};
     if(uart_write_bytes(DEVS_UART, (char*)hpm_send, sizeof(hpm_send)) != sizeof(hpm_send)) {
         ERROR_PRINTF("Error querying the HPM module");
         return -1;
     }
 
-    // One of two possibilities:
-    // The device responds with a positive acknowledgment, which includes the measurement itself,
-    // OR the device responds with a negative ACK which doesn't.
-    uint8_t data[128];
+    uint8_t data[64];
     size_t length = 0;
 
     // Wait for at least eight bytes from the particle sensor.
@@ -175,7 +172,6 @@ int hpm_query() {
 
         if (read_bytes > 0) {
             if (header) {
-                bool found = false;
                 for(hpm_response_t * respond = responses; respond->id; respond++)
                     if (header == respond->id) {
                         data[0] = header;
@@ -185,11 +181,6 @@ int hpm_query() {
                             if (r < 0) {
                                 goto unknown_response;
                             }
-                            if (length > read_bytes) {
-                                length -= read_bytes;
-                                found = true;
-                                break;
-                            }
                             return 0;
                         }
                         else {
@@ -197,17 +188,16 @@ int hpm_query() {
                             goto unknown_response;
                         }
                     }
-                if (!found) {
-                    ERROR_PRINTF("Unknown HPM message header 0x%02"PRIx8, header);
-                    length = (length > sizeof(data))?sizeof(data):length;
-                    read_bytes = uart_read_bytes(DEVS_UART, data, length-1, 2000);
-                    if (read_bytes > 0) {
-                        for(unsigned n = 0; n < read_bytes; n++) {
-                            ERROR_PRINTF("0x%02"PRIx8, data[n]);
-                        }
+                ERROR_PRINTF("Unknown HPM message header 0x%02"PRIx8, header);
+                length = (length > sizeof(data))?sizeof(data):length;
+                read_bytes = uart_read_bytes(DEVS_UART, data, length-1, 2000);
+                if (read_bytes > 0) {
+                    for(unsigned n = 0; n < read_bytes; n++) {
+                        ERROR_PRINTF("0x%02"PRIx8, data[n]);
                     }
-                    goto unknown_response;
                 }
+                goto unknown_response;
+
             } else if (header == 0xFF) {
                 /* The odd stray high isn't unreasonable, it can happen. */
                 length--;
