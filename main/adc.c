@@ -28,7 +28,7 @@ void adc_setup() {
 
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
 }
 
 static uint16_t adc1_safe_get(adc1_channel_t channel) {
@@ -64,12 +64,30 @@ static int adc_avg_get(unsigned index) {
     return (r * 10000) / ADC_AVG_SLOTS / 4095;
 }
 
+
+static int adc_max_get(unsigned index) {
+    unsigned tops[ADC_MAX_AVG] = {0};
+    for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
+        unsigned v = adc_values[n][index];
+        for (unsigned i = 0; i < ADC_MAX_AVG; i++) {
+            if (!tops[i] || tops[i] < v)
+                 tops[i] = v;
+        }
+    }
+    int r = 0;
+    for (unsigned n = 0; n < ADC_MAX_AVG; n++) {
+        r += tops[n];
+    }
+    return (r * 10000) / ADC_MAX_AVG / 4095;
+}
+
+
 void sound_query() {
     DEBUG_PRINTF("Gate = %d", gpio_get_level(SOUND_GATE));
-    int v = adc_avg_get(0);
+    int v = adc_max_get(0);
     INFO_PRINTF("Sound output : %d", v);
     mqtt_announce_int("Snd Level", v);
-    v = adc_avg_get(1);
+    v = adc_max_get(1);
     INFO_PRINTF("Sound envelope : %d", v);
     mqtt_announce_int("Snd Envlp", v);
     v = adc_avg_get(2);
