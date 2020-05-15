@@ -34,6 +34,12 @@
 #define SOUND_ENVELOPE  ADC1_CHANNEL_3
 #define SOUND_OUTPUT    ADC1_CHANNEL_6
 #define SOUND_GATE      36
+
+/*
+ * Pin assignments for health monitoring
+ */
+ #define BATMON        ADC2_CHANNEL_4
+
 /*
  * UART mux.
  * We ran out of UARTs so we need to multiplex. This pin is brought high or low to choose the port
