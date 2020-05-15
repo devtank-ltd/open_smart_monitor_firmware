@@ -4,6 +4,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
+#include "logging.h"
 
 // 1000 microseconds is 1 millisecond.
 #define DEBOUNCE_WAIT 1000
@@ -47,7 +48,7 @@ static void IRAM_ATTR isr_p1(void * arg) {
     if(debounce(&previous_edge, &level, new_level) && new_level) count1++;
 }
 
-void freq_compute(void * arg) {
+static void freq_compute(void * arg) {
     // Have this function run every second, and it will compute the
     // frequency of both pulses. In hertz.
     static int old_count1 = 0;
@@ -59,12 +60,13 @@ void freq_compute(void * arg) {
 }
 
 void volume_setup() {
-    printf("Setting the volume measurement gpio up\n");
-    gpio_config_t io_conf;
-    io_conf.intr_type = GPIO_PIN_INTR_ANYEDGE;
-    io_conf.pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2);
-    io_conf.mode = GPIO_MODE_INPUT;
-    io_conf.pull_up_en = 1;
+    DEBUG_PRINTF("Setting the volume measurement gpio up");
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_PIN_INTR_ANYEDGE,
+        .pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2),
+        .mode = GPIO_MODE_INPUT,
+        .pull_up_en = 1
+    };
 
     const esp_timer_create_args_t periodic_timer_args = {
         .callback = &freq_compute,
@@ -82,10 +84,18 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
 }
 
-void qry_frequency(const char * key, int which) {
+static void qry_frequency(const char * key, int which) {
     mqtt_announce_int(key, (which ? freq1 : freq2));
 }
 
-void qry_pulsecount(const char * key, int multiplier, int which) {
+static void qry_pulsecount(const char * key, int multiplier, int which) {
     mqtt_announce_int(key, (which ? count1 : count2) * multiplier);
+}
+
+void water_volume_query() {
+    qry_pulsecount("WaterMeter", 10, 0);
+}
+
+void light_volume_query() {
+    qry_pulsecount("Light", 10, 1);
 }

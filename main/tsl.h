@@ -1,6 +1,4 @@
-#ifndef __TSL_H
+#pragma once
 #include "inttypes.h"
-void tsl_init();
+void tsl_setup();
 void tsl_query();
-#define __TSL_H
-#endif

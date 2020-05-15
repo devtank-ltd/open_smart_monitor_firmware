@@ -7,23 +7,33 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <inttypes.h>
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "driver/uart.h"
-#include "esp_modbus_master.h"
 #include "mqtt-sn.h"
 #include "driver/gpio.h"
 #include "pinmap.h"
+#include "logging.h"
 
-#define UART_NUM UART_NUM_1
-#define HPM_UART_TX 17
-#define HPM_UART_RX 16
-#define RS485_DE 14
+#define READ_HOLDING_FUNC 3
+#define MODBUS_ERROR_MASK 0x80
 
 #define E53_ADDR 5
-#define HOURMETER 50512
+
+/*         <               ADU                         >
+            addr(1), func(1), reg(2), count(2) , crc(2)
+                     <             PDU       >
+
+    For reading a holding, PDU is 16bit register address and 16bit register count.
+    https://en.wikipedia.org/wiki/Modbus#Modbus_RTU_frame_format_(primarily_used_on_asynchronous_serial_data_lines_like_RS-485/EIA-485)
+*/
+#define MIN_MODBUS_PACKET_SIZE    4 /*addr, func, crc*/
+#define MAX_MODBUS_PACKET_SIZE    127
+
 
 #include "esp_log.h"
 #include <string.h> // needed for memset down there
@@ -39,196 +49,393 @@
 
 int sococonnected = 0;
 
-// The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially, 
+typedef enum {
+    PARAM_TYPE_U8 = 0x00,                   /*!< Unsigned 8 */
+    PARAM_TYPE_U16 = 0x01,                  /*!< Unsigned 16 */
+    PARAM_TYPE_U32 = 0x02,                  /*!< Unsigned 32 */
+    PARAM_TYPE_FLOAT = 0x03,                /*!< Float type */
+    PARAM_TYPE_ASCII = 0x04                 /*!< ASCII type */
+} param_descr_type_t;
+
+typedef struct {
+    uint8_t             cid;                /*!< Characteristic cid */
+    const char*         param_key;          /*!< The key (name) of the parameter */
+    const char*         param_units;        /*!< The physical units of the parameter */
+    uint16_t            mb_reg_start;       /*!< This is the Modbus register address. This is the 0 based value. */
+    param_descr_type_t  param_type;         /*!< Float, U8, U16, U32, ASCII, etc. */
+    uint8_t             param_size;         /*!< Number of bytes in the parameter. */
+} dev_parameter_descriptor_t;
+
+
+// The daft thing here, which is mandated by the freemodbus library, is that the Cid must be a number starting from zero and incremented by one each time. Essentially,
 // each element needs a Cid equal to the subscript that identifies it, which makes adding ro removing parameters very tricky. Therefore, I recomment you only add them
 // to the end of the list. Even though it means that the order of items ends up making no sense.
-const mb_parameter_descriptor_t countis_e53[] = { \
- // { Cid, Param Name,                     Units,                           SlaveAddr,Modbus Reg Type,  Start,Size,Offs, Data Type,DataSize,ParamOptions,Access Mode}
-    { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50512,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1",        E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100", E53_ADDR, MB_PARAM_HOLDING, 50592,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 3,   (const char *)"Network type",   (const char *)"Network type",    E53_ADDR, MB_PARAM_HOLDING, 40448,   1,   0, PARAM_TYPE_U8,    1, NOOPTS, PAR_PERMS_READ },
-    { 4,   (const char *)"Ident",          (const char *)"Should read SOCO",E53_ADDR, MB_PARAM_HOLDING, 50000,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
-    { 5,   (const char *)"Vendor name",    (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50042,   8,   0, PARAM_TYPE_ASCII, 8, NOOPTS, PAR_PERMS_READ },
-    { 6,   (const char *)"ProductOrderID", (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50004,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
-    { 7,   (const char *)"ProductID",      (const char *)"",                E53_ADDR, MB_PARAM_HOLDING, 50005,   8,   0, PARAM_TYPE_U16,   8, NOOPTS, PAR_PERMS_READ },
-    { 8,   (const char *)"Voltage",        (const char *)"V",               E53_ADDR, MB_PARAM_HOLDING, 50520,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }, 
-    { 9,   (const char *)"Frequency",      (const char *)"Hz",              E53_ADDR, MB_PARAM_HOLDING, 50606,   4,   0, PARAM_TYPE_FLOAT, 4, NOOPTS, PAR_PERMS_READ },
-    { 10,  (const char *)"Current",        (const char *)"A",               E53_ADDR, MB_PARAM_HOLDING, 50528,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 11,  (const char *)"ActivePower",    (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50536,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 12,  (const char *)"ReactivePower",  (const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50538,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 13,  (const char *)"PowerFactor",    (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50542,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-
-    { 14,  (const char *)"ActivePowerP1",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50544,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 15,  (const char *)"ReactivePowerP1",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50550,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 16,  (const char *)"PowerFactorP1",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50562,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-
-    { 17,  (const char *)"ActivePowerP2",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50546,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 18,  (const char *)"ReactivePowerP2",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50552,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 19,  (const char *)"PowerFactorP2",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50564,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-
-    { 20,  (const char *)"ActivePowerP3",  (const char *)"P",               E53_ADDR, MB_PARAM_HOLDING, 50548,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 21,  (const char *)"ReactivePowerP3",(const char *)"Q",               E53_ADDR, MB_PARAM_HOLDING, 50554,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 22,  (const char *)"PowerFactorP3",  (const char *)"PF",              E53_ADDR, MB_PARAM_HOLDING, 50566,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 23,  (const char *)"ApparentPower",  (const char *)"VA",              E53_ADDR, MB_PARAM_HOLDING, 50540,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-
-    { 24,  (const char *)"ActivePowerh",   (const char *)"kWh",             E53_ADDR, MB_PARAM_HOLDING, 50770,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 25,  (const char *)"ReactivePowerh", (const char *)"varh",            E53_ADDR, MB_PARAM_HOLDING, 50772,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ },
-    { 26,  (const char *)"ApparentPowerh", (const char *)"VAh",             E53_ADDR, MB_PARAM_HOLDING, 50774,   4,   0, PARAM_TYPE_U32,   4, NOOPTS, PAR_PERMS_READ }
+const dev_parameter_descriptor_t countis_e53[] = { \
+ // { Cid, Param Name,                     Units,                          , Start, Data Type,      DataSize,}
+    { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50512, PARAM_TYPE_U32,   4},
+    { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1"        , 50536, PARAM_TYPE_U32,   4},
+    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50592, PARAM_TYPE_U32,   4},
+    { 3,   (const char *)"Network type",   (const char *)"Network type"    , 40448, PARAM_TYPE_U8,    1},
+    { 4,   (const char *)"Ident",          (const char *)"Should read SOCO", 50000, PARAM_TYPE_ASCII, 8},
+    { 5,   (const char *)"Vendor name",    (const char *)""                , 50042, PARAM_TYPE_ASCII, 8},
+    { 6,   (const char *)"ProductOrderID", (const char *)""                , 50004, PARAM_TYPE_U16,   8},
+    { 7,   (const char *)"ProductID",      (const char *)""                , 50005, PARAM_TYPE_U16,   8},
+    { 8,   (const char *)"Voltage",        (const char *)"V"               , 50520, PARAM_TYPE_U32,   4},
+    { 9,   (const char *)"Frequency",      (const char *)"Hz"              , 50606, PARAM_TYPE_FLOAT, 4},
+    { 10,  (const char *)"Current",        (const char *)"A"               , 50528, PARAM_TYPE_U32,   4},
+    { 11,  (const char *)"ActivePower",    (const char *)"P"               , 50536, PARAM_TYPE_U32,   4},
+    { 12,  (const char *)"ReactivePower",  (const char *)"Q"               , 50538, PARAM_TYPE_U32,   4},
+    { 13,  (const char *)"PowerFactor",    (const char *)"PF"              , 50542, PARAM_TYPE_U32,   4},
+    { 14,  (const char *)"ActivePowerP1",  (const char *)"P"               , 50544, PARAM_TYPE_U32,   4},
+    { 15,  (const char *)"ReactivePowerP1",(const char *)"Q"               , 50550, PARAM_TYPE_U32,   4},
+    { 16,  (const char *)"PowerFactorP1",  (const char *)"PF"              , 50562, PARAM_TYPE_U32,   4},
+    { 17,  (const char *)"ActivePowerP2",  (const char *)"P"               , 50546, PARAM_TYPE_U32,   4},
+    { 18,  (const char *)"ReactivePowerP2",(const char *)"Q"               , 50552, PARAM_TYPE_U32,   4},
+    { 19,  (const char *)"PowerFactorP2",  (const char *)"PF"              , 50564, PARAM_TYPE_U32,   4},
+    { 20,  (const char *)"ActivePowerP3",  (const char *)"P"               , 50548, PARAM_TYPE_U32,   4},
+    { 21,  (const char *)"ReactivePowerP3",(const char *)"Q"               , 50554, PARAM_TYPE_U32,   4},
+    { 22,  (const char *)"PowerFactorP3",  (const char *)"PF"              , 50566, PARAM_TYPE_U32,   4},
+    { 23,  (const char *)"ApparentPower",  (const char *)"VA"              , 50540, PARAM_TYPE_U32,   4},
+    { 24,  (const char *)"ActivePowerh",   (const char *)"kWh"             , 50770, PARAM_TYPE_U32,   4},
+    { 25,  (const char *)"ReactivePowerh", (const char *)"varh"            , 50772, PARAM_TYPE_U32,   4},
+    { 26,  (const char *)"ApparentPowerh", (const char *)"VAh"             , 50774, PARAM_TYPE_U32,   4}
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
 
-// Read characteristic value from Modbus parameter according to description table
-esp_err_t sense_modbus_read_value(uint16_t cid, void *value)
-{
-    uint8_t type = 0;
-    mb_parameter_descriptor_t cid_info = countis_e53[cid];
+uint16_t modbus_crc(uint8_t * buf, unsigned length) {
+    static const uint16_t crctable[] = {
+    0X0000, 0XC0C1, 0XC181, 0X0140, 0XC301, 0X03C0, 0X0280, 0XC241,
+    0XC601, 0X06C0, 0X0780, 0XC741, 0X0500, 0XC5C1, 0XC481, 0X0440,
+    0XCC01, 0X0CC0, 0X0D80, 0XCD41, 0X0F00, 0XCFC1, 0XCE81, 0X0E40,
+    0X0A00, 0XCAC1, 0XCB81, 0X0B40, 0XC901, 0X09C0, 0X0880, 0XC841,
+    0XD801, 0X18C0, 0X1980, 0XD941, 0X1B00, 0XDBC1, 0XDA81, 0X1A40,
+    0X1E00, 0XDEC1, 0XDF81, 0X1F40, 0XDD01, 0X1DC0, 0X1C80, 0XDC41,
+    0X1400, 0XD4C1, 0XD581, 0X1540, 0XD701, 0X17C0, 0X1680, 0XD641,
+    0XD201, 0X12C0, 0X1380, 0XD341, 0X1100, 0XD1C1, 0XD081, 0X1040,
+    0XF001, 0X30C0, 0X3180, 0XF141, 0X3300, 0XF3C1, 0XF281, 0X3240,
+    0X3600, 0XF6C1, 0XF781, 0X3740, 0XF501, 0X35C0, 0X3480, 0XF441,
+    0X3C00, 0XFCC1, 0XFD81, 0X3D40, 0XFF01, 0X3FC0, 0X3E80, 0XFE41,
+    0XFA01, 0X3AC0, 0X3B80, 0XFB41, 0X3900, 0XF9C1, 0XF881, 0X3840,
+    0X2800, 0XE8C1, 0XE981, 0X2940, 0XEB01, 0X2BC0, 0X2A80, 0XEA41,
+    0XEE01, 0X2EC0, 0X2F80, 0XEF41, 0X2D00, 0XEDC1, 0XEC81, 0X2C40,
+    0XE401, 0X24C0, 0X2580, 0XE541, 0X2700, 0XE7C1, 0XE681, 0X2640,
+    0X2200, 0XE2C1, 0XE381, 0X2340, 0XE101, 0X21C0, 0X2080, 0XE041,
+    0XA001, 0X60C0, 0X6180, 0XA141, 0X6300, 0XA3C1, 0XA281, 0X6240,
+    0X6600, 0XA6C1, 0XA781, 0X6740, 0XA501, 0X65C0, 0X6480, 0XA441,
+    0X6C00, 0XACC1, 0XAD81, 0X6D40, 0XAF01, 0X6FC0, 0X6E80, 0XAE41,
+    0XAA01, 0X6AC0, 0X6B80, 0XAB41, 0X6900, 0XA9C1, 0XA881, 0X6840,
+    0X7800, 0XB8C1, 0XB981, 0X7940, 0XBB01, 0X7BC0, 0X7A80, 0XBA41,
+    0XBE01, 0X7EC0, 0X7F80, 0XBF41, 0X7D00, 0XBDC1, 0XBC81, 0X7C40,
+    0XB401, 0X74C0, 0X7580, 0XB541, 0X7700, 0XB7C1, 0XB681, 0X7640,
+    0X7200, 0XB2C1, 0XB381, 0X7340, 0XB101, 0X71C0, 0X7080, 0XB041,
+    0X5000, 0X90C1, 0X9181, 0X5140, 0X9301, 0X53C0, 0X5280, 0X9241,
+    0X9601, 0X56C0, 0X5780, 0X9741, 0X5500, 0X95C1, 0X9481, 0X5440,
+    0X9C01, 0X5CC0, 0X5D80, 0X9D41, 0X5F00, 0X9FC1, 0X9E81, 0X5E40,
+    0X5A00, 0X9AC1, 0X9B81, 0X5B40, 0X9901, 0X59C0, 0X5880, 0X9841,
+    0X8801, 0X48C0, 0X4980, 0X8941, 0X4B00, 0X8BC1, 0X8A81, 0X4A40,
+    0X4E00, 0X8EC1, 0X8F81, 0X4F40, 0X8D01, 0X4DC0, 0X4C80, 0X8C41,
+    0X4400, 0X84C1, 0X8581, 0X4540, 0X8701, 0X47C0, 0X4680, 0X8641,
+    0X8201, 0X42C0, 0X4380, 0X8341, 0X4100, 0X81C1, 0X8081, 0X4040 };
 
-    // Send Modbus request to read cid correspond registers
-    esp_err_t error = mbc_master_get_parameter(cid, (char*)cid_info.param_key, value, &type);
-    SENSE_MB_CHECK((type <= PARAM_TYPE_ASCII), ESP_ERR_NOT_SUPPORTED, "returned data type is not supported (%u)", type);
-    return error;
+    uint16_t crc = 0xffff;
+    while(length--) {
+        uint8_t nTemp = *buf++ ^ crc;
+        crc >>= 8;
+        crc ^= crctable[nTemp];
+    }
+    return crc;
 }
 
-esp_err_t init_smart_meter() {
 
-    mb_communication_info_t comm = { 
-            .port = UART_NUM_1,
-            .mode = MB_MODE_RTU,
-            .baudrate = 9600,
-            .parity = UART_PARITY_DISABLE
-    };  
-    void* master_handler = NULL;
+static uint8_t modbuspacket[MAX_MODBUS_PACKET_SIZE];
 
-    esp_err_t err = mbc_master_init(MB_PORT_SERIAL_MASTER, &master_handler);
-    SENSE_MB_CHECK((master_handler != NULL), ESP_ERR_INVALID_STATE,
-                                "mb controller initialization fail.");
-    SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
-                            "mb controller initialization fail, returns(0x%x).",
-                            (uint32_t)err);
-    err = mbc_master_setup((void*)&comm);
-    SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
-                            "mb controller setup fail, returns(0x%x).",
-                            (uint32_t)err);
-    err = mbc_master_start();
-    SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
-                            "mb controller start fail, returns(0x%x).",
-                            (uint32_t)err);
-    vTaskDelay(5);
-    err = mbc_master_set_descriptor(&countis_e53[0], num_device_parameters);
-    SENSE_MB_CHECK((err == ESP_OK), ESP_ERR_INVALID_STATE,
-                                "mb controller set descriptor fail, returns(0x%x).",
-                                (uint32_t)err);
 
-    if(uart_set_pin(UART_NUM, HPM_UART_TX, HPM_UART_RX, RS485_DE, UART_PIN_NO_CHANGE) == ESP_FAIL)
-        printf("Error in uart_set_pin!\n");
-    uart_set_mode(UART_NUM, UART_MODE_RS485_HALF_DUPLEX);
+// Read characteristic value from Modbus parameter according to description table
+static esp_err_t sense_modbus_read_value(uint16_t cid, void *value, uint8_t value_size)
+{
+    dev_parameter_descriptor_t cid_info = countis_e53[cid];
 
+    if (value_size > cid_info.param_size) {
+        ERROR_PRINTF("Parameter %s is too small %"PRIu8" for %"PRIu8, cid_info.param_key, cid_info.param_size, value_size);
+        return ESP_FAIL;
+    }
+
+    uint16_t addr = cid_info.mb_reg_start;
+    uint8_t count = value_size / 2;
+
+    if (!count)
+        count = 1;
+
+    /* ADU Header (Application Data Unit) */
+    modbuspacket[0] = E53_ADDR;
+    /* ====================================== */
+    /* PDU payload (Protocol Data Unit) */
+    modbuspacket[1] = READ_HOLDING_FUNC; /*Holding*/
+    modbuspacket[2] = addr >> 8;   /*Register read address */
+    modbuspacket[3] = addr & 0xFF;
+    modbuspacket[4] = 0; /*Register read count */
+    modbuspacket[5] = count;
+    /* ====================================== */
+    /* ADU Tail */
+    uint16_t crc = modbus_crc(modbuspacket, 6);
+    modbuspacket[6] = crc & 0xFF;
+    modbuspacket[7] = crc >> 8;
+
+    if (uart_write_bytes(DEVS_UART, (char*)modbuspacket, 8) != 8) {
+        ERROR_PRINTF("Failed to write out Modbus packet.");
+        return ESP_FAIL;
+    }
+
+    size_t length = 0;
+
+    for(unsigned i = 0; i < 100 && length < MAX_MODBUS_PACKET_SIZE; i++) {
+        if (length) {
+            uint8_t v;
+            int r = uart_read_bytes(DEVS_UART, &v, 1, 0);
+            if (r < 0) {
+                ERROR_PRINTF("Failed to read (%zu) data from modbus", length);
+                return ESP_FAIL;
+            }
+            else if (r > 0 && v) {
+                // Ok, non zero, so it's should be a frame start.
+                modbuspacket[length++] = v;
+                i = 80;
+            }
+        }
+        else {
+            size_t toread;
+            esp_err_t err = uart_get_buffered_data_len(DEVS_UART, &toread);
+            if (err != ESP_OK) {
+                ERROR_PRINTF("Failed to read length from modbus : %s(%u)", esp_err_to_name(err), (unsigned)err);
+                return err;
+            }
+
+            if (toread) {
+                toread = (toread > (MAX_MODBUS_PACKET_SIZE - length))?(MAX_MODBUS_PACKET_SIZE - length):toread;
+                int r = uart_read_bytes(DEVS_UART, &modbuspacket[length], toread, 0);
+                if (r < 0) {
+                    ERROR_PRINTF("Failed to read (%zu) data from modbus", length);
+                    return ESP_FAIL;
+                }
+                else if ( r > 0 )
+                    length += toread;
+            }
+            else vTaskDelay(1);
+        }
+    }
+
+    if (length < MIN_MODBUS_PACKET_SIZE) {
+        ERROR_PRINTF("Modbus didn't return enough to be packet (%zu < %u)", length, (unsigned)MIN_MODBUS_PACKET_SIZE);
+        return ESP_FAIL;
+    }
+
+    if (length > MAX_MODBUS_PACKET_SIZE) {
+        ERROR_PRINTF("Modbus returned too much to be expected packet (%zu > %u)", length, (unsigned)MAX_MODBUS_PACKET_SIZE);
+        return ESP_FAIL;
+    }
+
+    crc = modbus_crc(modbuspacket, length - 2);
+
+    while(1) {
+        if ( (modbuspacket[length-1] == (crc >> 8)) &&
+             (modbuspacket[length-2] == (crc & 0xFF)) )
+             break;
+
+        if (!modbuspacket[length-1] && (length > MIN_MODBUS_PACKET_SIZE) ) {
+            INFO_PRINTF("Trimming zero trailing message.");
+            length -= 1;
+            continue;
+        }
+        ERROR_PRINTF("CRC error with reply.");
+        return ESP_FAIL;
+    }
+
+    uint8_t func = modbuspacket[1];
+
+    if (func == READ_HOLDING_FUNC) {
+        /* Yer! */
+
+        /* For reading a holding, 16bit register
+         *  https://en.wikipedia.org/wiki/Modbus#Modbus_RTU_frame_format_(primarily_used_on_asynchronous_serial_data_lines_like_RS-485/EIA-485)
+         *  http://www.simplymodbus.ca/FC03.htm
+         */
+        uint8_t bytes_count = modbuspacket[2];
+        if ((bytes_count / 2) != count) {
+            ERROR_PRINTF("Modbus responsed with different count of values than requested.");
+            return ESP_FAIL;
+        }
+
+        uint8_t * dst_value = (uint8_t*)value;
+
+        if (cid_info.param_type == PARAM_TYPE_U8) {
+            // Take it the order it comes
+            for(unsigned n = 0; n < bytes_count; n ++)
+                dst_value[n] = modbuspacket[3 + n];
+        }
+        else if (cid_info.param_type == PARAM_TYPE_ASCII) {
+            for(unsigned n = 0; n < bytes_count; n+=2) {
+                dst_value[n] = modbuspacket[3 + n + 1];
+                dst_value[n+1] = modbuspacket[3 + n];
+            }
+        }
+        else {
+            // Change to little endian from big.
+            for(unsigned n = 0; n < bytes_count; n ++)
+                dst_value[n] = modbuspacket[3 + (value_size - n - 1)];
+        }
+    }
+    else if (func == (READ_HOLDING_FUNC | MODBUS_ERROR_MASK)) {
+        if (length > MIN_MODBUS_PACKET_SIZE) {
+            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus exception : %"PRIu8, addr, modbuspacket[2]);
+            return ESP_FAIL;
+        }
+        else {
+            ERROR_PRINTF("Slave addr:%"PRIu16" responsed with modbus error but no exception code.", addr);
+            return ESP_FAIL;
+        }
+    }
+    else {
+        ERROR_PRINTF("Unsupported function (%"PRIu8")in response.", func);
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+
+static void smart_switch_switch() {
+    // Switch UART to Smart Meter
+    gpio_set_level(SW_SEL, 1);
+    ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_RS485_HALF_DUPLEX));
+    // Flush the input buffer from anything from other device.
+    vTaskDelay(1 / portTICK_PERIOD_MS);
+    uart_flush(DEVS_UART);
+}
+
+
+esp_err_t smart_meter_setup() {
+
+    DEBUG_PRINTF("Init Smart Meter");
+
+    smart_switch_switch();
 
     // Make sure we're actually connected to a SOCOMEC smart meter!
     // This function really returns a null byte between each character, "S\0O\0C\0O\0".
     char soco[8];
-    sense_modbus_read_value(4, soco);
+    esp_err_t err = sense_modbus_read_value(4, soco, sizeof(soco));
+    if (err != ESP_OK)
+        return ESP_FAIL;
 
-    if(soco[0] != 'S')     
+    if(soco[0] != 'S')
         goto unknown_device;
-    if(soco[1] !=    '\0') 
+    if(soco[1] != '\0')
         goto unknown_device;
-    if(soco[2] != 'O')     
+    if(soco[2] != 'O')
         goto unknown_device;
-    if(soco[3] !=    '\0') 
+    if(soco[3] != '\0')
         goto unknown_device;
-    if(soco[4] != 'C')     
+    if(soco[4] != 'C')
         goto unknown_device;
-    if(soco[5] !=    '\0') 
+    if(soco[5] != '\0')
         goto unknown_device;
-    if(soco[6] != 'O')     
+    if(soco[6] != 'O')
         goto unknown_device;
-    if(soco[7] !=    '\0') 
+    if(soco[7] != '\0')
         goto unknown_device;
 
     // Try and identify the model number. This doesn't work because of
     // Endianness mismatch and also buffer overruns; Might take another look later.
-    
+
     uint16_t product_order_id;
     uint16_t product_id;
     const char * prod = 0;
     const char * prodorder = 0;
 
-    sense_modbus_read_value(6, &product_order_id);
-    sense_modbus_read_value(7, &product_id);
-    
-    if(product_order_id == 100) 
+    err = sense_modbus_read_value(6, &product_order_id, sizeof(product_order_id));
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Failed to read Product Order ID.");
+        return ESP_FAIL;
+    }
+    err = sense_modbus_read_value(7, &product_id,       sizeof(product_id));
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Failed to read Product ID.");
+        return ESP_FAIL;
+    }
+
+    if(product_order_id == 100)
         prodorder = "Countis";
-    if(product_order_id == 200) 
+    if(product_order_id == 200)
         prodorder = "Protection";
-    if(product_order_id == 300) 
+    if(product_order_id == 300)
         prodorder = "Atys";
-    if(product_order_id == 400) 
+    if(product_order_id == 400)
         prodorder = "Diris";
 
-    if(!prodorder) 
+    if(!prodorder)
         goto unknown_device;
 
-    if(product_id == 100) 
+    if(product_id == 100)
         prod = "E53";
-    if(product_id == 1000) 
+    if(product_id == 1000)
         prod = "ATS3";
 
     if(!prod) goto unknown_device;
 
-    printf("Connected to a Socomec %s %s.\n", prodorder, prod);
+    INFO_PRINTF("Connected to a Socomec %s %s.", prodorder, prod);
     sococonnected = 1;
-    return err;
-    
+    return ESP_OK;
+
 unknown_device:
-    printf("product_order_id = %d\nproduct_id = %d\n", product_order_id, product_id);
-    for(int i = 0; i < 8; i++) printf("soco[%d] == '%c';\n", i, soco[i]);
-    printf("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.\n");
-    return err;
+    ERROR_PRINTF("product_order_id = %d\nproduct_id = %d", product_order_id, product_id);
+    for(int i = 0; i < 8; i++) {
+        DEBUG_PRINTF("soco[%d] == '%c';", i, soco[i]);
+    }
+    ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
+    return ESP_FAIL;
 
 }
 
-void query_countis()
+void smart_meter_query()
 {
     if(!sococonnected)
        return;
-    gpio_set_level(UART_MUX, 0);
-    uint32_t hourmeter = 0;
-    uint32_t apparentpower = 0;
-    float fhourmeter = 0.0;
-    uint8_t networktype = 0;
-    uint32_t volt = 0;
-    float ffreq = 0.0;
-    uint32_t current = 0;
+    smart_switch_switch();
 
-    sense_modbus_read_value(0,  &hourmeter);
-    sense_modbus_read_value(1,  &apparentpower);
-    sense_modbus_read_value(2,  &fhourmeter);
-    sense_modbus_read_value(3,  &networktype);
-    sense_modbus_read_value(8,  &volt);
-    sense_modbus_read_value(9,  &ffreq);
-    sense_modbus_read_value(10, &current);
+    uint32_t hourmeter     = 0;
+    uint32_t apparentpower = 0;
+    float    fhourmeter    = 0.0;
+    uint8_t  networktype   = 0;
+    uint32_t volt          = 0;
+    float    ffreq         = 0.0;
+    uint32_t current       = 0;
+
+    sense_modbus_read_value(0,  &hourmeter,     sizeof(hourmeter));
+    sense_modbus_read_value(1,  &apparentpower, sizeof(apparentpower));
+    sense_modbus_read_value(2,  &fhourmeter,    sizeof(fhourmeter));
+    sense_modbus_read_value(3,  &networktype,   sizeof(networktype));
+    sense_modbus_read_value(8,  &volt,          sizeof(volt));
+    sense_modbus_read_value(9,  &ffreq,         sizeof(ffreq));
+    sense_modbus_read_value(10, &current,       sizeof(current));
 
     // The volt reads as:
     // high byte, low byte, zero, zero
-    // all inside a uint32_t. The two upper bits encode a number a hundred times the actual voltage.
+    // all inside a uint32_t. The two upper bytes encode a number a hundred times the actual voltage.
     int mV = (volt >> 16) * 100;
     // I suspect a similar thing goes for the ampage.
     int mA = (current >> 16) * 100;
 
     const char * ntnames[] = { "1bl", "2bl", "3bl", "3nbl", "4bl", "4nbl" };
 
-    printf("network type: %s\n", ntnames[networktype]);
+    INFO_PRINTF("network type: %s", ntnames[networktype]);
 
-    printf("hourmeter = i%u f%f\napparent_power = %u\n", hourmeter, fhourmeter, apparentpower);
-    printf("%dmV, %dmA\n", mV, mA);
-   
+    INFO_PRINTF("hourmeter = i%u f%f\napparent_power = %u", hourmeter, fhourmeter, apparentpower);
+    INFO_PRINTF("%dmV, %dmA", mV, mA);
+
     for(int i = 8; i <= 26; i++) {
         int32_t v = 0;
-        sense_modbus_read_value(i, &v);
+        sense_modbus_read_value(i, &v, sizeof(v));
         mqtt_announce_int(countis_e53[i].param_key, v >> 16);
-        printf("%s = %d\n", countis_e53[i].param_key, v);
+        INFO_PRINTF("%s = %d", countis_e53[i].param_key, v);
     }
 }

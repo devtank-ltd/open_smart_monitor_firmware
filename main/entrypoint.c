@@ -11,6 +11,7 @@
 #include "pinmap.h"
 
 #include "hdc.h"
+#include "adc.h"
 #include "hpm.h"
 #include "tsl.h"
 #include "volume.h"
@@ -18,6 +19,9 @@
 #include "mqtt-sn.h"
 #include "mac.h"
 #include "config.h"
+#include "status_led.h"
+#include "logging.h"
+
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
 {
@@ -41,11 +45,12 @@ void lora_uart_setup() {
         /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
         /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_CTS,
     };
+    DEBUG_PRINTF("Init lora uart.");
     ESP_ERROR_CHECK(uart_param_config(LORA_UART, &lora));
 
     esp_err_t err = uart_set_pin(LORA_UART, LORA_UART_TX, LORA_UART_RX, UART_PIN_NO_CHANGE, LORA_UART_CTS);
     if(err != ESP_OK) {
-        printf("Trouble %s setting the pins up!\n", esp_err_to_name(err));
+        ERROR_PRINTF("Trouble %s setting the pins up!", esp_err_to_name(err));
         while(1);
     }
 
@@ -53,6 +58,28 @@ void lora_uart_setup() {
     ESP_ERROR_CHECK(uart_driver_install(LORA_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
 
 }
+
+void device_uart_setup() {
+    /* UART setup */
+    uart_config_t hpm = {
+        /* UART baud rate */            .baud_rate = 9600,
+        /* UART byte size */            .data_bits = UART_DATA_8_BITS,
+        /* UART parity mode */          .parity = UART_PARITY_DISABLE,
+        /* UART stop bits */            .stop_bits = UART_STOP_BITS_1,
+        /* UART HW flow control mode */ .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+    };
+    DEBUG_PRINTF("Init multiplex uart.");
+    ESP_ERROR_CHECK(uart_param_config(DEVS_UART, &hpm));
+    gpio_set_direction(SW_SEL, GPIO_MODE_OUTPUT);
+
+    //esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int rts_io_num, int cts_io_num);
+    ESP_ERROR_CHECK(uart_set_pin(DEVS_UART, DEVS_UART_TX, DEVS_UART_RX, RS485_DE, UART_PIN_NO_CHANGE));
+
+    const int uart_buffer_size = 2 * 1024;
+    ESP_ERROR_CHECK(uart_driver_install(DEVS_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
+}
+
+
 
 void i2c_setup() {
 
@@ -65,13 +92,15 @@ void i2c_setup() {
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = 10000;
 
-    if (i2c_param_config(I2CBUS, &conf) != ESP_OK)
-    	return false;
+    if (i2c_param_config(I2CBUS, &conf) != ESP_OK) {
+        ERROR_PRINTF("Error configuring I2C.");
+        return;
+    }
 
-    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK)
-		return false;
-
-    return true;
+    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK) {
+        ERROR_PRINTF("Error setting I2C to master.");
+        return;
+    }
 }
 
 void app_main(void)
@@ -81,31 +110,31 @@ void app_main(void)
     notification("CONFIGURING UARTS AND I2C");
     getmac();
     lora_uart_setup();
-//    hpm_uart_setup();
+    device_uart_setup();
+    adc_setup();
     i2c_setup();
-    tsl_init();
-    hpm_init();
-    init_smart_meter();
+    tsl_setup();
+    hpm_setup();
+    smart_meter_setup();
     volume_setup();
-
-    gpio_config_t config;
-    config.pin_bit_mask = (1ULL << UART_MUX);
-    config.mode = GPIO_MODE_OUTPUT;
-    ESP_ERROR_CHECK(gpio_config(&config));
 
     for(;;) {
         heartbeat();
+        status_led_toggle();
 
-        hpm_query();
-        hdc_query();
-        tsl_query();
+        hpm_query(); /* (Honeywell) particle meter */
+        hdc_query(); /* humidity sensor with temperature sensor */
+        tsl_query(); /* Lux/light sensor */
 
-        query_countis();
-        qry_pulsecount("WaterMeter", 10, 0);
+        smart_meter_query();
+        water_volume_query();
+        light_volume_query();
 
-        configure();
+        sound_query();
 
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+//        configure();
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);

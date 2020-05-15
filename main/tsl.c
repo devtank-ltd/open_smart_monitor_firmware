@@ -2,9 +2,14 @@
 #include "pinmap.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
+#include "logging.h"
 
 // possible addresses are: 0x29, 0x39, 0x49.
-#define TSL2591_ADDR  0x39 // 0x39 is correct on the lashup.
+// The address selection pin may be:
+// floating    - 0x29
+// grounded    - 0x39
+// tied to Vin - 0x49
+#define TSL2591_ADDR  0x29 // 0x39 is correct on the lashup.
 
 #define C0DATAL       0x0c
 #define C0DATAH       0x0d
@@ -25,7 +30,7 @@
 #define ACK_CHECK_EN  0x01
 #define ACK_CHECK_DIS 0x00
 
-uint8_t read_tsl_reg(uint8_t reg) {
+static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -40,13 +45,13 @@ uint8_t read_tsl_reg(uint8_t reg) {
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
-    if(err != ESP_OK) printf("Trouble2 %s reading from the TSL2561\n", esp_err_to_name(err));
+    if(err != ESP_OK) ERROR_PRINTF("Trouble %s reading from the TSL2561", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
 }
 
-void write_tsl_reg(uint8_t reg, uint8_t value) {
+static void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (TSL2591_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
@@ -56,18 +61,19 @@ void write_tsl_reg(uint8_t reg, uint8_t value) {
     i2c_master_stop(cmd);
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
-    if(err != ESP_OK) printf("Trouble %s writing to the TSL2561\n", esp_err_to_name(err));
+    if(err != ESP_OK) ERROR_PRINTF("Trouble %s writing to the TSL2561", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 }
 
-void tsl_powerdown() {
+static void tsl_powerdown() {
     write_tsl_reg(CONTROL, CONTROL_OFF);
 }
 
-void tsl_init() {
+void tsl_setup() {
+    DEBUG_PRINTF("Init TSL");
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
-    printf("TSL2561 initialised %d \n", read_tsl_reg(CONTROL));
+    INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
 }
 
 void tsl_query() {
@@ -75,7 +81,7 @@ void tsl_query() {
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
     if(alive != 0x03) {
-        printf("TSL2561 was found to be dead. %u\n", alive);
+        ERROR_PRINTF("TSL2561 was found to be dead. %u", alive);
     }
 
     // The datasheet recommends that all four bytes of ALS data are read as a single transaction to minimise skew between the two channels.

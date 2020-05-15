@@ -1,4 +1,2 @@
-#ifndef __HDC_H
+#pragma once
 void hdc_query();
-#define __HDC_H
-#endif

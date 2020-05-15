@@ -1,7 +1,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
-
+#include "logging.h"
 #include "pinmap.h"
 #include "driver/gpio.h"
 #include "driver/uart.h"
@@ -19,7 +19,7 @@
 #define BUFLEN 255
 
 
-void sendthebytes(const char * str, size_t len) {
+static void sendthebytes(const char * str, size_t len) {
     while(len)
     {
         esp_err_t err = uart_wait_tx_done(LORA_UART, 200);
@@ -31,23 +31,23 @@ void sendthebytes(const char * str, size_t len) {
                 len -= sent;
                 str += sent;
                 if(len)
-                    printf("Only printed %d bytes, should have printed %zu. Trying again.\n", sent, len);
+                    DEBUG_PRINTF("Only printed %d bytes, should have printed %zu. Trying again.", sent, len);
             }
             else if (sent < 0)
             {
-                printf("Error writing to UART\n");
+                ERROR_PRINTF("Error writing to UART");
             }
         } else {
-            printf("Trouble %s writing to the LoRa UART.\n", esp_err_to_name(err));
+            ERROR_PRINTF("Trouble %s writing to the LoRa UART.", esp_err_to_name(err));
         }
     }
 }
 
 
-// This funcion was shamelessly stolen from 
+// This function was shamelessly stolen from
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
 // and changed to Actual C by me.
-void mqtt_sn_send(const char topic[2], const char * message, bool retain)
+static void mqtt_sn_send(const char topic[2], const char * message, bool retain)
 {
     char header[7];
     size_t len = strlen(message);
@@ -77,7 +77,7 @@ void mqtt_sn_send(const char topic[2], const char * message, bool retain)
 
 }
 
-void mqtt_update(const char ident, const char * msg) {
+static void mqtt_update(const char ident, const char * msg) {
     char topic[2];
     topic[0] = SFNODE;
     topic[1] = ident;

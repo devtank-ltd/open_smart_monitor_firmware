@@ -3,7 +3,9 @@
 #include "esp_err.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
-#define HDC2080_ADDR  0x40
+#include "logging.h"
+
+#define HDC2080_ADDR  0x41
 
 #define TMP_L         0x00
 #define TMP_H         0x01
@@ -20,7 +22,7 @@
  */
 #define MEAS_TRIG     0x01
 
-uint8_t read_reg(uint8_t reg) {
+static uint8_t read_reg(uint8_t reg) {
     uint8_t ret = 0;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
 
@@ -34,13 +36,13 @@ uint8_t read_reg(uint8_t reg) {
 
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK)
-        printf("Trouble %s reading from the HDC2080\n", esp_err_to_name(err));
+        ERROR_PRINTF("Trouble %s reading from the HDC2080", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 
     return ret;
 }
 
-void write_reg(uint8_t reg, uint8_t value) {
+static void write_reg(uint8_t reg, uint8_t value) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (HDC2080_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN);
@@ -48,28 +50,28 @@ void write_reg(uint8_t reg, uint8_t value) {
     i2c_master_write_byte(cmd, value, ACK_CHECK_DIS);
     i2c_master_stop(cmd);
     if(i2c_master_cmd_begin(I2CBUS, cmd, 50) != ESP_OK)
-        printf("Trouble writing to the HDC2080\n");
+        ERROR_PRINTF("Trouble writing to the HDC2080");
     i2c_cmd_link_delete(cmd);
 }
 
-void hdc_init() {
+static void hdc_init() {
     write_reg(CONFIG, MEAS_TRIG);
 }
 
-void hdc_wait() {
+static void hdc_wait() {
     int i;
     for(i = 50; !i; i--) {
         if(read_reg(CONFIG) && MEAS_TRIG) {
-            printf("Waiting %d for HDC2080\n", i);
+            INFO_PRINTF("Waiting %d for HDC2080", i);
             vTaskDelay(500);
         } else {
-            printf("HDC2080 reports being ready\n");
+            INFO_PRINTF("HDC2080 reports being ready");
             return;
         }
     }
 }
 
-uint16_t q16(uint8_t reg_l, uint8_t reg_h) {
+static uint16_t q16(uint8_t reg_l, uint8_t reg_h) {
     return read_reg(reg_h) * 256 + read_reg(reg_l);
 }
 
@@ -79,12 +81,14 @@ void hdc_query() {
 
     hdc_init();
     hdc_wait();
-   
+
     uint16_t tempreading = q16(TMP_L, TMP_H);
     temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
-    
+    INFO_PRINTF("Temp %G Celsius", temp_celsius);
+
     uint16_t humreading = q16(HUM_L, HUM_H);
     relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
+    INFO_PRINTF("Relative Humidity %G", relative_humidity);
 
     mqtt_announce_int("temperature", temp_celsius);
     mqtt_announce_int("humidity", relative_humidity);
