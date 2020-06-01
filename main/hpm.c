@@ -40,7 +40,7 @@ static int process_part_measure_response(uint8_t *data) {
 
     DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
-        ERROR_PRINTF("Malformed HMP module particle measure result.");
+        ERROR_PRINTF("Malformed HPM module particle measure result.");
         return -1;
     }
 
@@ -73,7 +73,7 @@ static int process_part_measure_long_response(uint8_t *data) {
 
     DEBUG_PRINTF("HPM long particle measure msg");
     if (data[1] != 0x4d || data[2] != 0 || data[3] != 28) { /* 13 2byte data entries + 2 for byte checksum*/
-        ERROR_PRINTF("Malformed long HMP module particle measure result.");
+        ERROR_PRINTF("Malformed long HPM module particle measure result.");
         return -1;
     }
 
