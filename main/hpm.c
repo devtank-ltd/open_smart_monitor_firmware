@@ -18,7 +18,7 @@ void hpm_setup() {
 }
 
 
-static void hmp_switch() {
+static void hpm_switch() {
     // Switch UART to HPM
     gpio_set_level(SW_SEL, 0);
     ESP_ERROR_CHECK(uart_set_mode(DEVS_UART, UART_MODE_UART));
@@ -141,7 +141,7 @@ static hpm_response_t responses[] = {
 int hpm_query() {
     if(!enable) return 0;
 
-    hmp_switch();
+    hpm_switch();
 
     // Send the request for the measurement, though it does send measurements on power up, and we power it up/down each time.
     static uint8_t hpm_send[] = {0x68, 0x01, 0x04, 0x93};
