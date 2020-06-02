@@ -86,10 +86,10 @@ void sound_query() {
     DEBUG_PRINTF("Gate = %d", gpio_get_level(SOUND_GATE));
     int v = adc_max_get(0);
     INFO_PRINTF("Sound output : %d", v);
-    mqtt_announce_int("Snd Level", v);
+    mqtt_announce_int("SOUNDLEVEL", v);
     v = adc_max_get(1);
     INFO_PRINTF("Sound envelope : %d", v);
-    mqtt_announce_int("Snd Envlp", v);
+    mqtt_announce_int("SOUNDENV", v);
     v = adc_avg_get(2);
     INFO_PRINTF("BATMON : %d", v);
     mqtt_announce_int("BATMON", v);
