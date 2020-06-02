@@ -197,10 +197,6 @@ int hpm_query() {
                     }
                 }
                 goto unknown_response;
-
-            } else if (header == 0xFF) {
-                /* The odd stray high isn't unreasonable, it can happen. */
-                length--;
             }
             else {
                 /* The odd stray zero isn't unreasonable, it can happen. */
