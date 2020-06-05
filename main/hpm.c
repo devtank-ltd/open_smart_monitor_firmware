@@ -38,7 +38,7 @@ typedef union {
 
 static int process_part_measure_response(uint8_t *data) {
 
-    DEBUG_PRINTF("HPM short particle measure msg");
+//    DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
         ERROR_PRINTF("Malformed HPM module particle measure result.");
         return -1;
@@ -61,7 +61,7 @@ static int process_part_measure_response(uint8_t *data) {
     unit_entry_t pm25 = {.h = data[3], .l = data[4]};
     unit_entry_t pm10 = {.h = data[5], .l = data[6]};
 
-    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
+//    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
 
     mqtt_announce_int("PM10",  pm10.d);
     mqtt_announce_int("PM2.5", pm25.d);
@@ -71,7 +71,7 @@ static int process_part_measure_response(uint8_t *data) {
 
 static int process_part_measure_long_response(uint8_t *data) {
 
-    DEBUG_PRINTF("HPM long particle measure msg");
+//    DEBUG_PRINTF("HPM long particle measure msg");
     if (data[1] != 0x4d || data[2] != 0 || data[3] != 28) { /* 13 2byte data entries + 2 for byte checksum*/
         ERROR_PRINTF("Malformed long HPM module particle measure result.");
         return -1;
@@ -92,7 +92,7 @@ static int process_part_measure_long_response(uint8_t *data) {
     unit_entry_t pm25 = {.h = data[6], .l = data[7]};
     unit_entry_t pm10 = {.h = data[8], .l = data[9]};
 
-    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
+//    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
 
     mqtt_announce_int("PM10",  pm10.d);
     mqtt_announce_int("PM2.5", pm25.d);
@@ -112,7 +112,7 @@ static int process_nack_response(uint8_t *data) {
 
 
 static int process_ack_response(uint8_t *data) {
-    DEBUG_PRINTF("HPM ACK");
+//    DEBUG_PRINTF("HPM ACK");
     if (data[1] == 0xA5) {
         INFO_PRINTF("ACK received from HPM module");
         return 2;
