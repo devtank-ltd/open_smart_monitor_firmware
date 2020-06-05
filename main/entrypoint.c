@@ -119,7 +119,7 @@ void app_main(void)
     volume_setup();
 
     for(;;) {
-        heartbeat();
+//        heartbeat();
         status_led_toggle();
 
         hpm_query(); /* (Honeywell) particle meter */
@@ -134,7 +134,7 @@ void app_main(void)
 
 //        configure();
 
-        vTaskDelay(50 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);
