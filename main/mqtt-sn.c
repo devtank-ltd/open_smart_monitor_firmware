@@ -26,7 +26,7 @@ static void sendthebytes(const char * str, size_t len) {
         if(err == ESP_OK)
         {
             int sent = uart_tx_chars(LORA_UART, str, len);
-            if (sent > 0)
+            if (sent >= 0)
             {
                 len -= sent;
                 str += sent;
@@ -66,7 +66,6 @@ static void mqtt_sn_send(const char topic[2], const char * message)
 
     sendthebytes(header, 7);
     sendthebytes(message, len);
-
 }
 
 static void mqtt_update(const char ident, const char * msg) {
