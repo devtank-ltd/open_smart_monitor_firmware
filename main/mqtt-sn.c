@@ -43,6 +43,58 @@ static void sendthebytes(const char * str, size_t len) {
     }
 }
 
+void clear_buffer() {
+    uart_flush(LORA_UART);
+}
+
+int await_ack() {
+    uint8_t ackbuf[BUFLEN];
+    uart_read_bytes(LORA_UART, ackbuf, BUFLEN, 200);
+
+    // We've just received some number of bytes, which should contain an ACK message
+    char ackmsg[BUFLEN];
+    const char example[25] = {
+       	0x19,
+	    0x0c,
+	    0x62,
+	    0x39,
+	    0x61,
+	    0x00,
+	    0x00,
+	    0x5b,
+	    0x39,
+	    0x38,
+	    0x66,
+	    0x34,
+	    0x61,
+	    0x62,
+	    0x31,
+	    0x34,
+	    0x37,
+	    0x33,
+	    0x39,
+	    0x35,
+	    0x20,
+	    0x61,
+	    0x63,
+	    0x6b,
+	    0x5d
+    };
+    memcpy(&ackmsg, example, example[0]);
+    memcpy(ackmsg + 8, mac_addr, 12);
+
+    for(int i = 0; i < 64; i++) {
+        if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) return 1; // found it
+    }
+    printf("Couldn't find the ACK message in the buffer. Here it is:\n");
+    for(int i = 0; i < BUFLEN; i++)
+        printf("\t%x\t%c\n", ackbuf[i], ackbuf[i]);
+    printf("And here's the ackmsg for comparison");
+    for(int i = 0; i < ackmsg[0]; i++)
+        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+
+    return 0; // not found
+}
 
 // This function was shamelessly stolen from
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
@@ -64,8 +116,22 @@ static void mqtt_sn_send(const char topic[2], const char * message)
     header[5] = 0x00;  // Message ID High
     header[6] = 0x00;  // message ID Low;
 
-    sendthebytes(header, 7);
-    sendthebytes(message, len);
+    int i = 0;
+    while(1){
+        clear_buffer();
+        sendthebytes(header, 7);
+        sendthebytes(message, len);
+        if(await_ack()) {
+            return;
+        } else {
+            printf("ACK not received!\n");
+            if(i > 3) {
+                printf("Giving up after %d goes.\n", i + 1);
+                return;
+            }
+        }
+        i++;
+    }
 }
 
 static void mqtt_update(const char ident, const char * msg) {
@@ -94,8 +160,8 @@ void mqtt_announce_str(char * key, char * val) {
     mqtt_update('I', msg);
 }
 
-void mqtt_delta_announce_int(const char * key, int * val, int * old, int delta) {
-    if(ABS(*val - *old) < delta) {
+void mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta) {
+    if(ABS(*val - *old) > delta) {
         *old = *val;
         mqtt_announce_int(key, * val);
     }
