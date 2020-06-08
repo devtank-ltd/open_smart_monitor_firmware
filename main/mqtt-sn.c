@@ -19,6 +19,8 @@
 #define BUFLEN 255
 #define ABS(x)  (x<0)?-x:x
 
+#define DR_REG_RNG_BASE                        0x3ff75144
+
 static void sendthebytes(const char * str, size_t len) {
     while(len)
     {
@@ -125,6 +127,9 @@ static void mqtt_sn_send(const char topic[2], const char * message)
             return;
         } else {
             printf("ACK not received!\n");
+            uint32_t randomNumber = READ_PERI_REG(DR_REG_RNG_BASE) & 0x3ff;
+            printf("Sleeping for %d ticks.", randomNumber);
+            vTaskDelay(randomNumber);
             if(i > 3) {
                 printf("Giving up after %d goes.\n", i + 1);
                 return;
