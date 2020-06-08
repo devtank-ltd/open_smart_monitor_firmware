@@ -17,7 +17,7 @@
 #define SFNODE '9'
 
 #define BUFLEN 255
-
+#define ABS(x)  (x<0)?-x:x
 
 static void sendthebytes(const char * str, size_t len) {
     while(len)
@@ -94,3 +94,9 @@ void mqtt_announce_str(char * key, char * val) {
     mqtt_update('I', msg);
 }
 
+void mqtt_delta_announce_int(const char * key, int * val, int * old, int delta) {
+    if(ABS(*val - *old) < delta) {
+        *old = *val;
+        mqtt_announce_int(key, * val);
+    }
+}

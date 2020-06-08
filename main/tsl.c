@@ -80,7 +80,8 @@ void tsl_setup() {
 }
 
 void tsl_query() {
-    static int32_t oldc0 = - (LUM_DELTA * 2);
+    static uint16_t old_vis;
+    static uint16_t old_c1;
     uint16_t c0;
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
@@ -100,10 +101,8 @@ void tsl_query() {
     tmph = read_tsl_reg(C1DATAH);
     c1 = tmph * 256 + tmpl;
 
-    if(ABS(c0 - oldc0) > LUM_DELTA) {
-        oldc0 = c0;
-        mqtt_announce_int("VisibleLight", c0 - c1);
-        mqtt_announce_int("InfraRed", c1);
-    }
+    uint16_t vis = c0 - c1;
+    mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
+    mqtt_delta_announce_int("InfraRed", &c1, &old_c1, LUM_DELTA);
 //    tsl_powerdown();
 }

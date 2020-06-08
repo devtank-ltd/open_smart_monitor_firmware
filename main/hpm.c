@@ -42,8 +42,9 @@ typedef union {
 
 static int process_part_measure_response(uint8_t *data) {
 
-    static int oldpm25 = 0-(PM25_DELTA * 2);
-    static int oldpm10 = 0-(PM10_DELTA * 2);
+    // These initial values are chosen for being unrealistic.
+    static uint16_t oldpm25 = 65535;
+    static uint16_t oldpm10 = 65535;
 
 //    DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
@@ -69,16 +70,8 @@ static int process_part_measure_response(uint8_t *data) {
     unit_entry_t pm10 = {.h = data[5], .l = data[6]};
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-
-    if(ABS(pm10.d - oldpm10) > PM10_DELTA) {
-        oldpm10 = pm10.d;
-        mqtt_announce_int("PM10",  pm10.d);
-    }
-
-    if(ABS(pm25.d - oldpm25) > PM25_DELTA) {
-        oldpm25 = pm25.d;
-        mqtt_announce_int("PM25",  pm25.d);
-    }
+    mqtt_delta_announce_int("PM10", &pm10.d, &oldpm10, PM10_DELTA);
+    mqtt_delta_announce_int("PM25", &pm25.d, &oldpm25, PM25_DELTA);
     return 8;
 }
 
