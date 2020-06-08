@@ -11,6 +11,10 @@
 #define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
 static int enable = 0;
 
+#define ABS(x)  (x<0)?-x:x
+#define PM10_DELTA 10 
+#define PM25_DELTA 2
+
 void hpm_setup() {
     DEBUG_PRINTF("Init HPM");
     const char *value = get_config("HPM");
@@ -38,6 +42,9 @@ typedef union {
 
 static int process_part_measure_response(uint8_t *data) {
 
+    static int oldpm25 = 0-(PM25_DELTA * 2);
+    static int oldpm10 = 0-(PM10_DELTA * 2);
+
 //    DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
         ERROR_PRINTF("Malformed HPM module particle measure result.");
@@ -63,8 +70,15 @@ static int process_part_measure_response(uint8_t *data) {
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
 
-    mqtt_announce_int("PM10",  pm10.d);
-    mqtt_announce_int("PM2.5", pm25.d);
+    if(ABS(pm10.d - oldpm10) > PM10_DELTA) {
+        oldpm10 = pm10.d;
+        mqtt_announce_int("PM10",  pm10.d);
+    }
+
+    if(ABS(pm25.d - oldpm25) > PM25_DELTA) {
+        oldpm25 = pm25.d;
+        mqtt_announce_int("PM25",  pm25.d);
+    }
     return 8;
 }
 
