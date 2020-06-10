@@ -87,3 +87,10 @@ void mqtt_announce_int(char * key, int val) {
     strstr(msg, ";")[0] = '\0';
     mqtt_update('I', msg);
 }
+
+void mqtt_announce_str(char * key, char * val) {
+    char msg[BUFLEN];
+    snprintf(msg, BUFLEN - 1, "[%s %s %s];", mac_addr, key, val);
+    mqtt_update('I', msg);
+}
+
