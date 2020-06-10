@@ -3,3 +3,4 @@ main/.*.swp
 .swp
 sdkconfig.old
 sdkconfig
+main/commit.h
