@@ -118,6 +118,8 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
+    mqtt_announce_str("fw", GIT_COMMIT);
+
     for(;;) {
 //        heartbeat();
         status_led_toggle();
