@@ -21,6 +21,7 @@
 #include "config.h"
 #include "status_led.h"
 #include "logging.h"
+#include "commit.h"
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
