@@ -21,6 +21,8 @@
 
 #define DR_REG_RNG_BASE                        0x3ff75144
 
+static volatile uint16_t dropped = 0;
+
 static void sendthebytes(const char * str, size_t len) {
     while(len)
     {
