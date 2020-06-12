@@ -157,7 +157,7 @@ void heartbeat() {
 
 void mqtt_announce_dropped() {
     static uint16_t old_dropped = 0;
-    mqtt_delta_announce_int("mqtt_dropped", dropped, old_dropped, 1);
+    mqtt_delta_announce_int("mqtt_dropped", (uint16_t*)&dropped, &old_dropped, 1);
 }
 
 void mqtt_announce_int(const char * key, int val) {
@@ -168,7 +168,7 @@ void mqtt_announce_int(const char * key, int val) {
     mqtt_update('I', msg);
 }
 
-void mqtt_announce_str(char * key, char * val) {
+void mqtt_announce_str(const char * key, const char * val) {
     char msg[BUFLEN];
     snprintf(msg, BUFLEN - 1, "[%s %s %s];", mac_addr, key, val);
     mqtt_update('I', msg);
