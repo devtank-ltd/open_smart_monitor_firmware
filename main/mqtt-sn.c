@@ -132,6 +132,7 @@ static void mqtt_sn_send(const char topic[2], const char * message)
             vTaskDelay(randomNumber);
             if(i > 3) {
                 printf("Giving up after %d goes.\n", i + 1);
+                dropped++;
                 return;
             }
         }
@@ -149,6 +150,11 @@ static void mqtt_update(const char ident, const char * msg) {
 
 void heartbeat() {
     mqtt_update('f', "I'm alive");
+}
+
+void mqtt_announce_dropped() {
+    static uint16_t old_dropped = 0;
+    mqtt_delta_announce_int("mqtt_dropped", dropped, old_dropped, 1);
 }
 
 void mqtt_announce_int(char * key, int val) {

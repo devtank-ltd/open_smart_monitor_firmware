@@ -136,7 +136,7 @@ void app_main(void)
         sound_query();
 
 //        configure();
-
+        mqtt_announce_dropped();
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 
