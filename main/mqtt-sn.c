@@ -91,12 +91,12 @@ int await_ack() {
     for(int i = 0; i < 64; i++) {
         if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) return 1; // found it
     }
-    printf("Couldn't find the ACK message in the buffer. Here it is:\n");
-    for(int i = 0; i < BUFLEN; i++)
-        printf("\t%x\t%c\n", ackbuf[i], ackbuf[i]);
-    printf("And here's the ackmsg for comparison");
-    for(int i = 0; i < ackmsg[0]; i++)
-        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+//    printf("Couldn't find the ACK message in the buffer. Here it is:\n");
+//    for(int i = 0; i < BUFLEN; i++)
+//        printf("\t%x\t%c\n", ackbuf[i], ackbuf[i]);
+//    printf("And here's the ackmsg for comparison");
+//    for(int i = 0; i < ackmsg[0]; i++)
+//        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
 
     return 0; // not found
 }
