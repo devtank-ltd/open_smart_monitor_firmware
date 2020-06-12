@@ -160,7 +160,7 @@ void mqtt_announce_dropped() {
     mqtt_delta_announce_int("mqtt_dropped", dropped, old_dropped, 1);
 }
 
-void mqtt_announce_int(char * key, int val) {
+void mqtt_announce_int(const char * key, int val) {
     char msg[BUFLEN];
     snprintf(msg, BUFLEN - 1, "[%s %s %d];", mac_addr, key, val);
     // workaround for the fact that this snprintf isn't null-terminating the string
