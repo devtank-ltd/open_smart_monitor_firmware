@@ -6,6 +6,7 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
+#include "mqtt-sn.h"
 #include "mac.h"
 
 #define MQTT_SN_MAX_PACKET_LENGTH     (255)
