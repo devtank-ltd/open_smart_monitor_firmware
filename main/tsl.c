@@ -30,6 +30,9 @@
 #define ACK_CHECK_EN  0x01
 #define ACK_CHECK_DIS 0x00
 
+#define ABS(x)  (x<0)?-x:x
+#define LUM_DELTA 4
+
 static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
 
@@ -77,6 +80,8 @@ void tsl_setup() {
 }
 
 void tsl_query() {
+    static uint16_t old_vis;
+    static uint16_t old_c1;
     uint16_t c0;
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
@@ -96,7 +101,8 @@ void tsl_query() {
     tmph = read_tsl_reg(C1DATAH);
     c1 = tmph * 256 + tmpl;
 
-    mqtt_announce_int("VisibleLight", c0 - c1);
-    mqtt_announce_int("InfraRed", c1);
+    uint16_t vis = c0 - c1;
+    mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
+    mqtt_delta_announce_int("InfraRed", &c1, &old_c1, LUM_DELTA);
 //    tsl_powerdown();
 }

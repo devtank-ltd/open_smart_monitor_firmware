@@ -22,6 +22,11 @@
  */
 #define MEAS_TRIG     0x01
 
+#define ABS(X)  (X<0)?-X:X
+#define TEMP_DELTA 2
+#define RH_DELTA   5
+
+
 static uint8_t read_reg(uint8_t reg) {
     uint8_t ret = 0;
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -79,6 +84,12 @@ void hdc_query() {
 
     float temp_celsius, relative_humidity;
 
+    // These initial values are chosen for being well outside of a possible range.
+    // Therefore, the first time this function runs, the delta check down there will
+    // see that the new value must be published.
+    static float old_temp_celsius = -274 - (TEMP_DELTA * 2);
+    static float old_relative_humidity = 0 - (RH_DELTA * 2);
+
     hdc_init();
     hdc_wait();
 
@@ -90,6 +101,13 @@ void hdc_query() {
     relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
     INFO_PRINTF("Relative Humidity %G", relative_humidity);
 
-    mqtt_announce_int("temperature", temp_celsius);
-    mqtt_announce_int("humidity", relative_humidity);
+    if(ABS(temp_celsius - old_temp_celsius) > TEMP_DELTA) {
+        old_temp_celsius = temp_celsius;
+        mqtt_announce_int("temperature", temp_celsius);
+    }
+
+    if(ABS(relative_humidity - old_relative_humidity) > RH_DELTA) {
+        old_relative_humidity = relative_humidity;
+        mqtt_announce_int("humidity", relative_humidity);
+    }
 }

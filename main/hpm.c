@@ -11,6 +11,10 @@
 #define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
 static int enable = 0;
 
+#define ABS(x)  (x<0)?-x:x
+#define PM10_DELTA 10 
+#define PM25_DELTA 2
+
 void hpm_setup() {
     DEBUG_PRINTF("Init HPM");
     const char *value = get_config("HPM");
@@ -38,7 +42,11 @@ typedef union {
 
 static int process_part_measure_response(uint8_t *data) {
 
-    DEBUG_PRINTF("HPM short particle measure msg");
+    // These initial values are chosen for being unrealistic.
+    static uint16_t oldpm25 = 65535;
+    static uint16_t oldpm10 = 65535;
+
+//    DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
         ERROR_PRINTF("Malformed HPM module particle measure result.");
         return -1;
@@ -61,17 +69,16 @@ static int process_part_measure_response(uint8_t *data) {
     unit_entry_t pm25 = {.h = data[3], .l = data[4]};
     unit_entry_t pm10 = {.h = data[5], .l = data[6]};
 
-    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-
-    mqtt_announce_int("PM10",  pm10.d);
-    mqtt_announce_int("PM2.5", pm25.d);
+//    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
+    mqtt_delta_announce_int("PM10", &pm10.d, &oldpm10, PM10_DELTA);
+    mqtt_delta_announce_int("PM25", &pm25.d, &oldpm25, PM25_DELTA);
     return 8;
 }
 
 
 static int process_part_measure_long_response(uint8_t *data) {
 
-    DEBUG_PRINTF("HPM long particle measure msg");
+//    DEBUG_PRINTF("HPM long particle measure msg");
     if (data[1] != 0x4d || data[2] != 0 || data[3] != 28) { /* 13 2byte data entries + 2 for byte checksum*/
         ERROR_PRINTF("Malformed long HPM module particle measure result.");
         return -1;
@@ -92,7 +99,7 @@ static int process_part_measure_long_response(uint8_t *data) {
     unit_entry_t pm25 = {.h = data[6], .l = data[7]};
     unit_entry_t pm10 = {.h = data[8], .l = data[9]};
 
-    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
+//    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
 
     mqtt_announce_int("PM10",  pm10.d);
     mqtt_announce_int("PM2.5", pm25.d);
@@ -112,7 +119,7 @@ static int process_nack_response(uint8_t *data) {
 
 
 static int process_ack_response(uint8_t *data) {
-    DEBUG_PRINTF("HPM ACK");
+//    DEBUG_PRINTF("HPM ACK");
     if (data[1] == 0xA5) {
         INFO_PRINTF("ACK received from HPM module");
         return 2;
