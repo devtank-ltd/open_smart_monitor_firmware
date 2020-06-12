@@ -104,7 +104,7 @@ int await_ack() {
 // This function was shamelessly stolen from
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
 // and changed to Actual C by me.
-static void mqtt_sn_send(const char topic[2], const char * message)
+static int mqtt_sn_send(const char topic[2], const char * message)
 {
     char header[7];
     size_t len = strlen(message);
@@ -127,7 +127,7 @@ static void mqtt_sn_send(const char topic[2], const char * message)
         sendthebytes(header, 7);
         sendthebytes(message, len);
         if(await_ack()) {
-            return;
+            return 0;
         } else {
             printf("ACK not received!\n");
             uint32_t randomNumber = READ_PERI_REG(DR_REG_RNG_BASE) & 0x3ff;
@@ -136,47 +136,48 @@ static void mqtt_sn_send(const char topic[2], const char * message)
             if(i > 3) {
                 printf("Giving up after %d goes.\n", i + 1);
                 dropped++;
-                return;
+                return 1;
             }
         }
         i++;
     }
+    return 0;
 }
 
-static void mqtt_update(const char ident, const char * msg) {
+static int mqtt_update(const char ident, const char * msg) {
     char topic[2];
     topic[0] = SFNODE;
     topic[1] = ident;
     printf("%c%c: %s\n", topic[0], topic[1], msg);
-    mqtt_sn_send(topic, msg);
+    return mqtt_sn_send(topic, msg);
 }
 
-void heartbeat() {
+int heartbeat() {
     mqtt_update('f', "I'm alive");
 }
 
-void mqtt_announce_dropped() {
+int mqtt_announce_dropped() {
     static uint16_t old_dropped = 0;
-    mqtt_delta_announce_int("mqtt_dropped", (uint16_t*)&dropped, &old_dropped, 1);
+    return mqtt_delta_announce_int("mqtt_dropped", (uint16_t*)&dropped, &old_dropped, 1);
 }
 
-void mqtt_announce_int(const char * key, int val) {
+int mqtt_announce_int(const char * key, int val) {
     char msg[BUFLEN];
     snprintf(msg, BUFLEN - 1, "[%s %s %d];", mac_addr, key, val);
     // workaround for the fact that this snprintf isn't null-terminating the string
     strstr(msg, ";")[0] = '\0';
-    mqtt_update('I', msg);
+    return mqtt_update('I', msg);
 }
 
-void mqtt_announce_str(const char * key, const char * val) {
+int mqtt_announce_str(const char * key, const char * val) {
     char msg[BUFLEN];
     snprintf(msg, BUFLEN - 1, "[%s %s %s];", mac_addr, key, val);
-    mqtt_update('I', msg);
+    return mqtt_update('I', msg);
 }
 
 void mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta) {
     if(ABS(*val - *old) > delta) {
         *old = *val;
-        mqtt_announce_int(key, * val);
+        return mqtt_announce_int(key, * val);
     }
 }
