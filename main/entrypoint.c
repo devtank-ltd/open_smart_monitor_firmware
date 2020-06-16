@@ -143,7 +143,7 @@ void app_main(void)
 
 //        configure();
         mqtt_announce_dropped();
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(3 * 60000 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);
