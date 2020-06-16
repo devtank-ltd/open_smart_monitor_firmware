@@ -119,7 +119,13 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
-    mqtt_announce_str("fw", GIT_COMMIT);
+    while (mqtt_announce_str("sku", "ENV-01")) {
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+
+    while (mqtt_announce_str("fw", GIT_COMMIT)) {
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
 
     for(;;) {
 //        heartbeat();
@@ -136,8 +142,8 @@ void app_main(void)
         sound_query();
 
 //        configure();
-
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        mqtt_announce_dropped();
+        vTaskDelay(3 * 60000 / portTICK_PERIOD_MS);
     }
 
     fflush(stdout);
