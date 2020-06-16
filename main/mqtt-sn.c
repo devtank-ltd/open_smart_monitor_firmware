@@ -94,9 +94,9 @@ int await_ack() {
 //    printf("Couldn't find the ACK message in the buffer. Here it is:\n");
 //    for(int i = 0; i < BUFLEN; i++)
 //        printf("\t%x\t%c\n", ackbuf[i], ackbuf[i]);
-//    printf("And here's the ackmsg for comparison");
-//    for(int i = 0; i < ackmsg[0]; i++)
-//        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+    printf("And here's the ackmsg for comparison");
+    for(int i = 0; i < ackmsg[0]; i++)
+        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
 
     return 0; // not found
 }
@@ -153,7 +153,7 @@ static int mqtt_update(const char ident, const char * msg) {
 }
 
 int heartbeat() {
-    mqtt_update('f', "I'm alive");
+    return mqtt_update('f', "I'm alive");
 }
 
 int mqtt_announce_dropped() {
@@ -171,13 +171,14 @@ int mqtt_announce_int(const char * key, int val) {
 
 int mqtt_announce_str(const char * key, const char * val) {
     char msg[BUFLEN];
-    snprintf(msg, BUFLEN - 1, "[%s %s %s];", mac_addr, key, val);
+    snprintf(msg, BUFLEN - 1, "[%s %s %s]", mac_addr, key, val);
     return mqtt_update('I', msg);
 }
 
-void mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta) {
+int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta) {
     if(ABS(*val - *old) > delta) {
         *old = *val;
         return mqtt_announce_int(key, * val);
     }
+    return 0;
 }

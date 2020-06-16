@@ -1,6 +1,6 @@
 #pragma once
-void mqtt_announce_dropped();
-void heartbeat();
+int mqtt_announce_dropped();
+int heartbeat();
 
 int mqtt_announce_int(const char * key, int val);
 int mqtt_announce_str(const char * key, const char * val);
