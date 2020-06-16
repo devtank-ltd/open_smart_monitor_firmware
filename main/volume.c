@@ -48,6 +48,9 @@ static void IRAM_ATTR isr_p1(void * arg) {
     if(debounce(&previous_edge, &level, new_level) && new_level) count1++;
 }
 
+static void IRAM_ATTR isr_p3(void * arg) {
+}
+
 static void freq_compute(void * arg) {
     // Have this function run every second, and it will compute the
     // frequency of both pulses. In hertz.
@@ -82,6 +85,7 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_1, isr_p1, (void*) PULSE_IN_1));
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
+    ESP_ERROR_CHECK(gpio_isr_handler_add(POWER_INT,  isr_p3, (void*) POWER_INT));
 }
 
 static void qry_frequency(const char * key, int which) {
