@@ -75,7 +75,7 @@ void sound_query() {
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
         vrms += adc_values[n][0];
     }
-    vrms = vrms / ADC_AVG_SLOTS;
+    vrms = sqrt(vrms / ADC_AVG_SLOTS);
 
     // This equation 
     float db = (20*log(vrms/8.9125*.001))-34+94;
