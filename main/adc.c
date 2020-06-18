@@ -50,7 +50,7 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 static void periodic_timer_callback(void* arg) {
     int t = adc1_safe_get(SOUND_OUTPUT) - 2048; // Remove DC offset
     if(t < 0) t = -t;                           // Absolute value
-    adc_values[adc_values_index][0] = (t * t) / 2;
+    adc_values[adc_values_index][0] = (t * t);
 //    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
