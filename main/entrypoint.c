@@ -119,31 +119,37 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
-    while (mqtt_announce_str("sku", "ENV-01")) {
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-
-    while (mqtt_announce_str("fw", GIT_COMMIT)) {
-        vTaskDelay(500 / portTICK_PERIOD_MS);
-    }
-
     for(;;) {
-//        heartbeat();
-        status_led_toggle();
 
-        hpm_query(); /* (Honeywell) particle meter */
-        hdc_query(); /* humidity sensor with temperature sensor */
-        tsl_query(); /* Lux/light sensor */
+        // announce these every once in a while
+        while (mqtt_announce_str("sku", "ENV-01")) {
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
 
-        smart_meter_query();
-        water_volume_query();
-        light_volume_query();
-
-        sound_query();
-
-//        configure();
+        while (mqtt_announce_str("fw", GIT_COMMIT)) {
+            vTaskDelay(500 / portTICK_PERIOD_MS);
+        }
         mqtt_announce_dropped();
-        vTaskDelay(3 * 60000 / portTICK_PERIOD_MS);
+
+        for(int i = 0; i < 100; i++) {
+            // announce these more frequently
+            status_led_toggle();
+
+            hpm_query(); /* (Honeywell) particle meter */
+            hdc_query(); /* humidity sensor with temperature sensor */
+            tsl_query(); /* Lux/light sensor */
+
+            smart_meter_query();
+            water_volume_query();
+            light_volume_query();
+
+            for(int j = 0; j < 100; j++) {
+                sound_query();
+                vTaskDelay(18 / portTICK_PERIOD_MS);
+            }
+   
+        }
+//        configure();
     }
 
     fflush(stdout);
