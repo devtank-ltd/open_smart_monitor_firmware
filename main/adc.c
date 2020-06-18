@@ -83,5 +83,6 @@ void sound_query() {
     uint16_t old_db = 0;
     uint16_t idb = db;
     mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
+    mqtt_announce_int("RawADC", adc1_safe_get(SOUND_OUTPUT));
 }
 
