@@ -9,14 +9,13 @@
 static esp_timer_handle_t periodic_timer;
 static void periodic_timer_callback(void* arg);
 
-static volatile uint16_t adc_values[ADC_AVG_SLOTS][3] = {0};
+static volatile uint16_t adc_values[ADC_AVG_SLOTS][2] = {0};
 static unsigned adc_values_index = 0;
 
 
 void adc_setup() {
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(SOUND_OUTPUT,   ADC_ATTEN_DB_11);
-    adc1_config_channel_atten(SOUND_ENVELOPE, ADC_ATTEN_DB_11);
 
     adc2_config_channel_atten(BATMON,   ADC_ATTEN_DB_11);
 
@@ -50,8 +49,7 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 
 static void periodic_timer_callback(void* arg) {
     adc_values[adc_values_index][0] = adc1_safe_get(SOUND_OUTPUT);
-    adc_values[adc_values_index][1] = adc1_safe_get(SOUND_ENVELOPE);
-    adc_values[adc_values_index][2] = adc2_safe_get(BATMON);
+    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
 }
@@ -83,14 +81,10 @@ static int adc_max_get(unsigned index) {
 
 
 void sound_query() {
-    DEBUG_PRINTF("Gate = %d", gpio_get_level(SOUND_GATE));
     int v = adc_max_get(0);
     INFO_PRINTF("Sound output : %d", v);
     mqtt_announce_int("SOUNDLEVEL", v);
-    v = adc_max_get(1);
-    INFO_PRINTF("Sound envelope : %d", v);
-    mqtt_announce_int("SOUNDENV", v);
-    v = adc_avg_get(2);
+    v = adc_avg_get(1);
     INFO_PRINTF("BATMON : %d", v);
     mqtt_announce_int("BATMON", v);
 }
