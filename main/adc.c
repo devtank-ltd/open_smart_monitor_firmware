@@ -5,7 +5,7 @@
 #include "logging.h"
 #include "mqtt-sn.h"
 #include "config.h"
-
+#include "math.h"
 static esp_timer_handle_t periodic_timer;
 static void periodic_timer_callback(void* arg);
 
@@ -50,8 +50,8 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 static void periodic_timer_callback(void* arg) {
     int t = adc1_safe_get(SOUND_OUTPUT) - 2048; // Remove DC offset
     if(t < 0) t = -t;                           // Absolute value
-    adc_values[adc_values_index][0] = t;
-    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
+    adc_values[adc_values_index][0] = (t * t) / 2;
+//    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
 }
@@ -64,29 +64,24 @@ static int adc_avg_get(unsigned index) {
     return (r * 10000) / ADC_AVG_SLOTS / 4095;
 }
 
-
-static int adc_max_get(unsigned index) {
-    unsigned tops[ADC_MAX_AVG] = {0};
-    for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
-        unsigned v = adc_values[n][index];
-        for (unsigned i = 0; i < ADC_MAX_AVG; i++) {
-            if (!tops[i] || tops[i] < v)
-                 tops[i] = v;
-        }
-    }
-    int r = 0;
-    for (unsigned n = 0; n < ADC_MAX_AVG; n++) {
-        r += tops[n];
-    }
-    return (r * 10000) / ADC_MAX_AVG / 4095;
-}
-
-
-void sound_query() {
-    int v = adc_max_get(0);
-    INFO_PRINTF("Sound output : %d", v);
-    mqtt_announce_int("SOUNDLEVEL", v);
-    v = adc_avg_get(1);
+void battery_query() {
+    int v = adc_avg_get(1);
     INFO_PRINTF("BATMON : %d", v);
     mqtt_announce_int("BATMON", v);
 }
+
+void sound_query() {
+    unsigned long vrms = 0;
+    for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
+        vrms += adc_values[n][0];
+    }
+    vrms = vrms / ADC_AVG_SLOTS;
+
+    // This equation 
+    float db = (20*log(vrms/8.9125*.001))-40+94;
+
+    uint16_t old_db = 0;
+    uint16_t idb = db;
+    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
+}
+
