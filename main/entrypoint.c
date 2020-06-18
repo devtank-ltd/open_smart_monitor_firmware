@@ -22,6 +22,7 @@
 #include "status_led.h"
 #include "logging.h"
 #include "commit.h"
+#include "math.h"
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -119,6 +120,16 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
+
+    printf("i\tfi\tf\tu\n");
+    for(int i = 0; i < 2000; i++) {
+        float fi = i;
+        float f = sqrt(fi);
+        uint16_t u = f;
+        printf("%u\t%f\t%f\t\%u\n", i, fi, f, (unsigned int) u);
+    }
+
+
     for(;;) {
 
         // announce these every once in a while
@@ -145,7 +156,7 @@ void app_main(void)
 
             for(int j = 0; j < 100; j++) {
                 sound_query();
-                vTaskDelay(18 / portTICK_PERIOD_MS);
+                vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
    
         }
