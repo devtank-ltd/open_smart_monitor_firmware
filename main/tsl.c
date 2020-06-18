@@ -75,13 +75,90 @@ static void tsl_powerdown() {
 void tsl_setup() {
     DEBUG_PRINTF("Init TSL");
     write_tsl_reg(CONTROL, CONTROL_ON);
-    write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
+    write_tsl_reg(TIMING,  0x12); // An integration cycle begins every 402ms.
     INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
 }
 
-void tsl_query() {
+#define CH_SCALE 10
+#define LUX_SCALE 14
+#define RATIO_SCALE 9
+
+#define K1T 0x0040
+#define B1T 0x01f2
+#define M1T 0x01be
+
+#define K2T 0x0080
+#define B2T 0x0214
+#define M2T 0x02d1
+
+#define K3T 0x00c0
+#define B3T 0x023f
+#define M3T 0x037b
+
+#define K4T 0x0100
+#define B4T 0x0270
+#define M4T 0x03fe
+
+#define K5T 0x0138
+#define B5T 0x016f
+#define M5T 0x01fc
+
+#define K6T 0x019a
+#define B6T 0x00d2
+#define M6T 0x00fb
+
+#define K7T 0x029a
+#define B7T 0x0018
+#define M7T 0x0012
+
+#define K8T 0x029a
+#define B8T 0x0000
+#define M8T 0x0000
+
+
+
+void CalculateLux(uint16_t ch0, uint16_t ch1)
+{
+    unsigned long chScale = (1 << CH_SCALE); // no scaling
+    unsigned long channel1;
+    unsigned long channel0;
+
+    // scale the channel values
+    channel0 = (ch0 * chScale) >> CH_SCALE;
+    channel1 = (ch1 * chScale) >> CH_SCALE;
+
+    // find the ratio of the channel values (Channel1/Channel0)
+    unsigned long ratio1 = 0;
+    if (channel0 != 0) ratio1 = (channel1 << (RATIO_SCALE+1)) / channel0;
+    else return;
+
+    unsigned long ratio = (ratio1 + 1) >> 1;
+
+    unsigned int b, m;
+
+    if(ratio <= K1T)       {b=B1T; m=M1T;}
+    else if (ratio <= K2T) {b=B2T; m=M2T;}
+    else if (ratio <= K3T) {b=B3T; m=M3T;}
+    else if (ratio <= K4T) {b=B4T; m=M4T;}
+    else if (ratio <= K5T) {b=B5T; m=M5T;}
+    else if (ratio <= K6T) {b=B6T; m=M6T;}
+    else if (ratio <= K7T) {b=B7T; m=M7T;}
+    else if (ratio >  K8T) {b=B8T; m=M8T;}
+
+    unsigned long temp;
+    temp = ((channel0 * b) - (channel1 * m));
+
+    temp += (1 << (LUX_SCALE - 1));
+    unsigned long lux = temp >> LUX_SCALE;
+
+    uint16_t vis = lux;
     static uint16_t old_vis;
-    static uint16_t old_c1;
+
+    mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
+
+}
+
+void tsl_query() {
     uint16_t c0;
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
@@ -101,8 +178,6 @@ void tsl_query() {
     tmph = read_tsl_reg(C1DATAH);
     c1 = tmph * 256 + tmpl;
 
-    uint16_t vis = c0 - c1;
-    mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
-    mqtt_delta_announce_int("InfraRed", &c1, &old_c1, LUM_DELTA);
+    CalculateLux(c0, c1);
 //    tsl_powerdown();
 }
