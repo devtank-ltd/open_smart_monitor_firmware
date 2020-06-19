@@ -13,6 +13,7 @@ static volatile double micvolts[ADC_AVG_SLOTS] = {0};
 static volatile uint16_t bat_values[ADC_AVG_SLOTS] = {0};
 static unsigned adc_values_index = 0;
 
+#define AMP_GAIN 28.63
 
 void adc_setup() {
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -77,7 +78,7 @@ double voltagecalc(int adc_count){
 }
 
 double dbcalc(int adc_count) {
-    double db = (20*log10(voltagecalc(adc_count)/8.9125*.001))-33.44+94;
+    double db = (20*log10(voltagecalc(adc_count)/8.9125*.001))-AMP_GAIN+94;
     return db;
 }
 
@@ -90,7 +91,7 @@ void sound_query() {
     vrms = vrms / ADC_AVG_SLOTS;
 
     // This equation 
-    float db = (20*log10(vrms/0.00891))-33.44+94;
+    double db = (20*log10(vrms/0.00891))-AMP_GAIN+94;
 
     uint16_t old_db = 0;
     uint16_t idb = db;
