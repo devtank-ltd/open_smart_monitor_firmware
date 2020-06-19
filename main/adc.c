@@ -48,7 +48,7 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 
 
 static void periodic_timer_callback(void* arg) {
-    int t = adc1_safe_get(SOUND_OUTPUT) - 2048; // Remove DC offset
+    int t = adc1_safe_get(SOUND_OUTPUT) - 1850; // Remove DC offset
     if(t < 0) t = -t;                           // Absolute value
     adc_values[adc_values_index][0] = (t * t);
 //    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
@@ -78,7 +78,7 @@ void sound_query() {
     vrms = sqrt(vrms / ADC_AVG_SLOTS);
 
     // This equation 
-    float db = (20*log(vrms/8.9125*.001))-34+94;
+    float db = (20*log(vrms/8.9125*.001))-33.44+94;
 
     uint16_t old_db = 0;
     uint16_t idb = db;
