@@ -120,16 +120,6 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
-
-    printf("i\tfi\tf\tu\n");
-    for(int i = 0; i < 2000; i++) {
-        float fi = i;
-        float f = sqrt(fi);
-        uint16_t u = f;
-        printf("%u\t%f\t%f\t\%u\n", i, fi, f, (unsigned int) u);
-    }
-
-
     for(;;) {
 
         // announce these every once in a while
