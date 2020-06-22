@@ -14,6 +14,7 @@ static volatile uint16_t bat_values[ADC_AVG_SLOTS] = {0};
 static unsigned adc_values_index = 0;
 
 #define AMP_GAIN 28.63
+#define CONST_DB_OFFS 40
 
 void adc_setup() {
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -94,7 +95,7 @@ void sound_query() {
     double db = (20*log10(vrms/0.00891))-AMP_GAIN+94;
 
     uint16_t old_db = 0;
-    uint16_t idb = db;
+    uint16_t idb = db + CONST_DB_OFFS;
     printf("vrms = %Lf\n", vrms);
     mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
     mqtt_announce_int("RawADC", adc1_safe_get(SOUND_OUTPUT));
