@@ -13,7 +13,7 @@ static volatile uint16_t micvolts[ADC_AVG_SLOTS] = {0};
 static volatile uint16_t bat_values[ADC_AVG_SLOTS] = {0};
 static unsigned adc_values_index = 0;
 
-#define AMP_GAIN 31.82
+#define AMP_GAIN 40
 #define CONST_DB_OFFS 40
 #define ADC_COUNT 4095
 #define MIDPOINT 1.63246
@@ -55,6 +55,7 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 static void periodic_timer_callback(void* arg) {
     int t = adc1_safe_get(SOUND_OUTPUT);
     micvolts[adc_values_index] = t;
+    printf("%u\n", t);
 //    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
@@ -90,10 +91,10 @@ double voltagecalc(int adc_count){
 void sound_query() {
     long double vrms = 0;
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
-        double a = abs(voltagecalc(micvolts[n]) - MIDPOINT);
+        double a = voltagecalc(micvolts[n]) - MIDPOINT;
         vrms += a * a;
     }
-    vrms = sqrtl(vrms/ADC_AVG_SLOTS);
+    vrms = sqrtl(vrms);
 
     // This equation 
     double db = (20*log10(vrms/0.00891))-AMP_GAIN+94;
