@@ -9,12 +9,14 @@
 static esp_timer_handle_t periodic_timer;
 static void periodic_timer_callback(void* arg);
 
-static volatile double micvolts[ADC_AVG_SLOTS] = {0};
+static volatile uint16_t micvolts[ADC_AVG_SLOTS] = {0};
 static volatile uint16_t bat_values[ADC_AVG_SLOTS] = {0};
 static unsigned adc_values_index = 0;
 
 #define AMP_GAIN 28.63
 #define CONST_DB_OFFS 40
+#define ADC_COUNT 4095
+#define MIDPOINT 1.64
 
 void adc_setup() {
     adc1_config_width(ADC_WIDTH_BIT_12);
@@ -51,10 +53,8 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 
 
 static void periodic_timer_callback(void* arg) {
-    int t = adc1_safe_get(SOUND_OUTPUT) - 1850; // Remove DC offset
-    if(t < 0) t = -t;                           // Absolute value
-    double v = t/4096.0 * 3.18;
-    micvolts[adc_values_index] = v;
+    int t = adc1_safe_get(SOUND_OUTPUT);
+    micvolts[adc_values_index] = t;
 //    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
@@ -75,29 +75,37 @@ void battery_query() {
 }
 
 double voltagecalc(int adc_count){
-    return adc_count/4096.0 * 3.18;
-}
-
-double dbcalc(int adc_count) {
-    double db = (20*log10(voltagecalc(adc_count)/8.9125*.001))-AMP_GAIN+94;
-    return db;
+      if(adc_count < 1 || adc_count > 4095) return 0;
+      return -6.20034e-27 * pow(adc_count, 8)\
+             +1.09482e-22 * pow(adc_count, 7)\
+             -7.95465e-19 * pow(adc_count, 6)\
+             +3.06831e-15 * pow(adc_count, 5)\
+             -6.76502e-12 * pow(adc_count, 4)\
+             +8.52865e-09 * pow(adc_count, 3)\
+             -5.76208e-06 * pow(adc_count, 2)\
+             +0.00255141  * adc_count \
+             -0.00165281;
 }
 
 void sound_query() {
     int i;
     long double vrms = 0;
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
-        vrms += micvolts[n] * micvolts[n];
+        double a = abs(voltagecalc(micvolts[n]) - MIDPOINT);
+        vrms += a * a;
     }
-    vrms = vrms / ADC_AVG_SLOTS;
+    vrms = sqrtl(vrms/ADC_AVG_SLOTS);
 
     // This equation 
     double db = (20*log10(vrms/0.00891))-AMP_GAIN+94;
 
-    uint16_t old_db = 0;
-    uint16_t idb = db + CONST_DB_OFFS;
-    printf("vrms = %Lf\n", vrms);
-    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
-    mqtt_announce_int("RawADC", adc1_safe_get(SOUND_OUTPUT));
+//    uint16_t old_db = 0;
+//    uint16_t idb = db + CONST_DB_OFFS;
+    uint16_t raw = adc1_safe_get(SOUND_OUTPUT);
+    printf("vrms = %Lf\traw = %u\t", vrms, raw);
+    printf("%fV\t", voltagecalc(raw));
+    printf("%fdB\n", db);
+//    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
+//    mqtt_announce_int("RawADC", adc1_safe_get(SOUND_OUTPUT));
 }
 
