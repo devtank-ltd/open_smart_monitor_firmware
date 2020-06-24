@@ -126,7 +126,7 @@ void sound_query() {
         uint16_t adcsample = micvolts[n] & 0x0fff;
         if(!adcsample) break;
         double a = voltagecalc(adcsample) - MIDPOINT;
-        printf("%u\n", (unsigned int) adcsample);
+//        printf("%u\n", (unsigned int) adcsample);
         vrms += a * a;
     }
     vrms = sqrtl(vrms/n);
@@ -135,9 +135,9 @@ void sound_query() {
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
     uint16_t idb = db;
-    uint16_t old_db = 0;
+    static uint16_t old_db = 0;
 //    printf("vrms = %Lf\t", vrms);
 //    printf("%fdB\n", db);
-    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
+    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 5);
 }
 
