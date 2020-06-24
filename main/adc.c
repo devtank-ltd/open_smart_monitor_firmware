@@ -134,7 +134,7 @@ void sound_query() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-//    uint16_t old_db = 0;
+    uint16_t old_db = 0;
 //    printf("vrms = %Lf\t", vrms);
 //    printf("%fdB\n", db);
     mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
