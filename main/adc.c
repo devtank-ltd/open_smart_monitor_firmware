@@ -114,7 +114,6 @@ int db_correction(int db) {
     if(db > 100) return db + 20;
     if(db > 65)  return db + 15;
     if(db > 60)  return db + 10;
-    printf("dB < 60\n");
     return db;
 }
 
@@ -136,9 +135,8 @@ void sound_query() {
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
 //    uint16_t old_db = 0;
-    printf("vrms = %Lf\t", vrms);
-    printf("%fdB\n", db);
-//    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
-//    mqtt_announce_int("RawADC", adc1_safe_get(SOUND_OUTPUT));
+//    printf("vrms = %Lf\t", vrms);
+//    printf("%fdB\n", db);
+    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 1);
 }
 
