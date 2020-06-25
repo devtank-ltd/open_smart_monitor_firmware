@@ -123,10 +123,10 @@ static int mqtt_sn_send(const char topic[2], const char * message)
     char crcstr[4];
     const char * hex = "0123456789abcdef";
 
-    crcstr[0] = hex[crc      & 0xf];
-    crcstr[1] = hex[crc >> 4 & 0xf];
-    crcstr[2] = hex[crc >> 8 & 0xf];
-    crcstr[3] = hex[crc >>12 & 0xf];
+    crcstr[3] = hex[crc      & 0xf];
+    crcstr[2] = hex[crc >> 4 & 0xf];
+    crcstr[1] = hex[crc >> 8 & 0xf];
+    crcstr[0] = hex[crc >>12 & 0xf];
 
     int i = 0;
     while(1){
