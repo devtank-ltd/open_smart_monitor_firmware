@@ -139,7 +139,7 @@ void sound_query() {
 
     uint16_t idb = db;
     static uint16_t old_db = 0;
-    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
+//    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
 //    printf("%fdB\n", db);
     mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 5);
 }

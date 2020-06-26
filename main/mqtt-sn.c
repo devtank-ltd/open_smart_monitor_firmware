@@ -8,6 +8,7 @@
 #include "esp32/rom/uart.h"
 #include "mqtt-sn.h"
 #include "mac.h"
+#include "socomec.h"
 
 #define MQTT_SN_MAX_PACKET_LENGTH     (255)
 #define MQTT_SN_TYPE_PUBLISH          (0x0C)
@@ -103,14 +104,13 @@ int await_ack() {
 // and changed to Actual C by me.
 static int mqtt_sn_send(const char topic[2], const char * message)
 {
-    return 0;
     char header[7];
     size_t len = strlen(message);
 
     if (len > (255-7))
         len = 255-7;
 
-    header[0] = sizeof(header) + len;
+    header[0] = sizeof(header) + len + 4;
     header[1] = MQTT_SN_TYPE_PUBLISH;
     header[2] = MQTT_SN_FLAG_QOS_N1 | MQTT_SN_TOPIC_TYPE_SHORT;
 
@@ -119,11 +119,21 @@ static int mqtt_sn_send(const char topic[2], const char * message)
     header[5] = 0x00;  // Message ID High
     header[6] = 0x00;  // message ID Low;
 
+    uint16_t crc = modbus_crc(message, strlen(message));
+    char crcstr[4];
+    const char * hex = "0123456789abcdef";
+
+    crcstr[3] = hex[crc      & 0xf];
+    crcstr[2] = hex[crc >> 4 & 0xf];
+    crcstr[1] = hex[crc >> 8 & 0xf];
+    crcstr[0] = hex[crc >>12 & 0xf];
+
     int i = 0;
     while(1){
         clear_buffer();
         sendthebytes(header, 7);
         sendthebytes(message, len);
+        sendthebytes(crcstr, 4);
         if(await_ack()) {
             return 0;
         } else {
