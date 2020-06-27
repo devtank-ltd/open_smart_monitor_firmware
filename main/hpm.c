@@ -71,7 +71,7 @@ static int process_part_measure_response(uint8_t *data) {
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
     mqtt_delta_announce_int("PM10", &pm10.d, &oldpm10, PM10_DELTA);
-    mqtt_delta_announce_int("PM25", &pm25.d, &oldpm25, PM25_DELTA);
+    mqtt_delta_announce_int("PM2.5", &pm25.d, &oldpm25, PM25_DELTA);
     return 8;
 }
 
