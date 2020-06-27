@@ -450,6 +450,31 @@ void smart_meter_query()
     sense_modbus_read_value(33, &current1,      sizeof(current1));
     sense_modbus_read_value(34, &current2,      sizeof(current2));
     sense_modbus_read_value(35, &current3,      sizeof(current3));
+
+    static uint32_t apparent1_old;
+    mqtt_delta_announce_int("ApparentPower1", &apparent1, &apparent1_old, 1);
+    static uint32_t apparent2_old;
+    mqtt_delta_announce_int("ApparentPower2", &apparent2, &apparent2_old, 1);
+    static uint32_t apparent3_old;
+    mqtt_delta_announce_int("ApparentPower3", &apparent3, &apparent3_old, 1);
+    static uint32_t powerfactor1_old;
+    mqtt_delta_announce_int("PowerFactor1", &powerfactor1, &powerfactor1_old, 1);
+    static uint32_t powerfactor2_old;
+    mqtt_delta_announce_int("PowerFactor2", &powerfactor2, &powerfactor2_old, 1);
+    static uint32_t powerfactor3_old;
+    mqtt_delta_announce_int("PowerFactor3", &powerfactor3, &powerfactor3_old, 1);
+    static uint32_t voltage1_old;
+    mqtt_delta_announce_int("Voltage1", &voltage1, &voltage1_old, 1);
+    static uint32_t voltage2_old;
+    mqtt_delta_announce_int("Voltage2", &voltage2, &voltage2_old, 1);
+    static uint32_t voltage3_old;
+    mqtt_delta_announce_int("Voltage3", &voltage3, &voltage3_old, 1);
+    static uint32_t current1_old;
+    mqtt_delta_announce_int("Current1", &current1, &current1_old, 1);
+    static uint32_t current2_old;
+    mqtt_delta_announce_int("Current2", &current2, &current2_old, 1);
+    static uint32_t current3_old;
+    mqtt_delta_announce_int("Current3", &current3, &current3_old, 1);
     
     // The volt reads as:
     // high byte, low byte, zero, zero
