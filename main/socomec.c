@@ -470,13 +470,13 @@ void smart_meter_query()
     uint16_t powerfactor3_i = powerfactor3;
     mqtt_delta_announce_int("PowerFactor3", &powerfactor3_i, &powerfactor3_old, 1);
     static uint16_t voltage1_old = 0;
-    uint16_t voltage1_i = voltage1;
+    uint16_t voltage1_i = voltage1 * 100;
     mqtt_delta_announce_int("Voltage1", &voltage1_i, &voltage1_old, 1);
     static uint16_t voltage2_old = 0;
-    uint16_t voltage2_i = voltage2;
+    uint16_t voltage2_i = voltage2 * 100;
     mqtt_delta_announce_int("Voltage2", &voltage2_i, &voltage2_old, 1);
     static uint16_t voltage3_old = 0;
-    uint16_t voltage3_i = voltage3;
+    uint16_t voltage3_i = voltage3 * 100;
     mqtt_delta_announce_int("Voltage3", &voltage3_i, &voltage3_old, 1);
     static uint16_t current1_old = 0;
     uint16_t current1_i = current1;
