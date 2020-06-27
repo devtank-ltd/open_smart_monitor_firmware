@@ -98,7 +98,16 @@ const dev_parameter_descriptor_t countis_e53[] = { \
     { 23,  (const char *)"ApparentPower",  (const char *)"VA"              , 50540, PARAM_TYPE_U32,   4},
     { 24,  (const char *)"ActivePowerh",   (const char *)"kWh"             , 50770, PARAM_TYPE_U32,   4},
     { 25,  (const char *)"ReactivePowerh", (const char *)"varh"            , 50772, PARAM_TYPE_U32,   4},
-    { 26,  (const char *)"ApparentPowerh", (const char *)"VAh"             , 50774, PARAM_TYPE_U32,   4}
+    { 26,  (const char *)"ApparentPowerh", (const char *)"VAh"             , 50774, PARAM_TYPE_U32,   4},
+    { 27,  (const char *)"ApparentPowerP1",(const char *)"VA / 0.1"        , 50556, PARAM_TYPE_U32,   4},
+    { 28,  (const char *)"ApparentPowerP2",(const char *)"VA / 0.1"        , 50558, PARAM_TYPE_U32,   4},
+    { 29,  (const char *)"ApparentPowerP3",(const char *)"VA / 0.1"        , 50560, PARAM_TYPE_U32,   4},
+    { 30,  (const char *)"VoltageP1",      (const char *)"V / 100"         , 50520, PARAM_TYPE_U32,   4},
+    { 31,  (const char *)"VoltageP2",      (const char *)"V / 100"         , 50522, PARAM_TYPE_U32,   4},
+    { 32,  (const char *)"VoltageP3",      (const char *)"V / 100"         , 50524, PARAM_TYPE_U32,   4},
+    { 33,  (const char *)"CurrentP1",      (const char *)"A / 1000"        , 50520, PARAM_TYPE_U32,   4},
+    { 34,  (const char *)"CurrentP2",      (const char *)"A / 1000"        , 50522, PARAM_TYPE_U32,   4},
+    { 35,  (const char *)"CurrentP3",      (const char *)"A / 1000"        , 50524, PARAM_TYPE_U32,   4},
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -409,6 +418,18 @@ void smart_meter_query()
     uint32_t volt          = 0;
     float    ffreq         = 0.0;
     uint32_t current       = 0;
+    uint32_t apparent1     = 0;
+    uint32_t apparent2     = 0;
+    uint32_t apparent3     = 0;
+    uint32_t powerfactor1  = 0;
+    uint32_t powerfactor2  = 0;
+    uint32_t powerfactor3  = 0;
+    uint32_t voltage1      = 0;
+    uint32_t voltage2      = 0;
+    uint32_t voltage3      = 0;
+    uint32_t current1      = 0;
+    uint32_t current2      = 0;
+    uint32_t current3      = 0;
 
     sense_modbus_read_value(0,  &hourmeter,     sizeof(hourmeter));
     sense_modbus_read_value(1,  &apparentpower, sizeof(apparentpower));
@@ -417,7 +438,19 @@ void smart_meter_query()
     sense_modbus_read_value(8,  &volt,          sizeof(volt));
     sense_modbus_read_value(9,  &ffreq,         sizeof(ffreq));
     sense_modbus_read_value(10, &current,       sizeof(current));
-
+    sense_modbus_read_value(27, &apparent1,     sizeof(apparent1));
+    sense_modbus_read_value(28, &apparent2,     sizeof(apparent2));
+    sense_modbus_read_value(29, &apparent3,     sizeof(apparent3));
+    sense_modbus_read_value(16, &powerfactor1,  sizeof(powerfactor1));
+    sense_modbus_read_value(19, &powerfactor2,  sizeof(powerfactor2));
+    sense_modbus_read_value(22, &powerfactor3,  sizeof(powerfactor3));
+    sense_modbus_read_value(30, &voltage1,      sizeof(voltage1));
+    sense_modbus_read_value(31, &voltage2,      sizeof(voltage2));
+    sense_modbus_read_value(32, &voltage3,      sizeof(voltage3));
+    sense_modbus_read_value(33, &current1,      sizeof(current1));
+    sense_modbus_read_value(34, &current2,      sizeof(current2));
+    sense_modbus_read_value(35, &current3,      sizeof(current3));
+    
     // The volt reads as:
     // high byte, low byte, zero, zero
     // all inside a uint32_t. The two upper bytes encode a number a hundred times the actual voltage.
