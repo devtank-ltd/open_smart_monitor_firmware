@@ -502,10 +502,4 @@ void smart_meter_query()
     INFO_PRINTF("hourmeter = i%u f%f\napparent_power = %u", hourmeter, fhourmeter, apparentpower);
     INFO_PRINTF("%dmV, %dmA", mV, mA);
 
-    for(int i = 8; i <= 26; i++) {
-        int32_t v = 0;
-        sense_modbus_read_value(i, &v, sizeof(v));
-        mqtt_announce_int(countis_e53[i].param_key, v >> 16);
-        INFO_PRINTF("%s = %d", countis_e53[i].param_key, v);
-    }
 }
