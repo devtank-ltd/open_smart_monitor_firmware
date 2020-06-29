@@ -107,7 +107,8 @@ double voltagecalc(int adc_count){
 }
 
 int db_correction(int db) {
-    if(db < 64) return 0;
+    if(db < 60) return 0;
+    if(db < 66) return db + 5
     if(db < 71) return db + 13;
     if(db < 99) return db + 15;
     return db + 18;
