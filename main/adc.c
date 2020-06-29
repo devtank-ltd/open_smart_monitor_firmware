@@ -45,15 +45,15 @@ void adc_setup() {
 
     adc2_config_channel_atten(BATMON,   ADC_ATTEN_DB_11);
 
-//    const esp_timer_create_args_t periodic_timer_args = {
-//            .callback = &periodic_timer_callback,
-//            /* name is optional, but may help identify the timer when debugging */
-//            .name = "periodic"
-//    };
-//
-//    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-//
-//    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
+    const esp_timer_create_args_t periodic_timer_args = {
+            .callback = &periodic_timer_callback,
+            /* name is optional, but may help identify the timer when debugging */
+            .name = "adc_timer"
+    };
+
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
 }
 
 static uint16_t adc1_safe_get(adc1_channel_t channel) {
@@ -75,10 +75,7 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 
 static void periodic_timer_callback(void* arg) {
     int t = adc1_safe_get(SOUND_OUTPUT);
-    micvolts[adc_values_index] = t;
     bat_values[adc_values_index] = adc2_safe_get(BAT_MON);
-//    printf("%u\n", t);
-//    adc_values[adc_values_index][1] = adc2_safe_get(BATMON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
 }
@@ -86,7 +83,7 @@ static void periodic_timer_callback(void* arg) {
 static int adc_avg_get(unsigned index) {
     int r = 0;
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
-        r += micvolts[n];
+        r += bat_values[n];
     }
     return (r * 10000) / ADC_AVG_SLOTS / 4095;
 }
