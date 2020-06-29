@@ -107,10 +107,10 @@ double voltagecalc(int adc_count){
 }
 
 int db_correction(int db) {
-    if(db > 100) return db + 20;
-    if(db > 65)  return db + 15;
-    if(db > 60)  return db + 10;
-    return db;
+    if(db < 64) return 0;
+    if(db < 71) return db + 13;
+    if(db < 99) return db + 15;
+    return db + 18;
 }
 
 void sound_query() {
