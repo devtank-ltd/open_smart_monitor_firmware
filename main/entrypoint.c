@@ -134,7 +134,6 @@ void app_main(void)
 
         for(int i = 0; i < 100; i++) {
             // announce these more frequently
-            status_led_toggle();
 
             hpm_query(); /* (Honeywell) particle meter */
             hdc_query(); /* humidity sensor with temperature sensor */
@@ -145,6 +144,7 @@ void app_main(void)
             light_volume_query();
 
             for(int j = 0; j < 100; j++) {
+                status_led_toggle();
                 sound_query();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
