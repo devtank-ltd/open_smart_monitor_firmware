@@ -104,6 +104,7 @@ int await_ack() {
 // and changed to Actual C by me.
 static int mqtt_sn_send(const char topic[2], const char * message)
 {
+    return 0;
     char header[7];
     size_t len = strlen(message);
 
