@@ -75,7 +75,7 @@ static void tsl_powerdown() {
 void tsl_setup() {
     DEBUG_PRINTF("Init TSL");
     write_tsl_reg(CONTROL, CONTROL_ON);
-    write_tsl_reg(TIMING,  0x12); // An integration cycle begins every 402ms.
+    write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
     INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
 }
 
