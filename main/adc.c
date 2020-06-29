@@ -74,7 +74,6 @@ static uint16_t adc2_safe_get(adc2_channel_t channel) {
 
 
 static void periodic_timer_callback(void* arg) {
-    int t = adc1_safe_get(SOUND_OUTPUT);
     bat_values[adc_values_index] = adc2_safe_get(BAT_MON);
     adc_values_index += 1;
     adc_values_index %= ADC_AVG_SLOTS;
