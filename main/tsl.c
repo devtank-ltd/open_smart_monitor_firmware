@@ -152,7 +152,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
 //    else if (ratio >  K8T) {b=B8T; m=M8T;}
 
     if(!ch0) return;
-    float r = ch1/ch0;
+    float r = ch1/(float)ch0;
     float a = afn(r);
     int lux;
     if(r < 0.54) lux = ch0 * (a - 0.062 * powf((ch1/ch0), 1.4));
@@ -171,6 +171,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     uint16_t vis = lux;
     static uint16_t old_vis;
 
+    printf("ch0 = %u, ch1 = %u, r = %f, a = %f\n", ch0, ch1, r, a);
     mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
 
 }
