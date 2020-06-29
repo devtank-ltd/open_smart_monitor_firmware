@@ -105,9 +105,9 @@ const dev_parameter_descriptor_t countis_e53[] = { \
     { 30,  (const char *)"VoltageP1",      (const char *)"V / 100"         , 50520, PARAM_TYPE_U32,   4},
     { 31,  (const char *)"VoltageP2",      (const char *)"V / 100"         , 50522, PARAM_TYPE_U32,   4},
     { 32,  (const char *)"VoltageP3",      (const char *)"V / 100"         , 50524, PARAM_TYPE_U32,   4},
-    { 33,  (const char *)"CurrentP1",      (const char *)"A / 1000"        , 50520, PARAM_TYPE_U32,   4},
-    { 34,  (const char *)"CurrentP2",      (const char *)"A / 1000"        , 50522, PARAM_TYPE_U32,   4},
-    { 35,  (const char *)"CurrentP3",      (const char *)"A / 1000"        , 50524, PARAM_TYPE_U32,   4},
+    { 33,  (const char *)"CurrentP1",      (const char *)"A / 1000"        , 50528, PARAM_TYPE_U32,   4},
+    { 34,  (const char *)"CurrentP2",      (const char *)"A / 1000"        , 50530, PARAM_TYPE_U32,   4},
+    { 35,  (const char *)"CurrentP3",      (const char *)"A / 1000"        , 50532, PARAM_TYPE_U32,   4},
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
