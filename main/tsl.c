@@ -3,7 +3,7 @@
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
 #include "logging.h"
-
+#include <math.h>
 // possible addresses are: 0x29, 0x39, 0x49.
 // The address selection pin may be:
 // floating    - 0x29
@@ -115,41 +115,58 @@ void tsl_setup() {
 #define B8T 0x0000
 #define M8T 0x0000
 
-
+float afn(float r) {
+    if(r < 0.1) return 0.604;
+    if(r < 0.2) return 0.449;
+    if(r < 0.4) return 0.406;
+    if(r < 0.53)return 0.727;
+    return 0;
+}
 
 void CalculateLux(uint16_t ch0, uint16_t ch1)
 {
-    unsigned long chScale = (1 << CH_SCALE); // no scaling
-    unsigned long channel1;
-    unsigned long channel0;
+//    unsigned long chScale = (1 << CH_SCALE); // no scaling
+//    unsigned long channel1;
+//    unsigned long channel0;
 
     // scale the channel values
-    channel0 = (ch0 * chScale) >> CH_SCALE;
-    channel1 = (ch1 * chScale) >> CH_SCALE;
+//    channel0 = (ch0 * chScale) >> CH_SCALE;
+//    channel1 = (ch1 * chScale) >> CH_SCALE;
 
     // find the ratio of the channel values (Channel1/Channel0)
-    unsigned long ratio1 = 0;
-    if (channel0 != 0) ratio1 = (channel1 << (RATIO_SCALE+1)) / channel0;
-    else return;
+//    unsigned long ratio1 = 0;
+//    if (channel0 != 0) ratio1 = (channel1 << (RATIO_SCALE+1)) / channel0;
+//    else return;
 
-    unsigned long ratio = (ratio1 + 1) >> 1;
+//    unsigned long ratio = (ratio1 + 1) >> 1;
 
-    unsigned int b, m;
+//    unsigned int b, m;
 
-    if(ratio <= K1T)       {b=B1T; m=M1T;}
-    else if (ratio <= K2T) {b=B2T; m=M2T;}
-    else if (ratio <= K3T) {b=B3T; m=M3T;}
-    else if (ratio <= K4T) {b=B4T; m=M4T;}
-    else if (ratio <= K5T) {b=B5T; m=M5T;}
-    else if (ratio <= K6T) {b=B6T; m=M6T;}
-    else if (ratio <= K7T) {b=B7T; m=M7T;}
-    else if (ratio >  K8T) {b=B8T; m=M8T;}
+//    if(ratio <= K1T)       {b=B1T; m=M1T;}
+//    else if (ratio <= K2T) {b=B2T; m=M2T;}
+//    else if (ratio <= K3T) {b=B3T; m=M3T;}
+//    else if (ratio <= K4T) {b=B4T; m=M4T;}
+//    else if (ratio <= K5T) {b=B5T; m=M5T;}
+//    else if (ratio <= K6T) {b=B6T; m=M6T;}
+//    else if (ratio <= K7T) {b=B7T; m=M7T;}
+//    else if (ratio >  K8T) {b=B8T; m=M8T;}
 
-    unsigned long temp;
-    temp = ((channel0 * b) - (channel1 * m));
+    if(!ch0) return;
+    float r = ch1/ch0;
+    float a = afn(r);
+    int lux;
+    if(r < 0.54) lux = ch0 * (a - 0.062 * powf((ch1/ch0), 1.4));
+    else if(r < 0.61) lux = 0.224 * ch0 - 0.031 * ch1;
+    else if(r < 0.80) lux = 0.0128 * ch0 - 0.0153 * ch1;
+    else if(r < 1.30) lux = 0.00146 * ch0 - 0.00112 * ch1;
+    else lux = 0;
 
-    temp += (1 << (LUX_SCALE - 1));
-    unsigned long lux = temp >> LUX_SCALE;
+
+//    unsigned long temp;
+//    temp = ((channel0 * b) - (channel1 * m));
+
+//    temp += (1 << (LUX_SCALE - 1));
+//    unsigned long lux = temp >> LUX_SCALE;
 
     uint16_t vis = lux;
     static uint16_t old_vis;
@@ -157,6 +174,8 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
 
 }
+
+
 
 void tsl_query() {
     uint16_t c0;
