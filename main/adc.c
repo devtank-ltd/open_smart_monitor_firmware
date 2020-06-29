@@ -18,7 +18,7 @@ static unsigned adc_values_index = 0;
 
 #define AMP_GAIN 31.82
 #define ADC_COUNT 4095
-#define MIDPOINT 1.635
+#define MIDPOINT 1.6801
 #define EXAMPLE_I2S_NUM 0
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
