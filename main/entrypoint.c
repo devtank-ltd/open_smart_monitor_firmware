@@ -142,6 +142,7 @@ void app_main(void)
             smart_meter_query();
             water_volume_query();
             light_volume_query();
+            battery_query();
 
             for(int j = 0; j < 100; j++) {
                 status_led_toggle();
