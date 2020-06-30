@@ -18,7 +18,7 @@ void measurements_task(void *pvParameters) {
     adc_setup();
     tsl_setup();
     volume_setup();
-    //smart_meter_setup();
+    smart_meter_setup();
 
 
     for(;;) {
