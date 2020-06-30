@@ -121,6 +121,7 @@ void app_main(void)
     volume_setup();
 
     for(;;) {
+        status_led_toggle();
 
         // announce these every once in a while
         while (mqtt_announce_str("sku", "ENV-01")) {
