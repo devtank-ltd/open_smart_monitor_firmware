@@ -110,6 +110,7 @@ void app_main(void)
     notification("ENTRYPOINT REACHED");
 
     notification("CONFIGURING UARTS AND I2C");
+    status_led_toggle();
     getmac();
     lora_uart_setup();
     device_uart_setup();
