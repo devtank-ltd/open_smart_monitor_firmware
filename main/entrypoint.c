@@ -105,12 +105,13 @@ void i2c_setup() {
     }
 }
 
+#define LEDSTACKSIZE 1000
+
 void app_main(void)
 {
     notification("ENTRYPOINT REACHED");
 
     notification("CONFIGURING UARTS AND I2C");
-    status_led_toggle();
     getmac();
     lora_uart_setup();
     device_uart_setup();
@@ -121,9 +122,22 @@ void app_main(void)
     smart_meter_setup();
     volume_setup();
 
-    for(;;) {
-        status_led_toggle();
+    TaskHandle_t xLEDHandle = NULL;
+    StaticTask_t xLEDBuffer;
+    StackType_t  xLEDStack[LEDSTACKSIZE];
+    xLEDHandle = xTaskCreateStatic(
+                      status_led_task, /* Function that implements the task. */
+                      "LEDBLINK",      /* Text name for the task. */
+                      LEDSTACKSIZE,    /* Number of indexes in the xStack array. */
+                      (void*)1,        /* Parameter passed into the task. */
+                      tskIDLE_PRIORITY,/* Priority at which the task is created. */
+                      xLEDStack,       /* Array to use as the task's stack. */
+                      &xLEDBuffer);    /* Variable to hold the task's data structure. */
 
+
+
+
+    for(;;) {
         // announce these every once in a while
         while (mqtt_announce_str("sku", "ENV-01")) {
             vTaskDelay(500 / portTICK_PERIOD_MS);
@@ -147,7 +161,6 @@ void app_main(void)
             battery_query();
 
             for(int j = 0; j < 100; j++) {
-                status_led_toggle();
                 sound_query();
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
