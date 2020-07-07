@@ -7,6 +7,8 @@
 #include "config.h"
 #include "math.h"
 #include "driver/i2s.h"
+#include "stats.h"
+
 static esp_timer_handle_t periodic_timer;
 static void periodic_timer_callback(void* arg);
 
@@ -22,6 +24,30 @@ static unsigned adc_values_index = 0;
 #define EXAMPLE_I2S_NUM 0
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
+
+#define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
+
+uint16_t db[SAMPLES];
+
+void soundsample(uint16_t db_s) {
+    static int sample_no = 0;
+    db[sample_no] = db_s;
+    sample_no++;
+    sample_no %= SAMPLES;
+}
+
+void sound_announce() {
+    uint16_t max;
+    uint16_t min;
+    uint64_t avg;
+
+    stats(db, SAMPLES, &avg, &min, &max);
+
+    mqtt_announce_int("sound-avg", avg);
+    mqtt_announce_int("sound-min", min);
+    mqtt_announce_int("sound-max", max);
+}
+
 void adc_setup() {
     int i2s_num = EXAMPLE_I2S_NUM;
     i2s_config_t i2s_config = {
@@ -114,6 +140,8 @@ int db_correction(int db) {
     return db + 18;
 }
 
+
+
 void sound_query() {
     long double vrms = 0;
     size_t bytes_read;
@@ -134,11 +162,9 @@ void sound_query() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    uint16_t idb = db;
-    static uint16_t old_db = 0;
+    soundsample(db * 10);
+
 //    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
 //    printf("%fdB\n", db);
-    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 5);
-    //mqtt_announce_int("SOUNDLEVEL", idb);
 }
 
