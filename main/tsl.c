@@ -171,7 +171,6 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     uint16_t vis = lux;
     static uint16_t old_vis;
 
-    printf("ch0 = %u, ch1 = %u, r = %f, a = %f\n", ch0, ch1, r, a);
     mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
 
 }
