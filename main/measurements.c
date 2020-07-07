@@ -36,6 +36,9 @@ void measurements_task(void *pvParameters) {
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
 
+            // Also announce the averages, minima, etc.
+            hpm_announce();
+
             // These need to be announced once every ten minutes or whatever
             smart_meter_query();
             water_volume_query();
