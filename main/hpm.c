@@ -4,6 +4,7 @@
 #include "esp32/rom/uart.h"
 #include "pinmap.h"
 #include "config.h"
+#include "stats.h"
 #include "logging.h"
 #include "mqtt-sn.h"
 

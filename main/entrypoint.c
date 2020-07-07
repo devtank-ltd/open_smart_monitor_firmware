@@ -113,9 +113,6 @@ StackType_t  xMeasureStack[MEASSTACKSIZE];
 
 void app_main(void)
 {
-    notification("ENTRYPOINT REACHED");
-
-    notification("CONFIGURING UARTS AND I2C");
     i2c_setup();
     getmac();
     lora_uart_setup();
