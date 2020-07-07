@@ -20,7 +20,7 @@
 #include "measurements.h"
 
 #define LEDSTACKSIZE 1000
-#define MEASSTACKSIZE 1000
+#define MEASSTACKSIZE 10000
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -103,6 +103,14 @@ void i2c_setup() {
     }
 }
 
+TaskHandle_t xLEDHandle = NULL;
+StaticTask_t xLEDBuffer;
+StackType_t  xLEDStack[LEDSTACKSIZE];
+
+TaskHandle_t xMeasureHandle = NULL;
+StaticTask_t xMeasureBuffer;
+StackType_t  xMeasureStack[MEASSTACKSIZE];
+
 void app_main(void)
 {
     notification("ENTRYPOINT REACHED");
@@ -113,9 +121,6 @@ void app_main(void)
     lora_uart_setup();
     device_uart_setup();
 
-    TaskHandle_t xLEDHandle = NULL;
-    StaticTask_t xLEDBuffer;
-    StackType_t  xLEDStack[LEDSTACKSIZE];
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
                       "LEDBLINK",      /* Text name for the task. */
@@ -126,9 +131,6 @@ void app_main(void)
                       &xLEDBuffer);    /* Variable to hold the task's data structure. */
 
 
-    TaskHandle_t xMeasureHandle = NULL;
-    StaticTask_t xMeasureBuffer;
-    StackType_t  xMeasureStack[MEASSTACKSIZE];
     xMeasureHandle = xTaskCreateStatic(
                       measurements_task,
                       "MEASUREMENTS",
