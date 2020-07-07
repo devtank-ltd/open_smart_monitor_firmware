@@ -26,6 +26,41 @@
 #define TEMP_DELTA 2
 #define RH_DELTA   5
 
+#define SAMPLES 1000
+
+uint16_t temperature[SAMPLES] = {0};
+uint16_t humidity[SAMPLES] = {0};
+
+void hdc_sample(uint16_t temp, uint16_t hum) {
+    static int sample_no = 0;
+    temperature[sample_no] = temp;
+    humidity[sample_no] = hum;
+    sample_no++;
+    sample_no %= SAMPLES;
+}
+
+void hdc_announce() {
+    uint16_t temp_max = 0;
+    uint16_t temp_min = 0;
+    uint64_t temp_avg = 0;
+    
+    uint16_t hum_max = 0;
+    uint16_t hum_min = 0;
+    uint64_t hum_avg = 0;
+
+    stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
+    stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
+
+    mqtt_announce_int("temperature-avg", temp_avg);
+    mqtt_announce_int("temperature-min", temp_min);
+    mqtt_announce_int("temperature-max", temp_max);
+
+    mqtt_announce_int("humidity-avg", hum_avg);
+    mqtt_announce_int("humidity-min", hum_min);
+    mqtt_announce_int("humidity-max", hum_max);
+
+
+}
 
 static uint8_t read_reg(uint8_t reg) {
     uint8_t ret = 0;

@@ -27,25 +27,16 @@ void sample(uint16_t pm25_s, uint16_t pm10_s) {
 }
 
 void hpm_announce() {
-    uint16_t pm25min = pm25[0];
-    uint16_t pm25max = pm25[0];
-    long long int pm25avg = 0;
+    uint16_t pm25min = 0;
+    uint16_t pm25max = 0;
+    uint64_t pm25avg = 0;
 
-    uint16_t pm10min = pm10[0];
-    uint16_t pm10max = pm10[0];
-    long long int pm10avg = 0;
+    uint16_t pm10min = 0;
+    uint16_t pm10max = 0;
+    uint64_t pm10avg = 0;
 
-    for(int i = 0; i < SAMPLES; i++) {
-        if(pm25[i] < pm25min) pm25min = pm25[i];
-        if(pm10[i] < pm10min) pm10min = pm10[i];
-        if(pm25[i] > pm25max) pm25max = pm25[i];
-        if(pm10[i] > pm10max) pm10max = pm10[i];
-        pm25avg += pm25[i];
-        pm10avg += pm10[i];
-    }
-
-    pm25avg /= SAMPLES;
-    pm10avg /= SAMPLES;
+    stats(pm25, SAMPLES, &pm25avg, &pm25min, &pm25max);
+    stats(pm10, SAMPLES, &pm10avg, &pm10min, &pm10max);
 
     mqtt_announce_int("pm25avg", pm25avg);
     mqtt_announce_int("pm25min", pm25min);
