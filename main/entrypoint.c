@@ -10,12 +10,6 @@
 
 #include "pinmap.h"
 
-#include "hdc.h"
-#include "adc.h"
-#include "hpm.h"
-#include "tsl.h"
-#include "volume.h"
-#include "socomec.h"
 #include "mqtt-sn.h"
 #include "mac.h"
 #include "config.h"
@@ -23,6 +17,10 @@
 #include "logging.h"
 #include "commit.h"
 #include "math.h"
+#include "measurements.h"
+
+#define LEDSTACKSIZE 1000
+#define MEASSTACKSIZE 1000
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -105,22 +103,15 @@ void i2c_setup() {
     }
 }
 
-#define LEDSTACKSIZE 1000
-
 void app_main(void)
 {
     notification("ENTRYPOINT REACHED");
 
     notification("CONFIGURING UARTS AND I2C");
+    i2c_setup();
     getmac();
     lora_uart_setup();
     device_uart_setup();
-    adc_setup();
-    i2c_setup();
-    tsl_setup();
-    hpm_setup();
-    smart_meter_setup();
-    volume_setup();
 
     TaskHandle_t xLEDHandle = NULL;
     StaticTask_t xLEDBuffer;
