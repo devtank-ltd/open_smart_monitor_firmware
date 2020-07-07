@@ -10,12 +10,6 @@
 
 #include "pinmap.h"
 
-#include "hdc.h"
-#include "adc.h"
-#include "hpm.h"
-#include "tsl.h"
-#include "volume.h"
-#include "socomec.h"
 #include "mqtt-sn.h"
 #include "mac.h"
 #include "config.h"
@@ -23,6 +17,10 @@
 #include "logging.h"
 #include "commit.h"
 #include "math.h"
+#include "measurements.h"
+
+#define LEDSTACKSIZE 1000
+#define MEASSTACKSIZE 10000
 
 unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
@@ -105,26 +103,21 @@ void i2c_setup() {
     }
 }
 
-#define LEDSTACKSIZE 1000
+TaskHandle_t xLEDHandle = NULL;
+StaticTask_t xLEDBuffer;
+StackType_t  xLEDStack[LEDSTACKSIZE];
+
+TaskHandle_t xMeasureHandle = NULL;
+StaticTask_t xMeasureBuffer;
+StackType_t  xMeasureStack[MEASSTACKSIZE];
 
 void app_main(void)
 {
-    notification("ENTRYPOINT REACHED");
-
-    notification("CONFIGURING UARTS AND I2C");
+    i2c_setup();
     getmac();
     lora_uart_setup();
     device_uart_setup();
-    adc_setup();
-    i2c_setup();
-    tsl_setup();
-    hpm_setup();
-    smart_meter_setup();
-    volume_setup();
 
-    TaskHandle_t xLEDHandle = NULL;
-    StaticTask_t xLEDBuffer;
-    StackType_t  xLEDStack[LEDSTACKSIZE];
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
                       "LEDBLINK",      /* Text name for the task. */
@@ -135,40 +128,15 @@ void app_main(void)
                       &xLEDBuffer);    /* Variable to hold the task's data structure. */
 
 
+    xMeasureHandle = xTaskCreateStatic(
+                      measurements_task,
+                      "MEASUREMENTS",
+                      MEASSTACKSIZE,
+                      (void*)1,
+                      tskIDLE_PRIORITY + 1,
+                      xMeasureStack,
+                      &xMeasureBuffer);
 
-
-    for(;;) {
-        // announce these every once in a while
-        while (mqtt_announce_str("sku", "ENV-01")) {
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-        }
-
-        while (mqtt_announce_str("fw", GIT_COMMIT)) {
-            vTaskDelay(500 / portTICK_PERIOD_MS);
-        }
-        mqtt_announce_dropped();
-
-        for(int i = 0; i < 100; i++) {
-            // announce these more frequently
-
-            hpm_query(); /* (Honeywell) particle meter */
-            hdc_query(); /* humidity sensor with temperature sensor */
-            tsl_query(); /* Lux/light sensor */
-
-            smart_meter_query();
-            water_volume_query();
-            light_volume_query();
-            battery_query();
-
-            for(int j = 0; j < 100; j++) {
-                sound_query();
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
-            }
-   
-        }
-//        configure();
-    }
-
-    fflush(stdout);
+    for(;;) vTaskDelay(INT_MAX);
     esp_restart();
 }

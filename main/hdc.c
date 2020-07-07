@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "driver/i2c.h"
 #include "mqtt-sn.h"
+#include "stats.h"
 #include "logging.h"
 
 #define HDC2080_ADDR  0x41
@@ -26,6 +27,41 @@
 #define TEMP_DELTA 2
 #define RH_DELTA   5
 
+#define SAMPLES 1000
+
+uint16_t temperature[SAMPLES] = {0};
+uint16_t humidity[SAMPLES] = {0};
+
+void hdcsample(uint16_t temp, uint16_t hum) {
+    static int sample_no = 0;
+    temperature[sample_no] = temp;
+    humidity[sample_no] = hum;
+    sample_no++;
+    sample_no %= SAMPLES;
+}
+
+void hdc_announce() {
+    uint16_t temp_max = 0;
+    uint16_t temp_min = 0;
+    uint64_t temp_avg = 0;
+    
+    uint16_t hum_max = 0;
+    uint16_t hum_min = 0;
+    uint64_t hum_avg = 0;
+
+    stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
+    stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
+
+    mqtt_announce_int("temperature-avg", temp_avg);
+    mqtt_announce_int("temperature-min", temp_min);
+    mqtt_announce_int("temperature-max", temp_max);
+
+    mqtt_announce_int("humidity-avg", hum_avg);
+    mqtt_announce_int("humidity-min", hum_min);
+    mqtt_announce_int("humidity-max", hum_max);
+
+
+}
 
 static uint8_t read_reg(uint8_t reg) {
     uint8_t ret = 0;
@@ -84,30 +120,17 @@ void hdc_query() {
 
     float temp_celsius, relative_humidity;
 
-    // These initial values are chosen for being well outside of a possible range.
-    // Therefore, the first time this function runs, the delta check down there will
-    // see that the new value must be published.
-    static float old_temp_celsius = -274 - (TEMP_DELTA * 2);
-    static float old_relative_humidity = 0 - (RH_DELTA * 2);
 
     hdc_init();
     hdc_wait();
 
     uint16_t tempreading = q16(TMP_L, TMP_H);
     temp_celsius = ((float) tempreading/65536.0) * 165 - 40; // Equation 1 in the HDC2080 datasheet
-    INFO_PRINTF("Temp %G Celsius", temp_celsius);
 
     uint16_t humreading = q16(HUM_L, HUM_H);
     relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
-    INFO_PRINTF("Relative Humidity %G", relative_humidity);
 
-    if(ABS(temp_celsius - old_temp_celsius) > TEMP_DELTA) {
-        old_temp_celsius = temp_celsius;
-        mqtt_announce_int("temperature", temp_celsius);
-    }
+    if(temp_celsius > -39)
+        hdcsample(temp_celsius * 10, relative_humidity * 10);
 
-    if(ABS(relative_humidity - old_relative_humidity) > RH_DELTA) {
-        old_relative_humidity = relative_humidity;
-        mqtt_announce_int("humidity", relative_humidity);
-    }
 }
