@@ -113,11 +113,6 @@ static int adc_avg_get(unsigned index) {
     return (r * 10000) / ADC_AVG_SLOTS / 4095;
 }
 
-void battery_query() {
-    int v = adc_avg_get(1);
-    INFO_PRINTF("BATMON : %d", v);
-    mqtt_announce_int("BATMON", v);
-}
 
 double voltagecalc(int adc_count){
       if(adc_count < 1 || adc_count > 4095) return 0;
@@ -140,6 +135,11 @@ int db_correction(int db) {
     return db + 18;
 }
 
+void battery_query() {
+    int v = voltagecalc(adc_avg_get(1)) * 1000;
+    mqtt_announce_int("battery-millivolts", v);
+    mqtt_announce_int("battery-percent", (v - 2500) / 17);
+}
 
 
 void sound_query() {
