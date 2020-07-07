@@ -27,7 +27,8 @@ void measurements_task(void *pvParameters) {
         mqtt_announce_str("fw", GIT_COMMIT);
 
         for(int i = 0; i < 2; i++) {
-            for(int j = 0; j < 6000; j++) {
+            for(int j = 0; j < 600; j++) {
+                printf("sampling.\n");
                 // These need to be averaged over ten minutes.
                 hpm_query();   // smog sensor
                 hdc_query();   // humidity and temperature
@@ -35,6 +36,7 @@ void measurements_task(void *pvParameters) {
                 sound_query(); // sound
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
+            printf("announcing.\n");
 
             // Also announce the averages, minima, etc.
             hpm_announce();
