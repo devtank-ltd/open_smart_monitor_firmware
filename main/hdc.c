@@ -130,6 +130,7 @@ void hdc_query() {
     uint16_t humreading = q16(HUM_L, HUM_H);
     relative_humidity = ((float) humreading/65536.0) * 100; // Equation 2 in the HDC2080 datasheet
 
-    hdcsample(temp_celsius * 10, relative_humidity * 10);
+    if(temp_celsius > -39)
+        hdcsample(temp_celsius * 10, relative_humidity * 10);
 
 }
