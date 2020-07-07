@@ -38,6 +38,8 @@ void measurements_task(void *pvParameters) {
 
             // Also announce the averages, minima, etc.
             hpm_announce();
+            hdc_announce();
+            sound_announce();
 
             // These need to be announced once every ten minutes or whatever
             smart_meter_query();
