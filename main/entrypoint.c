@@ -140,6 +140,6 @@ void app_main(void)
                       xMeasureStack,
                       &xMeasureBuffer);
 
-    fflush(stdout);
+    for(;;) vTaskDelay(INT_MAX);
     esp_restart();
 }
