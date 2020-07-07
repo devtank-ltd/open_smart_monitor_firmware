@@ -1,6 +1,6 @@
 #include "stats.h"
 
-void stats(uint16_t * arr, unsigned int len, uint16_t * avg, uint16_t * min, uint16_t * max) {
+void stats(uint16_t * arr, unsigned int len, uint64_t * avg, uint16_t * min, uint16_t * max) {
     *min = arr[0];
     *max = arr[0];
     *avg = 0;
