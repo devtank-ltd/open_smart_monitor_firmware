@@ -136,9 +136,12 @@ int db_correction(int db) {
 }
 
 void battery_query() {
-    int v = voltagecalc(adc_avg_get(1)) * 1000;
+    int v = voltagecalc(adc_avg_get(1)) * 1000 * 3.197;
     mqtt_announce_int("battery-millivolts", v);
-    mqtt_announce_int("battery-percent", (v - 2500) / 17);
+    int pc = (v - 2500) / 17;
+    if(pc < 0) pc = 0;
+    if(pc > 100) pc = 100;
+    mqtt_announce_int("battery-percent", pc);
 }
 
 
