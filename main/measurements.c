@@ -32,7 +32,6 @@ void measurements_task(void *pvParameters) {
                 // These need to be averaged over ten minutes.
                 hpm_query();   // smog sensor
                 hdc_query();   // humidity and temperature
-                tsl_query();   // light
                 sound_query(); // sound
                 vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
@@ -44,6 +43,7 @@ void measurements_task(void *pvParameters) {
             sound_announce();
 
             // These need to be announced once every ten minutes or whatever
+            tsl_query();   // light
             smart_meter_query();
             water_volume_query();
             light_volume_query();
