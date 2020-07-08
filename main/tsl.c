@@ -4,6 +4,7 @@
 #include "mqtt-sn.h"
 #include "logging.h"
 #include <math.h>
+#include "stats.h"
 // possible addresses are: 0x29, 0x39, 0x49.
 // The address selection pin may be:
 // floating    - 0x29
@@ -32,6 +33,25 @@
 
 #define ABS(x)  (x<0)?-x:x
 #define LUM_DELTA 4
+
+#define SAMPLES 1000
+
+uint16_t lux[SAMPLES] = {0};
+
+void tslsample(uint16_t l) {
+    static int sample_no = 0;
+    lux[sample_no] = l;
+    sample_no++;
+    sample_no %= SAMPLES;
+}
+
+void tsl_announce(){
+    uint16_t min;
+    uint16_t max;
+    uint64_t avg;
+    stats(lux, SAMPLES, &avg, &min, &max);
+    mqtt_announce_int("VisibleLight", avg);
+}
 
 static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
@@ -169,10 +189,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
 //    unsigned long lux = temp >> LUX_SCALE;
 
     uint16_t vis = lux;
-    static uint16_t old_vis;
-
-    mqtt_delta_announce_int("VisibleLight", &vis, &old_vis, LUM_DELTA);
-
+    tslsample(vis);
 }
 
 
