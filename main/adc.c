@@ -139,9 +139,9 @@ void battery_query() {
     int adc = adc_avg_get(1);
     printf("adc = %u\n", adc);
     printf("polynomial = %f\n", voltagecalc(adc));
-    float v = adc_avg_get(1) / 4095.0 * 3.2;
-    //int v = voltagecalc(adc_avg_get(1)) * 1000 * 0.315; // * 3.197;
-    mqtt_announce_int("battery-millivolts", v * 3197);
+    //float v = adc_avg_get(1) / 4095.0 * 3.2;
+    int v = voltagecalc(adc_avg_get(1)) * 3197;
+    mqtt_announce_int("battery-millivolts", v);
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
