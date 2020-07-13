@@ -105,12 +105,12 @@ static void periodic_timer_callback(void* arg) {
     adc_values_index %= ADC_AVG_SLOTS;
 }
 
-static int adc_avg_get(unsigned index) {
+static double adc_avg_get(unsigned index) {
     int r = 0;
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
         r += bat_values[n];
     }
-    return (r * 10000) / ADC_AVG_SLOTS / 4095;
+    return r / (double)ADC_AVG_SLOTS;
 }
 
 
@@ -136,8 +136,12 @@ int db_correction(int db) {
 }
 
 void battery_query() {
-    int v = voltagecalc(adc_avg_get(1)) * 1000 * 3.197;
-    mqtt_announce_int("battery-millivolts", v);
+    int adc = adc_avg_get(1);
+    printf("adc = %u\n", adc);
+    printf("polynomial = %f\n", voltagecalc(adc));
+    float v = adc_avg_get(1) / 4095.0 * 3.2;
+    //int v = voltagecalc(adc_avg_get(1)) * 1000 * 0.315; // * 3.197;
+    mqtt_announce_int("battery-millivolts", v * 3197);
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;

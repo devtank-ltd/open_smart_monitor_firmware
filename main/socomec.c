@@ -407,8 +407,8 @@ unknown_device:
 
 void smart_meter_query()
 {
-    if(!sococonnected)
-       return;
+//    if(!sococonnected)
+//       return;
     smart_switch_switch();
 
     uint32_t hourmeter     = 0;
