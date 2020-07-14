@@ -28,7 +28,7 @@
 #define RH_DELTA   5
 
 #define SAMPLES 1000
-bool samples_ready = false;
+bool hdc_samples_ready = false;
 
 int32_t temperature[SAMPLES] = {0};
 int32_t humidity[SAMPLES] = {0};
@@ -46,7 +46,7 @@ void hdcsample(uint16_t temp, uint16_t hum) {
     temperature[sample_no] = temp;
     humidity[sample_no] = hum;
     sample_no++;
-    if(sample_no >= SAMPLES) samples_ready = true;
+    if(sample_no >= SAMPLES) hdc_samples_ready = true;
     sample_no %= SAMPLES;
 }
 
@@ -59,7 +59,7 @@ void hdc_announce() {
     int32_t hum_min = 0;
     int64_t hum_avg = 0;
 
-    if(!samples_ready) return;
+    if(!hdc_samples_ready) return;
 
     stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
     stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
@@ -147,12 +147,12 @@ void hdc_query() {
     unit_entry_t hum;
 
     if(q16(TMP_L, TMP_H, &temp) != ESP_OK) return;
-    int32_t temp_celsius = ((temp.d * 1000000 / (1 << 16)) * 165 / 100000) - 400;
+    int32_t temp_celsius = (((int64_t)temp.d * 1000000 / (1 << 16)) * 165 / 100000) - 400;
 
     if(q16(HUM_L, HUM_H, &hum) != ESP_OK) return;
-    int32_t relative_humidity = ((hum.d * 1000000 / (1 << 16)) * 100 / 100000);
+    int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
 
-    if(temp_celsius > -400)
+    if(temp_celsius > -300)
         hdcsample(temp_celsius, relative_humidity * 10);
 
 }
