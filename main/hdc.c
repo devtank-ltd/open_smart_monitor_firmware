@@ -28,6 +28,7 @@
 #define RH_DELTA   5
 
 #define SAMPLES 1000
+bool samples_ready = false;
 
 int32_t temperature[SAMPLES] = {0};
 int32_t humidity[SAMPLES] = {0};
@@ -37,6 +38,7 @@ void hdcsample(uint16_t temp, uint16_t hum) {
     temperature[sample_no] = temp;
     humidity[sample_no] = hum;
     sample_no++;
+    if(sample_no >= SAMPLES) samples_ready = true;
     sample_no %= SAMPLES;
 }
 
@@ -48,6 +50,8 @@ void hdc_announce() {
     int32_t hum_max = 0;
     int32_t hum_min = 0;
     int64_t hum_avg = 0;
+
+    if(!samples_ready) return;
 
     stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
     stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
