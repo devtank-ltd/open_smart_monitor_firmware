@@ -27,19 +27,25 @@ static unsigned adc_values_index = 0;
 
 #define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
 
-uint16_t db[SAMPLES];
+int32_t db[SAMPLES];
+bool samples_ready = false;
 
 void soundsample(uint16_t db_s) {
     static int sample_no = 0;
     db[sample_no] = db_s;
     sample_no++;
+    if(sample_no >= SAMPLES) {
+        samples_ready = true;
+    }
     sample_no %= SAMPLES;
 }
 
 void sound_announce() {
-    uint16_t max;
-    uint16_t min;
-    uint64_t avg;
+    int32_t max;
+    int32_t min;
+    int64_t avg;
+
+    if(!samples_ready) return;
 
     stats(db, SAMPLES, &avg, &min, &max);
 
@@ -128,7 +134,7 @@ double voltagecalc(int adc_count){
 }
 
 int db_correction(int db) {
-    if(db < 60) return 0;
+    if(db < 60) return 60;
     if(db < 66) return db + 5;
     if(db < 71) return db + 13;
     if(db < 99) return db + 15;
