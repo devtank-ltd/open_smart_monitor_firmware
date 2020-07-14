@@ -28,11 +28,15 @@ static unsigned adc_values_index = 0;
 #define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
 
 int32_t db[SAMPLES];
+bool samples_ready = false;
 
 void soundsample(uint16_t db_s) {
     static int sample_no = 0;
     db[sample_no] = db_s;
     sample_no++;
+    if(sample_no >= SAMPLES) {
+        samples_ready = true;
+    }
     sample_no %= SAMPLES;
 }
 
