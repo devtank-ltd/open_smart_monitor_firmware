@@ -45,6 +45,8 @@ void sound_announce() {
     int32_t min;
     int64_t avg;
 
+    if(!samples_ready) return;
+
     stats(db, SAMPLES, &avg, &min, &max);
 
     mqtt_announce_int("sound-avg", avg);
@@ -132,7 +134,7 @@ double voltagecalc(int adc_count){
 }
 
 int db_correction(int db) {
-    if(db < 60) return 0;
+    if(db < 60) return 60;
     if(db < 66) return db + 5;
     if(db < 71) return db + 13;
     if(db < 99) return db + 15;
