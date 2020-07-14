@@ -29,8 +29,8 @@
 
 #define SAMPLES 1000
 
-uint16_t temperature[SAMPLES] = {0};
-uint16_t humidity[SAMPLES] = {0};
+int32_t temperature[SAMPLES] = {0};
+int32_t humidity[SAMPLES] = {0};
 
 void hdcsample(uint16_t temp, uint16_t hum) {
     static int sample_no = 0;
@@ -41,13 +41,13 @@ void hdcsample(uint16_t temp, uint16_t hum) {
 }
 
 void hdc_announce() {
-    uint16_t temp_max = 0;
-    uint16_t temp_min = 0;
-    uint64_t temp_avg = 0;
+    int32_t temp_max = 0;
+    int32_t temp_min = 0;
+    int64_t temp_avg = 0;
     
-    uint16_t hum_max = 0;
-    uint16_t hum_min = 0;
-    uint64_t hum_avg = 0;
+    int32_t hum_max = 0;
+    int32_t hum_min = 0;
+    int64_t hum_avg = 0;
 
     stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
     stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);

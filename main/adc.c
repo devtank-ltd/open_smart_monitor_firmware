@@ -27,7 +27,7 @@ static unsigned adc_values_index = 0;
 
 #define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
 
-uint16_t db[SAMPLES];
+int32_t db[SAMPLES];
 
 void soundsample(uint16_t db_s) {
     static int sample_no = 0;
@@ -37,9 +37,9 @@ void soundsample(uint16_t db_s) {
 }
 
 void sound_announce() {
-    uint16_t max;
-    uint16_t min;
-    uint64_t avg;
+    int32_t max;
+    int32_t min;
+    int64_t avg;
 
     stats(db, SAMPLES, &avg, &min, &max);
 

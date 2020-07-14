@@ -36,7 +36,7 @@
 
 #define SAMPLES 1000
 
-uint16_t lux[SAMPLES] = {0};
+int32_t lux[SAMPLES] = {0};
 
 void tslsample(uint16_t l) {
     static int sample_no = 0;
@@ -46,9 +46,9 @@ void tslsample(uint16_t l) {
 }
 
 void tsl_announce(){
-    uint16_t min;
-    uint16_t max;
-    uint64_t avg;
+    int32_t min;
+    int32_t max;
+    int64_t avg;
     stats(lux, SAMPLES, &avg, &min, &max);
     mqtt_announce_int("VisibleLight", avg);
 }
@@ -188,7 +188,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
 //    temp += (1 << (LUX_SCALE - 1));
 //    unsigned long lux = temp >> LUX_SCALE;
 
-    uint16_t vis = lux;
+    int32_t vis = lux;
     tslsample(vis);
 }
 

@@ -16,10 +16,10 @@ static int enable = 0;
 
 #define SAMPLES 1000
 
-uint16_t pm25[SAMPLES] = {0};
-uint16_t pm10[SAMPLES] = {0};
+int32_t pm25[SAMPLES] = {0};
+int32_t pm10[SAMPLES] = {0};
 
-void sample(uint16_t pm25_s, uint16_t pm10_s) {
+void sample(int32_t pm25_s, int32_t pm10_s) {
     static int sample_no = 0;
     pm10[sample_no] = pm10_s;
     pm25[sample_no] = pm25_s;
@@ -28,13 +28,13 @@ void sample(uint16_t pm25_s, uint16_t pm10_s) {
 }
 
 void hpm_announce() {
-    uint16_t pm25min = 0;
-    uint16_t pm25max = 0;
-    uint64_t pm25avg = 0;
+    int32_t pm25min = 0;
+    int32_t pm25max = 0;
+    int64_t pm25avg = 0;
 
-    uint16_t pm10min = 0;
-    uint16_t pm10max = 0;
-    uint64_t pm10avg = 0;
+    int32_t pm10min = 0;
+    int32_t pm10max = 0;
+    int64_t pm10avg = 0;
 
     stats(pm25, SAMPLES, &pm25avg, &pm25min, &pm25max);
     stats(pm10, SAMPLES, &pm10avg, &pm10min, &pm10max);

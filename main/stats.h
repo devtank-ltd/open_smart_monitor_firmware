@@ -1,2 +1,2 @@
 #include "stdint.h"
-void stats(uint16_t * arr, unsigned int len, uint64_t * avg, uint16_t * min, uint16_t * max);
+void stats(int32_t * arr, unsigned int len, int64_t * avg, int32_t * min, int32_t * max);
