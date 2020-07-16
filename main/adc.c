@@ -88,15 +88,6 @@ void adc_setup() {
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
 }
 
-static uint16_t adc1_safe_get(adc1_channel_t channel) {
-    int r = adc1_get_raw(channel);
-    if(r < 0) {
-        ERROR_PRINTF("An error occurred when querying the ADC.");
-        return 0;
-    }
-    return (uint16_t)r;
-}
-
 static uint16_t adc2_safe_get(adc2_channel_t channel) {
     int r = 0;
     esp_err_t err = adc2_get_raw(channel, ADC_WIDTH_BIT_12, &r);
