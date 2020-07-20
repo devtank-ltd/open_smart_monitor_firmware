@@ -7,6 +7,8 @@
 #include "config.h"
 #include "math.h"
 #include "driver/i2s.h"
+#include "stats.h"
+
 static esp_timer_handle_t periodic_timer;
 static void periodic_timer_callback(void* arg);
 
@@ -18,10 +20,47 @@ static unsigned adc_values_index = 0;
 
 #define AMP_GAIN 31.82
 #define ADC_COUNT 4095
-#define MIDPOINT 1.6801
+
+
+
+#define MIDPOINT 1.6563
+
 #define EXAMPLE_I2S_NUM 0
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
+
+#define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
+
+int32_t db[SAMPLES];
+bool samples_ready = false;
+
+void soundsample(uint16_t db_s) {
+    static int sample_no = 0;
+    db[sample_no] = db_s;
+    sample_no++;
+    if(sample_no >= SAMPLES) {
+        samples_ready = true;
+    }
+    sample_no %= SAMPLES;
+}
+
+void sound_announce() {
+    int32_t max;
+    int32_t min;
+    int64_t avg;
+
+    if(!samples_ready) {
+        printf("Not enough samples to know how loud it is.");
+        return;
+    }
+
+    stats(db, SAMPLES, &avg, &min, &max);
+
+    mqtt_announce_int("sound-avg", avg);
+    mqtt_announce_int("sound-min", min);
+    mqtt_announce_int("sound-max", max);
+}
+
 void adc_setup() {
     int i2s_num = EXAMPLE_I2S_NUM;
     i2s_config_t i2s_config = {
@@ -56,15 +95,6 @@ void adc_setup() {
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
 }
 
-static uint16_t adc1_safe_get(adc1_channel_t channel) {
-    int r = adc1_get_raw(channel);
-    if(r < 0) {
-        ERROR_PRINTF("An error occurred when querying the ADC.");
-        return 0;
-    }
-    return (uint16_t)r;
-}
-
 static uint16_t adc2_safe_get(adc2_channel_t channel) {
     int r = 0;
     esp_err_t err = adc2_get_raw(channel, ADC_WIDTH_BIT_12, &r);
@@ -79,19 +109,14 @@ static void periodic_timer_callback(void* arg) {
     adc_values_index %= ADC_AVG_SLOTS;
 }
 
-static int adc_avg_get(unsigned index) {
+static double adc_avg_get(unsigned index) {
     int r = 0;
     for (unsigned n = 0; n < ADC_AVG_SLOTS; n++) {
         r += bat_values[n];
     }
-    return (r * 10000) / ADC_AVG_SLOTS / 4095;
+    return r / (double)ADC_AVG_SLOTS;
 }
 
-void battery_query() {
-    int v = adc_avg_get(1);
-    INFO_PRINTF("BATMON : %d", v);
-    mqtt_announce_int("BATMON", v);
-}
 
 double voltagecalc(int adc_count){
       if(adc_count < 1 || adc_count > 4095) return 0;
@@ -107,11 +132,26 @@ double voltagecalc(int adc_count){
 }
 
 int db_correction(int db) {
-    if(db < 64) return 0;
+    if(db < 60) return 60;
+    if(db < 66) return db + 5;
     if(db < 71) return db + 13;
     if(db < 99) return db + 15;
     return db + 18;
 }
+
+void battery_query() {
+    int adc = adc_avg_get(1);
+    printf("adc = %u\n", adc);
+    printf("polynomial = %f\n", voltagecalc(adc));
+    //float v = adc_avg_get(1) / 4095.0 * 3.2;
+    int v = voltagecalc(adc_avg_get(1)) * 3197;
+    mqtt_announce_int("battery-millivolts", v);
+    int pc = (v - 2500) / 17;
+    if(pc < 0) pc = 0;
+    if(pc > 100) pc = 100;
+    mqtt_announce_int("battery-percent", pc);
+}
+
 
 void sound_query() {
     long double vrms = 0;
@@ -133,10 +173,9 @@ void sound_query() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    uint16_t idb = db;
-    static uint16_t old_db = 0;
+    soundsample(db * 10);
+
 //    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
 //    printf("%fdB\n", db);
-    mqtt_delta_announce_int("SOUNDLEVEL", &idb, &old_db, 5);
 }
 

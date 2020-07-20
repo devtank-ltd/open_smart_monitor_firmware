@@ -3,17 +3,50 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "pinmap.h"
-#include "mqtt-sn.h"
 #include "config.h"
+#include "stats.h"
 #include "logging.h"
+#include "mqtt-sn.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
 #define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
 static int enable = 0;
 
 #define ABS(x)  (x<0)?-x:x
-#define PM10_DELTA 10 
-#define PM25_DELTA 2
+
+#define SAMPLES 1000
+
+int32_t pm25[SAMPLES] = {0};
+int32_t pm10[SAMPLES] = {0};
+
+void sample(int32_t pm25_s, int32_t pm10_s) {
+    static int sample_no = 0;
+    pm10[sample_no] = pm10_s;
+    pm25[sample_no] = pm25_s;
+    sample_no++;
+    sample_no %= SAMPLES;
+}
+
+void hpm_announce() {
+    int32_t pm25min = 0;
+    int32_t pm25max = 0;
+    int64_t pm25avg = 0;
+
+    int32_t pm10min = 0;
+    int32_t pm10max = 0;
+    int64_t pm10avg = 0;
+
+    stats(pm25, SAMPLES, &pm25avg, &pm25min, &pm25max);
+    stats(pm10, SAMPLES, &pm10avg, &pm10min, &pm10max);
+
+    mqtt_announce_int("pm25avg", pm25avg);
+    mqtt_announce_int("pm25min", pm25min);
+    mqtt_announce_int("pm25max", pm25max);
+    mqtt_announce_int("pm10avg", pm10avg);
+    mqtt_announce_int("pm10min", pm10min);
+    mqtt_announce_int("pm10max", pm10max);
+
+}
 
 void hpm_setup() {
     DEBUG_PRINTF("Init HPM");
@@ -42,10 +75,6 @@ typedef union {
 
 static int process_part_measure_response(uint8_t *data) {
 
-    // These initial values are chosen for being unrealistic.
-    static uint16_t oldpm25 = 65535;
-    static uint16_t oldpm10 = 65535;
-
 //    DEBUG_PRINTF("HPM short particle measure msg");
     if (data[1] != 5 || data[2] != 0x04) {
         ERROR_PRINTF("Malformed HPM module particle measure result.");
@@ -69,9 +98,7 @@ static int process_part_measure_response(uint8_t *data) {
     unit_entry_t pm25 = {.h = data[3], .l = data[4]};
     unit_entry_t pm10 = {.h = data[5], .l = data[6]};
 
-//    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-    mqtt_delta_announce_int("PM10", &pm10.d, &oldpm10, PM10_DELTA);
-    mqtt_delta_announce_int("PM2.5", &pm25.d, &oldpm25, PM25_DELTA);
+    sample(pm25.d, pm10.d);
     return 8;
 }
 
@@ -100,9 +127,7 @@ static int process_part_measure_long_response(uint8_t *data) {
     unit_entry_t pm10 = {.h = data[8], .l = data[9]};
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-
-    mqtt_announce_int("PM10",  pm10.d);
-    mqtt_announce_int("PM2.5", pm25.d);
+    sample(pm25.d, pm10.d);
     return 32;
 }
 
@@ -169,6 +194,7 @@ int hpm_query() {
     }
 
     if(!length) {
+        return 0;
         ERROR_PRINTF("No HPM response - is it even connected?");
         goto unknown_response;
     }

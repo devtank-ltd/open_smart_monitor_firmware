@@ -74,7 +74,7 @@ const dev_parameter_descriptor_t countis_e53[] = { \
  // { Cid, Param Name,                     Units,                          , Start, Data Type,      DataSize,}
     { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50512, PARAM_TYPE_U32,   4},
     { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1"        , 50536, PARAM_TYPE_U32,   4},
-    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50592, PARAM_TYPE_U32,   4},
+    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50592, PARAM_TYPE_FLOAT, 4},
     { 3,   (const char *)"Network type",   (const char *)"Network type"    , 40448, PARAM_TYPE_U8,    1},
     { 4,   (const char *)"Ident",          (const char *)"Should read SOCO", 50000, PARAM_TYPE_ASCII, 8},
     { 5,   (const char *)"Vendor name",    (const char *)""                , 50042, PARAM_TYPE_ASCII, 8},
@@ -407,8 +407,8 @@ unknown_device:
 
 void smart_meter_query()
 {
-    if(!sococonnected)
-       return;
+//    if(!sococonnected)
+//       return;
     smart_switch_switch();
 
     uint32_t hourmeter     = 0;
