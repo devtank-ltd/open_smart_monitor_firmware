@@ -34,7 +34,7 @@ void measurements_task(void *pvParameters) {
                 hdc_query();   // humidity and temperature
                 sound_query(); // sound
                 tsl_query();   // light
-                vTaskDelay(1000 / portTICK_PERIOD_MS);
+                //vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
             printf("announcing.\n");
 
