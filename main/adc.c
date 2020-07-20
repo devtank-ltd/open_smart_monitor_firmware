@@ -45,7 +45,10 @@ void sound_announce() {
     int32_t min;
     int64_t avg;
 
-    if(!samples_ready) return;
+    if(!samples_ready) {
+        printf("Not enough samples to know how loud it is.");
+        return;
+    }
 
     stats(db, SAMPLES, &avg, &min, &max);
 
