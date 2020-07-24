@@ -56,12 +56,16 @@ void clear_buffer() {
 
 int await_ack() {
     uint8_t ackbuf[ACKBUFLEN];
-    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 2000 / portTICK_PERIOD_MS);
+    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 20000 / portTICK_PERIOD_MS);
     if(received < 0) {
-        printf("Error getting ACK\n");
+        ERROR_PRINTF("Error getting ACK\n");
         return 0;
     }
-    printf("Received %u bytes in which to search for ACK.\n", received);
+    if(received < 25) {
+        ERROR_PRINTF("Not enough bytes for ACK");
+        return 0;
+    }
+    INFO_PRINTF("Received %u bytes in which to search for ACK.\n", received);
 
     // We've just received some number of bytes, which should contain an ACK message
     char ackmsg[ACKBUFLEN];
@@ -97,13 +101,14 @@ int await_ack() {
 
     for(int i = 0; i < received - 25; i++) {
         if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) {
-            printf("Found ACK %u bytes in\n", i);
+            INFO_PRINTF("Found ACK %u bytes in\n", i);
             return 1; // found it
         }
     }
-    printf("Here's the ackmsg for comparison");
+    ERR_PRINTF("No ACK received\n");
+    INFO_PRINTF("Here's the ackmsg for comparison");
     for(int i = 0; i < received; i++)
-        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+        INFO_PRINTF("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
 
     return 0; // not found
 }
