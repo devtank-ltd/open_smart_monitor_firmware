@@ -7,10 +7,10 @@
 #include "stats.h"
 // possible addresses are: 0x29, 0x39, 0x49.
 // The address selection pin may be:
-// floating    - 0x29
-// grounded    - 0x39
+// floating    - 0x29 // The correct address on production boards
+// grounded    - 0x39 // The correct address on some early prototypes
 // tied to Vin - 0x49
-#define TSL2591_ADDR  0x29 // 0x39 is correct on the lashup.
+#define TSL2591_ADDR  0x29
 
 #define C0DATAL       0x0c
 #define C0DATAH       0x0d
@@ -87,11 +87,11 @@ static void write_tsl_reg(uint8_t reg, uint8_t value) {
     if(err != ESP_OK) ERROR_PRINTF("Trouble %s writing to the TSL2561", esp_err_to_name(err));
     i2c_cmd_link_delete(cmd);
 }
-
+/*
 static void tsl_powerdown() {
     write_tsl_reg(CONTROL, CONTROL_OFF);
 }
-
+*/
 void tsl_setup() {
     DEBUG_PRINTF("Init TSL");
     write_tsl_reg(CONTROL, CONTROL_ON);
@@ -145,32 +145,6 @@ float afn(float r) {
 
 void CalculateLux(uint16_t ch0, uint16_t ch1)
 {
-//    unsigned long chScale = (1 << CH_SCALE); // no scaling
-//    unsigned long channel1;
-//    unsigned long channel0;
-
-    // scale the channel values
-//    channel0 = (ch0 * chScale) >> CH_SCALE;
-//    channel1 = (ch1 * chScale) >> CH_SCALE;
-
-    // find the ratio of the channel values (Channel1/Channel0)
-//    unsigned long ratio1 = 0;
-//    if (channel0 != 0) ratio1 = (channel1 << (RATIO_SCALE+1)) / channel0;
-//    else return;
-
-//    unsigned long ratio = (ratio1 + 1) >> 1;
-
-//    unsigned int b, m;
-
-//    if(ratio <= K1T)       {b=B1T; m=M1T;}
-//    else if (ratio <= K2T) {b=B2T; m=M2T;}
-//    else if (ratio <= K3T) {b=B3T; m=M3T;}
-//    else if (ratio <= K4T) {b=B4T; m=M4T;}
-//    else if (ratio <= K5T) {b=B5T; m=M5T;}
-//    else if (ratio <= K6T) {b=B6T; m=M6T;}
-//    else if (ratio <= K7T) {b=B7T; m=M7T;}
-//    else if (ratio >  K8T) {b=B8T; m=M8T;}
-
     if(!ch0) return;
     float r = ch1/(float)ch0;
     float a = afn(r);
@@ -180,13 +154,6 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     else if(r < 0.80) lux = 0.0128 * ch0 - 0.0153 * ch1;
     else if(r < 1.30) lux = 0.00146 * ch0 - 0.00112 * ch1;
     else lux = 0;
-
-
-//    unsigned long temp;
-//    temp = ((channel0 * b) - (channel1 * m));
-
-//    temp += (1 << (LUX_SCALE - 1));
-//    unsigned long lux = temp >> LUX_SCALE;
 
     int32_t vis = lux;
     tslsample(vis);
@@ -202,8 +169,11 @@ void tsl_query() {
         ERROR_PRINTF("TSL2561 was found to be dead. %u", alive);
     }
 
-    // The datasheet recommends that all four bytes of ALS data are read as a single transaction to minimise skew between the two channels.
-    // Some examples out there in the wild also read this data twice, due to the fact that the device is double-buffered. I don't know that that's really necessary though.
+    // The datasheet recommends that all four bytes of ALS data are read as a
+    // single transaction to minimise skew between the two channels. Some
+    // examples out there in the wild also read this data twice, due to the fact
+    // that the device is double-buffered. I don't know that that's really
+    // necessary though.
     uint8_t tmpl;
     uint8_t tmph;
 
@@ -215,5 +185,4 @@ void tsl_query() {
     c1 = tmph * 256 + tmpl;
 
     CalculateLux(c0, c1);
-//    tsl_powerdown();
 }
