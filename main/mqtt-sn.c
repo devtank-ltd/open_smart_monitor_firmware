@@ -133,7 +133,7 @@ static int mqtt_sn_send(const char topic[2], const char * message)
     header[5] = 0x00;  // Message ID High
     header[6] = 0x00;  // message ID Low;
 
-    uint16_t crc = modbus_crc(message, strlen(message));
+    uint16_t crc = modbus_crc((const uint8_t *)message, strlen(message));
     char crcstr[4];
     const char * hex = "0123456789abcdef";
 
