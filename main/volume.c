@@ -87,11 +87,11 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
     ESP_ERROR_CHECK(gpio_isr_handler_add(POWER_INT,  isr_p3, (void*) POWER_INT));
 }
-
+/*
 static void qry_frequency(const char * key, int which) {
     mqtt_announce_int(key, (which ? freq1 : freq2));
 }
-
+*/
 static void qry_pulsecount(const char * key, int multiplier, int which) {
     mqtt_announce_int(key, (which ? count1 : count2) * multiplier);
 }
