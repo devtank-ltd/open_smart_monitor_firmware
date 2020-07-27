@@ -105,7 +105,7 @@ int await_ack() {
             return 1; // found it
         }
     }
-    ERR_PRINTF("No ACK received\n");
+    ERROR_PRINTF("No ACK received\n");
     INFO_PRINTF("Here's the ackmsg for comparison");
     for(int i = 0; i < received; i++)
         INFO_PRINTF("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
