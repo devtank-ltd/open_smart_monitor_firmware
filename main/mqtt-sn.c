@@ -96,7 +96,7 @@ int await_ack() {
 	    0x6b,
 	    0x5d
     };
-    memcpy(&ackmsg, example, example[0]);
+    memcpy(ackmsg, example, example[0]);
     memcpy(ackmsg + 8, mac_addr, 12);
 
     for(int i = 0; i < received - 25; i++) {
