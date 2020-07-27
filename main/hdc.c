@@ -153,6 +153,6 @@ void hdc_query() {
     int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
 
     if(temp_celsius > -300)
-        hdcsample(temp_celsius - 30, relative_humidity * 10);
+        hdcsample(temp_celsius - 30, (relative_humidity * 10) + 30);
 
 }
