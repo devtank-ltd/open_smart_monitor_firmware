@@ -18,7 +18,8 @@
 
 #define SFNODE '9'
 
-#define BUFLEN 255
+#define BUFFERLEN 255
+#define ACKBUFLEN 2550
 #define ABS(x)  (x<0)?-x:x
 
 #define DR_REG_RNG_BASE                        0x3ff75144
@@ -50,15 +51,24 @@ static void sendthebytes(const char * str, size_t len) {
 }
 
 void clear_buffer() {
-    uart_flush(LORA_UART);
+    //uart_flush(LORA_UART);
 }
 
 int await_ack() {
-    uint8_t ackbuf[BUFLEN];
-    uart_read_bytes(LORA_UART, ackbuf, BUFLEN, 200);
+    uint8_t ackbuf[ACKBUFLEN];
+    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 20000 / portTICK_PERIOD_MS);
+    if(received < 0) {
+        ERROR_PRINTF("Error getting ACK\n");
+        return 0;
+    }
+    if(received < 25) {
+        ERROR_PRINTF("Not enough bytes for ACK");
+        return 0;
+    }
+    INFO_PRINTF("Received %u bytes in which to search for ACK.\n", received);
 
     // We've just received some number of bytes, which should contain an ACK message
-    char ackmsg[BUFLEN];
+    char ackmsg[ACKBUFLEN];
     const char example[25] = {
        	0x19,
 	    0x0c,
@@ -89,12 +99,16 @@ int await_ack() {
     memcpy(&ackmsg, example, example[0]);
     memcpy(ackmsg + 8, mac_addr, 12);
 
-    for(int i = 0; i < 64; i++) {
-        if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) return 1; // found it
+    for(int i = 0; i < received - 25; i++) {
+        if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) {
+            INFO_PRINTF("Found ACK %u bytes in\n", i);
+            return 1; // found it
+        }
     }
-    printf("Here's the ackmsg for comparison");
-    for(int i = 0; i < ackmsg[0]; i++)
-        printf("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+    ERR_PRINTF("No ACK received\n");
+    INFO_PRINTF("Here's the ackmsg for comparison");
+    for(int i = 0; i < received; i++)
+        INFO_PRINTF("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
 
     return 0; // not found
 }
@@ -104,7 +118,6 @@ int await_ack() {
 // and changed to Actual C by me.
 static int mqtt_sn_send(const char topic[2], const char * message)
 {
-    return 0;
     char header[7];
     size_t len = strlen(message);
 
@@ -171,16 +184,16 @@ int mqtt_announce_dropped() {
 }
 
 int mqtt_announce_int(const char * key, int val) {
-    char msg[BUFLEN];
-    snprintf(msg, BUFLEN - 1, "[%s %s %d];", mac_addr, key, val);
+    char msg[BUFFERLEN];
+    snprintf(msg, BUFFERLEN - 1, "[%s %s %d];", mac_addr, key, val);
     // workaround for the fact that this snprintf isn't null-terminating the string
     strstr(msg, ";")[0] = '\0';
     return mqtt_update('I', msg);
 }
 
 int mqtt_announce_str(const char * key, const char * val) {
-    char msg[BUFLEN];
-    snprintf(msg, BUFLEN - 1, "[%s %s %s]", mac_addr, key, val);
+    char msg[BUFFERLEN];
+    snprintf(msg, BUFFERLEN - 1, "[%s %s %s]", mac_addr, key, val);
     return mqtt_update('I', msg);
 }
 
