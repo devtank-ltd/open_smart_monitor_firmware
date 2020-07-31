@@ -56,7 +56,7 @@ void clear_buffer() {
 
 int await_ack() {
     uint8_t ackbuf[ACKBUFLEN];
-    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 5000 / portTICK_PERIOD_MS);
+    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 20000 / portTICK_PERIOD_MS);
     if(received < 0) {
         ERROR_PRINTF("Error getting ACK\n");
         return 0;
