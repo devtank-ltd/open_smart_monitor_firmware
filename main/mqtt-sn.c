@@ -99,7 +99,7 @@ int await_ack() {
     memcpy(ackmsg, example, example[0]);
     memcpy(ackmsg + 8, mac_addr, 12);
 
-    for(int i = 0; i < received - 25; i++) {
+    for(int i = 0; i <= received - 25; i++) {
         if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) {
             INFO_PRINTF("Found ACK %u bytes in\n", i);
             return 1; // found it
@@ -108,7 +108,7 @@ int await_ack() {
     ERROR_PRINTF("No ACK received\n");
     INFO_PRINTF("Here's the ackmsg for comparison");
     for(int i = 0; i < received; i++)
-        INFO_PRINTF("\t%0x %0x\t%c %c\n", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+        INFO_PRINTF("\t%2x %2x\t%c %c", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
 
     return 0; // not found
 }
