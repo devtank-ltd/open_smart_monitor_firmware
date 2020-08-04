@@ -65,7 +65,7 @@ int await_ack() {
         ERROR_PRINTF("Not enough bytes for ACK");
         return 0;
     }
-    INFO_PRINTF("Received %u bytes in which to search for ACK.\n", received);
+    INFO_PRINTF("Received %d bytes in which to search for ACK.\n", received);
 
     // We've just received some number of bytes, which should contain an ACK message
     char ackmsg[ACKBUFLEN];
@@ -101,7 +101,7 @@ int await_ack() {
 
     for(int i = 0; i <= received - 25; i++) {
         if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) {
-            INFO_PRINTF("Found ACK %u bytes in\n", i);
+            INFO_PRINTF("Found ACK %d bytes in\n", i);
             return 1; // found it
         }
     }
@@ -153,7 +153,7 @@ static int mqtt_sn_send(const char topic[2], const char * message)
         } else {
             printf("ACK not received!\n");
             uint32_t randomNumber = READ_PERI_REG(DR_REG_RNG_BASE) & 0x3ff;
-            printf("Sleeping for %d ticks.", randomNumber);
+            printf("Sleeping for %u ticks.", randomNumber);
             vTaskDelay(randomNumber);
             if(i > 3) {
                 printf("Giving up after %d goes.\n", i + 1);

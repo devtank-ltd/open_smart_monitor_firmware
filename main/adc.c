@@ -141,7 +141,7 @@ int db_correction(int db) {
 
 void battery_query() {
     int adc = adc_avg_get(1);
-    printf("adc = %u\n", adc);
+    printf("adc = %i\n", adc);
     printf("polynomial = %f\n", voltagecalc(adc));
     //float v = adc_avg_get(1) / 4095.0 * 3.2;
     int v = voltagecalc(adc_avg_get(1)) * 3197;
