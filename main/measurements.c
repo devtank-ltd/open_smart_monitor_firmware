@@ -26,7 +26,7 @@ void measurements_task(void *pvParameters) {
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
 
-        for(int i = 0; i < 2; i++) {
+        for(int i = 0; i < 10; i++) {
             for(int j = 0; j < 600; j++) {
                 printf("sampling.\n");
                 // These need to be averaged over ten minutes.
