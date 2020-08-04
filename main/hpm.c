@@ -194,7 +194,6 @@ int hpm_query() {
     }
 
     if(!length) {
-        return 0;
         ERROR_PRINTF("No HPM response - is it even connected?");
         goto unknown_response;
     }
