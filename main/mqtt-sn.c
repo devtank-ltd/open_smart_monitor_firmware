@@ -56,7 +56,9 @@ void clear_buffer() {
 
 int await_ack() {
     uint8_t ackbuf[ACKBUFLEN];
-    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 20000 / portTICK_PERIOD_MS);
+    // I have measured that the ACK arrives around 600 ms after the packet finished sending.
+    // I've bumped that up to 2000 milliseconds for lots of wiggle-room;
+    int received = uart_read_bytes(LORA_UART, ackbuf, ACKBUFLEN, 2000 / portTICK_PERIOD_MS);
     if(received < 0) {
         ERROR_PRINTF("Error getting ACK\n");
         return 0;
