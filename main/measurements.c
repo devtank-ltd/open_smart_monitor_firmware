@@ -31,7 +31,7 @@ void measurements_task(void *pvParameters) {
                 printf("sampling.\n");
                 // These need to be averaged over ten minutes.
                 hpm_query();   // smog sensor
-                //hdc_query();   // humidity and temperature
+                hdc_query();   // humidity and temperature
                 sound_query(); // sound
                 tsl_query();   // light
                 //vTaskDelay(1000 / portTICK_PERIOD_MS);
