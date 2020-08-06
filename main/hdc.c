@@ -32,6 +32,7 @@ bool hdc_samples_ready = false;
 
 int32_t temperature[SAMPLES] = {0};
 int32_t humidity[SAMPLES] = {0};
+static int sample_no = 0;
 
 typedef union {
     uint16_t d;
@@ -42,7 +43,6 @@ typedef union {
 } unit_entry_t;
 
 void hdcsample(uint16_t temp, uint16_t hum) {
-    static int sample_no = 0;
     temperature[sample_no] = temp;
     humidity[sample_no] = hum;
     sample_no++;
@@ -59,7 +59,10 @@ void hdc_announce() {
     int32_t hum_min = 0;
     int64_t hum_avg = 0;
 
-    if(!hdc_samples_ready) return;
+    if(!hdc_samples_ready) {
+        INFO_PRINTF("Only %d taken so far; cannot publish temperature or humidity", sample_no);
+        return;
+    }
 
     stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
     stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
@@ -152,7 +155,10 @@ void hdc_query() {
     if(q16(HUM_L, HUM_H, &hum) != ESP_OK) return;
     int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
 
-    if(temp_celsius > -300)
+    if(temp_celsius > -300) {
         hdcsample(temp_celsius - 30, (relative_humidity * 10) + 30);
+    } else {
+        ERROR_PRINTF("I refuse to believe it's less than -30 degrees here.");
+    }
 
 }
