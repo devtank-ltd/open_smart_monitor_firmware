@@ -74,7 +74,7 @@ const dev_parameter_descriptor_t countis_e53[] = { \
  // { Cid, Param Name,                     Units,                          , Start, Data Type,      DataSize,}
     { 0,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50512, PARAM_TYPE_U32,   4},
     { 1,   (const char *)"Apparent power", (const char *)"VA / 0.1"        , 50536, PARAM_TYPE_U32,   4},
-    { 2,   (const char *)"Hour meter",     (const char *)"watt/hours /100" , 50592, PARAM_TYPE_FLOAT, 4},
+    { 2,   (const char *)"Hour meter",     (const char *)"hours/100"       , 50592, PARAM_TYPE_U32,   4},
     { 3,   (const char *)"Network type",   (const char *)"Network type"    , 40448, PARAM_TYPE_U8,    1},
     { 4,   (const char *)"Ident",          (const char *)"Should read SOCO", 50000, PARAM_TYPE_ASCII, 8},
     { 5,   (const char *)"Vendor name",    (const char *)""                , 50042, PARAM_TYPE_ASCII, 8},
@@ -108,6 +108,8 @@ const dev_parameter_descriptor_t countis_e53[] = { \
     { 33,  (const char *)"CurrentP1",      (const char *)"A / 1000"        , 50528, PARAM_TYPE_U32,   4},
     { 34,  (const char *)"CurrentP2",      (const char *)"A / 1000"        , 50530, PARAM_TYPE_U32,   4},
     { 35,  (const char *)"CurrentP3",      (const char *)"A / 1000"        , 50532, PARAM_TYPE_U32,   4},
+    { 36,  (const char *)"ImportEnergy",   (const char *)"watt/hours/0.001", 50770, PARAM_TYPE_U32,   4},
+    { 37,  (const char *)"ExportEnergy",   (const char *)"watt/hours/0.001", 50770, PARAM_TYPE_U32,   4},
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
@@ -430,6 +432,9 @@ void smart_meter_query()
     uint32_t current1      = 0;
     uint32_t current2      = 0;
     uint32_t current3      = 0;
+    uint32_t importenergy  = 0;
+    uint32_t exportenergy  = 0;
+
 
     sense_modbus_read_value(0,  &hourmeter,     sizeof(hourmeter));
     sense_modbus_read_value(1,  &apparentpower, sizeof(apparentpower));
@@ -450,6 +455,8 @@ void smart_meter_query()
     sense_modbus_read_value(33, &current1,      sizeof(current1));
     sense_modbus_read_value(34, &current2,      sizeof(current2));
     sense_modbus_read_value(35, &current3,      sizeof(current3));
+    sense_modbus_read_value(36, &importenergy,  sizeof(importenergy));
+    sense_modbus_read_value(37, &exportenergy,  sizeof(exportenergy));
 
     static uint16_t apparent1_old = 0;
     uint16_t apparent1_i = apparent1;
@@ -487,7 +494,10 @@ void smart_meter_query()
     static uint16_t current3_old = 0;
     uint16_t current3_i = current3;
     mqtt_delta_announce_int("Current3", &current3_i, &current3_old, 1);
-    
+   
+    mqtt_announce_int("ExportEnergy", exportenergy);
+    mqtt_announce_int("ImportEnergy", importenergy);
+
     // The volt reads as:
     // high byte, low byte, zero, zero
     // all inside a uint32_t. The two upper bytes encode a number a hundred times the actual voltage.
