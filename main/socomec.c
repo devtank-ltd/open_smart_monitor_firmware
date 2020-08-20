@@ -109,7 +109,7 @@ const dev_parameter_descriptor_t countis_e53[] = { \
     { 34,  (const char *)"CurrentP2",      (const char *)"A / 1000"        , 50530, PARAM_TYPE_U32,   4},
     { 35,  (const char *)"CurrentP3",      (const char *)"A / 1000"        , 50532, PARAM_TYPE_U32,   4},
     { 36,  (const char *)"ImportEnergy",   (const char *)"watt/hours/0.001", 50770, PARAM_TYPE_U32,   4},
-    { 37,  (const char *)"ExportEnergy",   (const char *)"watt/hours/0.001", 50770, PARAM_TYPE_U32,   4},
+    { 37,  (const char *)"ExportEnergy",   (const char *)"watt/hours/0.001", 50776, PARAM_TYPE_U32,   4},
 };
 
 const uint16_t num_device_parameters = (sizeof(countis_e53)/sizeof(countis_e53[0]));
