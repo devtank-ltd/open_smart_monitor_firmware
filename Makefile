@@ -13,11 +13,9 @@ git:
 
 build: git
 
-flash: dfu
+flash: build dfu
 dfu:
 	./into_dfu.sh
-
-flash: dfu
 
 cppcheck:
 	cppcheck --enable=all --inconclusive --std=posix . -v
