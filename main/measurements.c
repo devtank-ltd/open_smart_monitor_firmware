@@ -18,7 +18,7 @@ void measurements_task(void *pvParameters) {
     adc_setup();
     tsl_setup();
     volume_setup();
-    smart_meter_setup();
+    //smart_meter_setup();
 
 
     for(;;) {
@@ -45,7 +45,7 @@ void measurements_task(void *pvParameters) {
 
             // These need to be announced once every ten minutes or whatever
             tsl_announce();   // light
-            smart_meter_query();
+            //smart_meter_query();
             water_volume_query();
             light_volume_query();
             battery_query();
