@@ -9,4 +9,6 @@
 
 void configure();
 void store_config(char * key, char * val);
+void set_midpoint(float v);
+float get_midpoint();
 const char* get_config(const char * key);
