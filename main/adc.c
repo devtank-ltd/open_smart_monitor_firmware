@@ -24,7 +24,7 @@ static unsigned adc_values_index = 0;
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
 
-#define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
+#define SAMPLES 1000 // 100 000 is too much for dram0_0_seg.
 
 float midpoint = 0;
 
