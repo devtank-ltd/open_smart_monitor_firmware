@@ -12,13 +12,17 @@
 #include "tsl.h"
 #include "socomec.h"
 #include "volume.h"
+#include "config.h"
 
 void measurements_task(void *pvParameters) {
-    hpm_setup();
+    uint8_t soco_en = get_socoen();
+    uint8_t hpm_en = get_hpmen();
+
+    if(hpm_en) hpm_setup();
     adc_setup();
     tsl_setup();
     volume_setup();
-    smart_meter_setup();
+    if(soco_en) smart_meter_setup();
 
 
     for(;;) {
@@ -30,7 +34,7 @@ void measurements_task(void *pvParameters) {
             for(int j = 0; j < 600; j++) {
                 printf("sampling.\n");
                 // These need to be averaged over ten minutes.
-//                hpm_query();   // smog sensor
+                if(hpm_en) hpm_query();   // smog sensor
                 hdc_query();   // humidity and temperature
                 sound_query(); // sound
                 tsl_query();   // light
@@ -39,13 +43,13 @@ void measurements_task(void *pvParameters) {
             printf("announcing.\n");
 
             // Also announce the averages, minima, etc.
-            hpm_announce();
+            if(hpm_en) hpm_announce();
             hdc_announce();
             sound_announce();
 
             // These need to be announced once every ten minutes or whatever
             tsl_announce();   // light
-            //smart_meter_query();
+            if(soco_en) smart_meter_query();
             water_volume_query();
             light_volume_query();
             battery_query();
