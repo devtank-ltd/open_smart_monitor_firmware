@@ -9,6 +9,7 @@
 #include "mqtt-sn.h"
 #include "mac.h"
 #include "socomec.h"
+#include "config.h"
 
 #define MQTT_SN_MAX_PACKET_LENGTH     (255)
 #define MQTT_SN_TYPE_PUBLISH          (0x0C)
@@ -120,6 +121,7 @@ int await_ack() {
 // and changed to Actual C by me.
 static int mqtt_sn_send(const char topic[2], const char * message)
 {
+    if(!get_mqtten()) return 0;
     char header[7];
     size_t len = strlen(message);
 

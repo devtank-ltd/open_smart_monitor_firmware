@@ -10,3 +10,13 @@
 void configure();
 void store_config(char * key, char * val);
 const char* get_config(const char * key);
+
+
+void set_midpoint(float v);
+float get_midpoint();
+void set_mqtten(uint8_t en);
+uint8_t get_mqtten();
+void set_socoen(uint8_t en);
+uint8_t get_socoen();
+void set_hpmen(uint8_t en);
+uint8_t get_hpmen();

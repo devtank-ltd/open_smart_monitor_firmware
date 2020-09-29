@@ -20,12 +20,13 @@ static unsigned adc_values_index = 0;
 
 #define AMP_GAIN 31.82
 #define ADC_COUNT 4095
-#define MIDPOINT 1.635
 #define EXAMPLE_I2S_NUM 0
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
 
-#define SAMPLES 10000 // 100 000 is too much for dram0_0_seg.
+#define SAMPLES 1000 // 100 000 is too much for dram0_0_seg.
+
+float midpoint = 0;
 
 int32_t db[SAMPLES];
 bool samples_ready = false;
@@ -58,6 +59,7 @@ void sound_announce() {
 }
 
 void adc_setup() {
+    midpoint = get_midpoint();
     int i2s_num = EXAMPLE_I2S_NUM;
     i2s_config_t i2s_config = {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_ADC_BUILT_IN,
@@ -159,7 +161,7 @@ void sound_query() {
         uint16_t adcsample = micvolts[n] & 0x0fff;
         avg += adcsample;
         if(!adcsample) break;
-        double a = voltagecalc(adcsample) - MIDPOINT;
+        double a = voltagecalc(adcsample) - midpoint;
 //        printf("%u\n", (unsigned int) adcsample);
         vrms += a * a;
     }
