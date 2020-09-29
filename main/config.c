@@ -87,6 +87,7 @@ uint8_t get_hpmen() {
     if(err != ESP_OK) {
              if(!strcmp(mac_addr, "98f4ab147441")) set_hpmen(0);
         else if(!strcmp(mac_addr, "98f4ab147445")) set_hpmen(0);
+        else if(!strcmp(mac_addr, "98f4ab147409")) set_hpmen(0);
         else set_hpmen(1);
         return get_hpmen();
     } else {
