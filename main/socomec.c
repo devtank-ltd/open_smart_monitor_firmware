@@ -1,11 +1,3 @@
-/* Hello World Example
-
-   This example code is in the Public Domain (or CC0 licensed, at your option.)
-
-   Unless required by applicable law or agreed to in writing, this
-   software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-   CONDITIONS OF ANY KIND, either express or implied.
-*/
 #include <stdio.h>
 #include <inttypes.h>
 
@@ -18,10 +10,22 @@
 #include "driver/gpio.h"
 #include "pinmap.h"
 #include "logging.h"
-
+#include "stats.h"
 #define READ_HOLDING_FUNC 3
 #define MODBUS_ERROR_MASK 0x80
 
+#define NUM_SAMPLES 1000
+
+static int32_t powerfactor[NUM_SAMPLES];
+static int32_t leadlag[NUM_SAMPLES];
+static int32_t current1[NUM_SAMPLES];
+static int32_t current2[NUM_SAMPLES];
+static int32_t current3[NUM_SAMPLES];
+static int32_t voltage1[NUM_SAMPLES];
+static int32_t voltage2[NUM_SAMPLES];
+static int32_t voltage3[NUM_SAMPLES];
+
+static bool samples_ready = false;
 #define E53_ADDR 5
 
 /*         <               ADU                         >
@@ -404,112 +408,108 @@ unknown_device:
     }
     ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
     return ESP_FAIL;
+}
 
+void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int32_t v2, int32_t v3) {
+    static int sample_no = 0;
+    if(pf < 0) {
+        powerfactor[sample_no] = -pf;
+        leadlag[sample_no] = -1000;
+    } else if(pf > 0) {
+        powerfactor[sample_no] = pf;
+        leadlag[sample_no] = 1000;
+    } else {
+        powerfactor[sample_no] = 0;
+        leadlag[sample_no] = 0;
+    }
+    current1[sample_no] = i1;
+    current2[sample_no] = i2;
+    current3[sample_no] = i3;
+    voltage1[sample_no] = v1;
+    voltage2[sample_no] = v2;
+    voltage3[sample_no] = v3;
+    sample_no++;
+    if(sample_no > NUM_SAMPLES) {
+        samples_ready = true;
+        sample_no = 0;
+    }
 }
 
 void smart_meter_query()
 {
-//    if(!sococonnected)
-//       return;
     smart_switch_switch();
 
     uint32_t hourmeter     = 0;
-    uint32_t apparentpower = 0;
-    float    fhourmeter    = 0.0;
-    uint8_t  networktype   = 0;
-    uint32_t volt          = 0;
-    float    ffreq         = 0.0;
-    uint32_t current       = 0;
-    uint32_t apparent1     = 0;
-    uint32_t apparent2     = 0;
-    uint32_t apparent3     = 0;
-    uint32_t powerfactor1  = 0;
-    uint32_t powerfactor2  = 0;
-    uint32_t powerfactor3  = 0;
+    uint32_t powerfactor   = 0;
     uint32_t voltage1      = 0;
     uint32_t voltage2      = 0;
     uint32_t voltage3      = 0;
     uint32_t current1      = 0;
     uint32_t current2      = 0;
     uint32_t current3      = 0;
-    uint32_t importenergy  = 0;
-    uint32_t exportenergy  = 0;
-
 
     sense_modbus_read_value(0,  &hourmeter,     sizeof(hourmeter));
-    sense_modbus_read_value(1,  &apparentpower, sizeof(apparentpower));
-    sense_modbus_read_value(2,  &fhourmeter,    sizeof(fhourmeter));
-    sense_modbus_read_value(3,  &networktype,   sizeof(networktype));
-    sense_modbus_read_value(8,  &volt,          sizeof(volt));
-    sense_modbus_read_value(9,  &ffreq,         sizeof(ffreq));
-    sense_modbus_read_value(10, &current,       sizeof(current));
-    sense_modbus_read_value(27, &apparent1,     sizeof(apparent1));
-    sense_modbus_read_value(28, &apparent2,     sizeof(apparent2));
-    sense_modbus_read_value(29, &apparent3,     sizeof(apparent3));
-    sense_modbus_read_value(16, &powerfactor1,  sizeof(powerfactor1));
-    sense_modbus_read_value(19, &powerfactor2,  sizeof(powerfactor2));
-    sense_modbus_read_value(22, &powerfactor3,  sizeof(powerfactor3));
+    sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
     sense_modbus_read_value(30, &voltage1,      sizeof(voltage1));
     sense_modbus_read_value(31, &voltage2,      sizeof(voltage2));
     sense_modbus_read_value(32, &voltage3,      sizeof(voltage3));
     sense_modbus_read_value(33, &current1,      sizeof(current1));
     sense_modbus_read_value(34, &current2,      sizeof(current2));
     sense_modbus_read_value(35, &current3,      sizeof(current3));
+
+    elecsample(powerfactor, current1, current2, current3, voltage1, voltage2, voltage3);
+}
+
+void smart_meter_announce() {
+    uint32_t importenergy  = 0;
+    uint32_t exportenergy  = 0;
     sense_modbus_read_value(36, &importenergy,  sizeof(importenergy));
     sense_modbus_read_value(37, &exportenergy,  sizeof(exportenergy));
+    
+    if(samples_ready) {
+        int32_t max;
+        int32_t min;
+        int64_t avg;
+        stats(powerfactor, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("PowerFactor-avg", avg);
+        mqtt_announce_int("PowerFactor-min", min);
+        mqtt_announce_int("PowerFactor-max", max);
 
-    static uint16_t apparent1_old = 0;
-    uint16_t apparent1_i = apparent1;
-    mqtt_delta_announce_int("ApparentPower1", &apparent1_i, &apparent1_old, 1);
-    static uint16_t apparent2_old = 0;
-    uint16_t apparent2_i = apparent2;
-    mqtt_delta_announce_int("ApparentPower2", &apparent2_i, &apparent2_old, 1);
-    static uint16_t apparent3_old = 0;
-    uint16_t apparent3_i = apparent3;
-    mqtt_delta_announce_int("ApparentPower3", &apparent3_i, &apparent3_old, 1);
-    static uint16_t powerfactor1_old = 0;
-    uint16_t powerfactor1_i = powerfactor1;
-    mqtt_delta_announce_int("PowerFactor1", &powerfactor1_i, &powerfactor1_old, 1);
-    static uint16_t powerfactor2_old = 0;
-    uint16_t powerfactor2_i = powerfactor2;
-    mqtt_delta_announce_int("PowerFactor2", &powerfactor2_i, &powerfactor2_old, 1);
-    static uint16_t powerfactor3_old = 0;
-    uint16_t powerfactor3_i = powerfactor3;
-    mqtt_delta_announce_int("PowerFactor3", &powerfactor3_i, &powerfactor3_old, 1);
-    static uint16_t voltage1_old = 0;
-    uint16_t voltage1_i = voltage1 * 100;
-    mqtt_delta_announce_int("Voltage1", &voltage1_i, &voltage1_old, 1);
-    static uint16_t voltage2_old = 0;
-    uint16_t voltage2_i = voltage2 * 100;
-    mqtt_delta_announce_int("Voltage2", &voltage2_i, &voltage2_old, 1);
-    static uint16_t voltage3_old = 0;
-    uint16_t voltage3_i = voltage3 * 100;
-    mqtt_delta_announce_int("Voltage3", &voltage3_i, &voltage3_old, 1);
-    static uint16_t current1_old = 0;
-    uint16_t current1_i = current1;
-    mqtt_delta_announce_int("Current1", &current1_i, &current1_old, 1);
-    static uint16_t current2_old = 0;
-    uint16_t current2_i = current2;
-    mqtt_delta_announce_int("Current2", &current2_i, &current2_old, 1);
-    static uint16_t current3_old = 0;
-    uint16_t current3_i = current3;
-    mqtt_delta_announce_int("Current3", &current3_i, &current3_old, 1);
-   
+        stats(leadlag, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("PowerFactor-LeadOrLag", avg);
+
+        stats(current1, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("current1-avg", avg);
+        mqtt_announce_int("current1-min", min);
+        mqtt_announce_int("current1-max", max);
+
+        stats(current2, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("current2-avg", avg);
+        mqtt_announce_int("current2-min", min);
+        mqtt_announce_int("current2-max", max);
+
+        stats(current3, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("current3-avg", avg);
+        mqtt_announce_int("current3-min", min);
+        mqtt_announce_int("current3-max", max);
+
+        stats(voltage1, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("voltage1-avg", avg);
+        mqtt_announce_int("voltage1-min", min);
+        mqtt_announce_int("voltage1-max", max);
+
+        stats(voltage2, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("voltage2-avg", avg);
+        mqtt_announce_int("voltage2-min", min);
+        mqtt_announce_int("voltage2-max", max);
+
+        stats(voltage3, NUM_SAMPLES, &avg, &min, &max);
+        mqtt_announce_int("voltage3-avg", avg);
+        mqtt_announce_int("voltage3-min", min);
+        mqtt_announce_int("voltage3-max", max);
+
+    }
+
     mqtt_announce_int("ExportEnergy", exportenergy);
     mqtt_announce_int("ImportEnergy", importenergy);
-
-    // The volt reads as:
-    // high byte, low byte, zero, zero
-    // all inside a uint32_t. The two upper bytes encode a number a hundred times the actual voltage.
-    int mV = (volt >> 16) * 100;
-    // I suspect a similar thing goes for the ampage.
-    int mA = (current >> 16) * 100;
-
-    const char * ntnames[] = { "1bl", "2bl", "3bl", "3nbl", "4bl", "4nbl" };
-
-    INFO_PRINTF("network type: %s", ntnames[networktype]);
-
-    INFO_PRINTF("hourmeter = i%u f%f\napparent_power = %u", hourmeter, fhourmeter, apparentpower);
-    INFO_PRINTF("%dmV, %dmA", mV, mA);
-
 }
