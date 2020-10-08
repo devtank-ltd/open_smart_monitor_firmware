@@ -71,7 +71,7 @@ float get_midpoint() {
         else set_midpoint(1.6804);
         return get_midpoint();
     } else {
-       return millivolts / 10000;
+       return millivolts / 10000.0;
     }
 }
 
