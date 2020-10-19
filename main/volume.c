@@ -92,14 +92,10 @@ static void qry_frequency(const char * key, int which) {
     mqtt_announce_int(key, (which ? freq1 : freq2));
 }
 */
-static void qry_pulsecount(const char * key, int multiplier, int which) {
-    mqtt_announce_int(key, (which ? count1 : count2) * multiplier);
-}
+void query_pulsecount(const char * key, int multiplier, int which) {
+    water_meter_datum.value = count1 * 10;
+    gas_meter_datum.value = count2;
+    water_meter_datum.ready = true;
+    gas_meter_datum.ready = true;
 
-void water_volume_query() {
-    qry_pulsecount("WaterMeter", 10, 0);
-}
-
-void light_volume_query() {
-    qry_pulsecount("Light", 10, 1);
 }
