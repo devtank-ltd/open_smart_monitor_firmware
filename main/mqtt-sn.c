@@ -31,6 +31,7 @@ mqtt_datum_t battery_pc_datum = {0};
 mqtt_datum_t battery_mv_datum = {0};
 mqtt_datum_t import_energy_datum = {0};
 mqtt_datum_t export_energy_datum = {0};
+mqtt_datum_t water_meter_datum = {0};
 mqtt_stats_t current1_stats = {0};
 mqtt_stats_t current2_stats = {0};
 mqtt_stats_t current3_stats = {0};
@@ -267,54 +268,49 @@ void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
 
 void mqtt_15mins() {
     // Announce battery level more frequently if it's not full.
-    if(battery_pc_datum != 100) {
+    if(battery_pc_datum.value != 100) {
         mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
         mqtt_announce_datum("battery-percent", &battery_pc_datum);
     }
-    mqtt_announce_stats("pm25", pm25_stats);
-    mqtt_announce_stats("pm10", pm10_stats);
-    mqtt_announce_stats("temperature", temperature_stats);
-    mqtt_announce_stats("sound", sound_stats);
-    vTaskDelay(
+    mqtt_announce_stats("pm25", &pm25_stats);
+    mqtt_announce_stats("pm10", &pm10_stats);
+    mqtt_announce_stats("temperature", &temperature_stats);
+    mqtt_announce_stats("sound", &sound_stats);
+    vTaskDelay((15 * 60 * 1000) / portTICK_PERIOD_MS);
 } 
 
 void mqtt_30mins() {
-    // Announce battery level more frequently if it's not full.
-    if(battery_pc_datum != 100) {
-        mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
-        mqtt_announce_datum("battery-percent", &battery_pc_datum);
-    }
-    mqtt_announce_stats("pm25", pm25_stats);
-    mqtt_announce_stats("pm10", pm10_stats);
-    mqtt_announce_stats("temperature", temperature_stats);
-    mqtt_announce_stats("humidity", humidity_stats);
-    mqtt_announce_stats("sound", sound_stats);
-    mqtt_announce_stats("visible-light", visible_light_stats);
+    mqtt_announce_stats("pm25", &pm25_stats);
+    mqtt_announce_stats("pm10", &pm10_stats);
+    mqtt_announce_stats("temperature", &temperature_stats);
+    mqtt_announce_stats("humidity", &humidity_stats);
+    mqtt_announce_stats("sound", &sound_stats);
+    mqtt_announce_stats("visible-light", &visible_light_stats);
 } 
 
 void mqtt_60mins() {
-    mqtt_announce_datum("ImportEnergy", import_energy_datum);
-    mqtt_announce_datum("ExportEnergy", export_energy_datum);
-    mqtt_announce_datum("WaterMeter", water_meter_datum);
-    mqtt_announce_stats("PowerFactor", pf_stats);
-    mqtt_announce_stats("PFLeadLag", pf_sign_stats);
-    mqtt_announce_stats("Current1", current1_stats);
-    mqtt_announce_stats("Current2", current2_stats);
-    mqtt_announce_stats("Current3", current3_stats);
-    mqtt_announce_stats("Voltage1", voltage1_stats);
-    mqtt_announce_stats("Voltage2", voltage2_stats);
-    mqtt_announce_stats("Voltage3", voltage3_stats);
+    mqtt_announce_datum("ImportEnergy", &import_energy_datum);
+    mqtt_announce_datum("ExportEnergy", &export_energy_datum);
+    mqtt_announce_datum("WaterMeter", &water_meter_datum);
+    mqtt_announce_stats("PowerFactor", &pf_stats);
+    mqtt_announce_stats("PFLeadLag", &pf_sign_stats);
+    mqtt_announce_stats("Current1", &current1_stats);
+    mqtt_announce_stats("Current2", &current2_stats);
+    mqtt_announce_stats("Current3", &current3_stats);
+    mqtt_announce_stats("Voltage1", &voltage1_stats);
+    mqtt_announce_stats("Voltage2", &voltage2_stats);
+    mqtt_announce_stats("Voltage3", &voltage3_stats);
     mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
     mqtt_announce_datum("battery-percent", &battery_pc_datum);
 }
 
 void mqtt_daily() {
-    mqtt_announce_datum("WaterMeter", water_meter_datum);
+    mqtt_announce_datum("WaterMeter", &water_meter_datum);
 }
 
 void mqtt_task(void * pvParameters) {
     for(;;) {
-        for(i = 0; i < 24; i++) {
+        for(int i = 0; i < 24; i++) {
             mqtt_15mins();
             mqtt_30mins();
             mqtt_15mins();
