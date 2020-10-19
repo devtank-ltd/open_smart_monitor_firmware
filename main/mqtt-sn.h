@@ -34,6 +34,7 @@ extern mqtt_stats_t voltage1_stats;
 extern mqtt_stats_t voltage2_stats;
 extern mqtt_stats_t voltage3_stats;
 extern mqtt_datum_t water_meter_datum;
+extern mqtt_datum_t gas_meter_datum;
 extern mqtt_datum_t export_energy_datum;
 extern mqtt_datum_t import_energy_datum;
 extern mqtt_stats_t pf_stats;

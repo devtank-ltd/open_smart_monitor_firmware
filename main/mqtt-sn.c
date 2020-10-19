@@ -32,6 +32,7 @@ mqtt_datum_t battery_mv_datum = {0};
 mqtt_datum_t import_energy_datum = {0};
 mqtt_datum_t export_energy_datum = {0};
 mqtt_datum_t water_meter_datum = {0};
+mqtt_datum_t gas_meter_datum = {0};
 mqtt_stats_t current1_stats = {0};
 mqtt_stats_t current2_stats = {0};
 mqtt_stats_t current3_stats = {0};
