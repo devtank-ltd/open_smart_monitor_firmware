@@ -36,26 +36,9 @@ void soundsample(uint16_t db_s) {
     db[sample_no] = db_s;
     sample_no++;
     if(sample_no >= SAMPLES) {
-        samples_ready = true;
+       stats(db, SAMPLES, &sound_stats);
     }
     sample_no %= SAMPLES;
-}
-
-void sound_announce() {
-    int32_t max;
-    int32_t min;
-    int64_t avg;
-
-    if(!samples_ready) {
-        printf("Not enough samples to know how loud it is.");
-        return;
-    }
-
-    stats(db, SAMPLES, &avg, &min, &max);
-
-    mqtt_announce_int("sound-avg", avg);
-    mqtt_announce_int("sound-min", min);
-    mqtt_announce_int("sound-max", max);
 }
 
 void adc_setup() {
@@ -138,16 +121,14 @@ int db_correction(int db) {
 }
 
 void battery_query() {
-    int adc = adc_avg_get(1);
-    printf("adc = %i\n", adc);
-    printf("polynomial = %f\n", voltagecalc(adc));
-    //float v = adc_avg_get(1) / 4095.0 * 3.2;
     int v = voltagecalc(adc_avg_get(1)) * 3197;
-    mqtt_announce_int("battery-millivolts", v);
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
-    mqtt_announce_int("battery-percent", pc);
+    battery_mv_datum.value = v;
+    battery_pc_datum.value = pc;
+    battery_mv_datum.ready = true;
+    battery_pc_datum.ready = true;
 }
 
 

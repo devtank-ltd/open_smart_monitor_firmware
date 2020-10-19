@@ -4,4 +4,3 @@
 void adc_setup();
 void battery_query();
 void sound_query();
-void sound_announce();
