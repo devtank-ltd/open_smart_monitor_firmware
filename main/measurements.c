@@ -47,9 +47,6 @@ void measurements_task(void *pvParameters) {
     tsl_query();
 
     for(;;) {
-        // These need to be announced very rarely.
-        mqtt_announce_str("sku", "ENV-01");
-        mqtt_announce_str("fw", GIT_COMMIT);
 
         for(int i = 0; i < 10; i++) {
             for(int j = 0; j < 600; j++) {

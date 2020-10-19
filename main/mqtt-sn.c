@@ -6,6 +6,7 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "mqtt-sn.h"
+#include "commit.h"
 #include "mac.h"
 #include "socomec.h"
 #include "config.h"
@@ -311,6 +312,8 @@ void mqtt_daily() {
 
 void mqtt_task(void * pvParameters) {
     for(;;) {
+        mqtt_announce_str("sku", "ENV-01");
+        mqtt_announce_str("fw", GIT_COMMIT);
         for(int i = 0; i < 24; i++) {
             mqtt_15mins();
             mqtt_30mins();
