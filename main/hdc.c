@@ -46,36 +46,11 @@ void hdcsample(uint16_t temp, uint16_t hum) {
     temperature[sample_no] = temp;
     humidity[sample_no] = hum;
     sample_no++;
-    if(sample_no >= SAMPLES) hdc_samples_ready = true;
-    sample_no %= SAMPLES;
-}
-
-void hdc_announce() {
-    int32_t temp_max = 0;
-    int32_t temp_min = 0;
-    int64_t temp_avg = 0;
-    
-    int32_t hum_max = 0;
-    int32_t hum_min = 0;
-    int64_t hum_avg = 0;
-
-    if(!hdc_samples_ready) {
-        INFO_PRINTF("Only %d taken so far; cannot publish temperature or humidity", sample_no);
-        return;
+    if(sample_no >= SAMPLES) {
+        stats(temperature, SAMPLES, &temperature_stats);
+        stats(humidity, SAMPLES, &humidity_stats);
     }
-
-    stats(temperature, SAMPLES, &temp_avg, &temp_min, &temp_max);
-    stats(humidity, SAMPLES, &hum_avg, &hum_min, &hum_max);
-
-    mqtt_announce_int("temperature-avg", temp_avg);
-    mqtt_announce_int("temperature-min", temp_min);
-    mqtt_announce_int("temperature-max", temp_max);
-
-    mqtt_announce_int("humidity-avg", hum_avg);
-    mqtt_announce_int("humidity-min", hum_min);
-    mqtt_announce_int("humidity-max", hum_max);
-
-
+    sample_no %= SAMPLES;
 }
 
 static esp_err_t read_reg(uint8_t reg, uint8_t * val) {
