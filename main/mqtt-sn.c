@@ -1,4 +1,3 @@
-#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include "logging.h"
@@ -24,6 +23,25 @@
 #define ABS(x)  (x<0)?-x:x
 
 #define DR_REG_RNG_BASE                        0x3ff75144
+
+mqtt_stats_t humidity_stats = {0};
+mqtt_stats_t sound_stats = {0};
+mqtt_stats_t temperature_stats = {0};
+mqtt_datum_t battery_pc_datum = {0};
+mqtt_datum_t battery_mv_datum = {0};
+mqtt_datum_t import_energy_datum = {0};
+mqtt_datum_t export_energy_datum = {0};
+mqtt_stats_t current1_stats = {0};
+mqtt_stats_t current2_stats = {0};
+mqtt_stats_t current3_stats = {0};
+mqtt_stats_t voltage1_stats = {0};
+mqtt_stats_t voltage2_stats = {0};
+mqtt_stats_t voltage3_stats = {0};
+mqtt_stats_t pf_stats = {0};
+mqtt_stats_t pf_sign_stats = {0};
+mqtt_stats_t pm10_stats = {0};
+mqtt_stats_t pm25_stats = {0};
+mqtt_stats_t visible_light_stats = {0};
 
 static volatile uint16_t dropped = 0;
 
@@ -207,4 +225,104 @@ int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, in
         return mqtt_announce_int(key, * val);
     }
     return 0;
+}
+
+void mqtt_announce_datum(const char * key, mqtt_datum_t * datum) {
+    if(!datum->ready)
+        return; // The datum is not ready to be sent over.
+    if(!mqtt_announce_int(key, datum->value))
+        datum->ready = 0; // Clear ready flag if MQTT packet sent successfully.
+}
+
+void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
+    char dkey[100];
+    bool ready = true;
+    mqtt_datum_t datum;
+    if(!stats->ready)
+        return;
+
+    strcpy(dkey, key);
+    strcat(dkey, "-min");
+    datum.ready = true;
+    datum.value = stats->minimum;
+    mqtt_announce_datum(dkey, &datum);
+    ready &= datum.ready;
+
+    strcpy(dkey, key);
+    strcat(dkey, "-max");
+    datum.ready = true;
+    datum.value = stats->maximum;
+    mqtt_announce_datum(dkey, &datum);
+    ready &= datum.ready;
+
+    strcpy(dkey, key);
+    strcat(dkey, "-avg");
+    datum.ready = true;
+    datum.value = stats->average;
+    mqtt_announce_datum(dkey, &datum);
+    ready &= datum.ready;
+
+    stats->ready = ready;
+}
+
+void mqtt_15mins() {
+    // Announce battery level more frequently if it's not full.
+    if(battery_pc_datum != 100) {
+        mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
+        mqtt_announce_datum("battery-percent", &battery_pc_datum);
+    }
+    mqtt_announce_stats("pm25", pm25_stats);
+    mqtt_announce_stats("pm10", pm10_stats);
+    mqtt_announce_stats("temperature", temperature_stats);
+    mqtt_announce_stats("sound", sound_stats);
+    vTaskDelay(
+} 
+
+void mqtt_30mins() {
+    // Announce battery level more frequently if it's not full.
+    if(battery_pc_datum != 100) {
+        mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
+        mqtt_announce_datum("battery-percent", &battery_pc_datum);
+    }
+    mqtt_announce_stats("pm25", pm25_stats);
+    mqtt_announce_stats("pm10", pm10_stats);
+    mqtt_announce_stats("temperature", temperature_stats);
+    mqtt_announce_stats("humidity", humidity_stats);
+    mqtt_announce_stats("sound", sound_stats);
+    mqtt_announce_stats("visible-light", visible_light_stats);
+} 
+
+void mqtt_60mins() {
+    mqtt_announce_datum("ImportEnergy", import_energy_datum);
+    mqtt_announce_datum("ExportEnergy", export_energy_datum);
+    mqtt_announce_datum("WaterMeter", water_meter_datum);
+    mqtt_announce_stats("PowerFactor", pf_stats);
+    mqtt_announce_stats("PFLeadLag", pf_sign_stats);
+    mqtt_announce_stats("Current1", current1_stats);
+    mqtt_announce_stats("Current2", current2_stats);
+    mqtt_announce_stats("Current3", current3_stats);
+    mqtt_announce_stats("Voltage1", voltage1_stats);
+    mqtt_announce_stats("Voltage2", voltage2_stats);
+    mqtt_announce_stats("Voltage3", voltage3_stats);
+    mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
+    mqtt_announce_datum("battery-percent", &battery_pc_datum);
+}
+
+void mqtt_daily() {
+    mqtt_announce_datum("WaterMeter", water_meter_datum);
+}
+
+void mqtt_task(void * pvParameters) {
+    for(;;) {
+        for(i = 0; i < 24; i++) {
+            mqtt_15mins();
+            mqtt_30mins();
+            mqtt_15mins();
+            mqtt_15mins();
+            mqtt_30mins();
+            mqtt_15mins();
+            mqtt_60mins();
+        }
+        mqtt_daily();
+    }
 }
