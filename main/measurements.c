@@ -64,8 +64,7 @@ void measurements_task(void *pvParameters) {
             }
 
             // These need to be announced once every ten minutes or whatever
-            water_volume_query();
-            light_volume_query();
+            query_pulsecount();
             battery_query();
             vTaskDelay(1000 / portTICK_PERIOD_MS);
         }
