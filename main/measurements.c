@@ -41,16 +41,8 @@ void measurements_task(void *pvParameters) {
                 if(soco_en) smart_meter_query();
                 //vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
-            printf("announcing.\n");
-
-            // Also announce the averages, minima, etc.
-            if(hpm_en) hpm_announce();
-            hdc_announce();
-            sound_announce();
-            if(soco_en) smart_meter_announce();
 
             // These need to be announced once every ten minutes or whatever
-            tsl_announce();   // light
             water_volume_query();
             light_volume_query();
             battery_query();
