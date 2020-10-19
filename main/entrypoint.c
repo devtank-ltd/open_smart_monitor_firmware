@@ -111,6 +111,10 @@ TaskHandle_t xMeasureHandle = NULL;
 StaticTask_t xMeasureBuffer;
 StackType_t  xMeasureStack[MEASSTACKSIZE];
 
+TaskHandle_t xMQTTHandle = NULL;
+StaticTask_t xMQTTBuffer;
+StackType_t  xMQTTStack[MEASSTACKSIZE];
+
 void app_main(void)
 {
     i2c_setup();
@@ -136,6 +140,15 @@ void app_main(void)
                       tskIDLE_PRIORITY + 1,
                       xMeasureStack,
                       &xMeasureBuffer);
+
+    xMeasureHandle = xTaskCreateStatic(
+                      mqtt_task,
+                      "MQTT-SN",
+                      MEASSTACKSIZE,
+                      (void*)1,
+                      tskIDLE_PRIORITY + 1,
+                      xMQTTStack,
+                      &xMQTTBuffer);
 
     for(;;) vTaskDelay(INT_MAX);
     esp_restart();
