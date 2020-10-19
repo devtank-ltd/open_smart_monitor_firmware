@@ -24,6 +24,27 @@ void measurements_task(void *pvParameters) {
     volume_setup();
     if(soco_en) smart_meter_setup();
 
+    // Take a few samples from various sensors;
+    // This will stagger the times when they need to calculate averages etc
+    sound_query();
+    sound_query();
+    sound_query();
+    sound_query();
+
+    hdc_query();
+    hdc_query();
+    hdc_query();
+
+    if(hpm_en) {
+        hpm_query();
+        hpm_query();
+    }
+    if(soco_en) {
+        smart_meter_query();
+        smart_meter_query();
+    }
+
+    tsl_query();
 
     for(;;) {
         // These need to be announced very rarely.
