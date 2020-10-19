@@ -42,15 +42,10 @@ void tslsample(uint16_t l) {
     static int sample_no = 0;
     lux[sample_no] = l;
     sample_no++;
+    if(sample_no >= SAMPLES) {
+        stats(lux, SAMPLES, &visible_light_stats);
+    }
     sample_no %= SAMPLES;
-}
-
-void tsl_announce(){
-    int32_t min;
-    int32_t max;
-    int64_t avg;
-    stats(lux, SAMPLES, &avg, &min, &max);
-    mqtt_announce_int("VisibleLight", avg);
 }
 
 static uint8_t read_tsl_reg(uint8_t reg) {
