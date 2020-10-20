@@ -235,7 +235,7 @@ void mqtt_announce_datum(const char * key, mqtt_datum_t * datum, TickType_t * ne
     if(cd < nd)
         *next_delay = cd;
 
-    if(datum->sent > datum->updated)
+    if(!datum->ready || (xTaskGetTickCount() < datum->updated + datum->delta))
         return; // The datum is not ready to be sent over.
     if(!mqtt_announce_int(key, datum->value))
         datum->sent = xTaskGetTickCount();
@@ -249,7 +249,7 @@ void mqtt_announce_stats(const char * key, mqtt_stats_t * stats, TickType_t * ne
     
     char dkey[100];
     bool ready = true;
-    if(stats->sent > stats->updated + stats->delta)
+    if(!stats->ready || (xTaskGetTickCount() < stats->updated + stats->delta))
         return; // The datum is not ready to be sent over.
 
     strcpy(dkey, key);
@@ -286,8 +286,8 @@ void mqtt_task(void * pvParameters) {
     for(;;) {
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
-        TickType_t next_delay;
-        for(int i = 0; i < 24; i++) {
+        for(int i = 0; i < 60; i++) {
+            TickType_t next_delay = INT_MAX;
             mqtt_announce_datum("WaterMeter", &water_meter_datum, &next_delay);
             mqtt_announce_stats("sound", &sound_stats, &next_delay);
             mqtt_announce_stats("pm25", &pm25_stats, &next_delay);
@@ -312,6 +312,9 @@ void mqtt_task(void * pvParameters) {
             mqtt_announce_stats("Voltage2", &voltage2_stats, &next_delay);
             mqtt_announce_stats("Voltage3", &voltage3_stats, &next_delay);
             mqtt_announce_datum("battery-millivolts", &battery_mv_datum, &next_delay);
+            if(!next_delay)
+                next_delay = 60 * 1000 / portTICK_PERIOD_MS; // One minute
+            INFO_PRINTF("Waiting %d ticks before doing another round of announcements\n", next_delay);
             vTaskDelay(next_delay);
         }
     }

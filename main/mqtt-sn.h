@@ -9,6 +9,7 @@ int mqtt_announce_str(const char * key, const char * val);
 int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta);
 
 typedef struct _ {
+    bool ready;
     TickType_t updated;
     TickType_t sent;
     TickType_t delta;
@@ -16,6 +17,7 @@ typedef struct _ {
 } mqtt_datum_t;
 
 typedef struct __ {
+    bool ready;
     TickType_t updated;
     TickType_t sent;
     TickType_t delta;
@@ -47,3 +49,4 @@ extern mqtt_stats_t pf_sign_stats;
 void mqtt_task(void *pvParameters);
 void mqtt_datum_update(mqtt_datum_t * datum, int32_t value);
 void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins);
+void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins);
