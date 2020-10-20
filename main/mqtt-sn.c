@@ -90,7 +90,6 @@ int await_ack() {
         ERROR_PRINTF("Not enough bytes for ACK");
         return 0;
     }
-    INFO_PRINTF("Received %d bytes in which to search for ACK.\n", received);
 
     // We've just received some number of bytes, which should contain an ACK message
     char ackmsg[ACKBUFLEN];
@@ -126,7 +125,6 @@ int await_ack() {
 
     for(int i = 0; i <= received - 25; i++) {
         if(!memcmp(ackbuf + i, ackmsg, ackmsg[0] - 1)) {
-            INFO_PRINTF("Found ACK %d bytes in\n", i);
             return 1; // found it
         }
     }
@@ -277,6 +275,9 @@ void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
         datum->sent = 0; // in case of roll-over.
 }
 
+void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins) {
+    stats->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
+}
 void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins) {
     datum->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
