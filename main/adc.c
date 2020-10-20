@@ -73,6 +73,9 @@ void adc_setup() {
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
+    mqtt_stats_update_delta(&sound_stats, 15);
+    mqtt_datum_update_delta(&battery_mv_datum, 15);
+    mqtt_datum_update_delta(&battery_pc_datum, 15);
 }
 
 static uint16_t adc2_safe_get(adc2_channel_t channel) {
@@ -125,6 +128,9 @@ void battery_query() {
     if(pc > 100) pc = 100;
     mqtt_datum_update(&battery_mv_datum, v);
     mqtt_datum_update(&battery_pc_datum, pc);
+    int delta = pc == 100 ? 120 : 10;
+    mqtt_datum_update_delta(&battery_mv_datum, delta);
+    mqtt_datum_update_delta(&battery_pc_datum, delta);
 }
 
 void sound_query() {
