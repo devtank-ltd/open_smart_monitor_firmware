@@ -29,7 +29,6 @@ static unsigned adc_values_index = 0;
 float midpoint = 0;
 
 int32_t db[SAMPLES];
-bool samples_ready = false;
 
 void soundsample(uint16_t db_s) {
     static int sample_no = 0;
@@ -98,7 +97,6 @@ static double adc_avg_get(unsigned index) {
     return r / (double)ADC_AVG_SLOTS;
 }
 
-
 double voltagecalc(int adc_count){
       if(adc_count < 1 || adc_count > 4095) return 0;
       return -6.20034e-27 * pow(adc_count, 8)\
@@ -125,12 +123,9 @@ void battery_query() {
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
-    battery_mv_datum.value = v;
-    battery_pc_datum.value = pc;
-    battery_mv_datum.ready = true;
-    battery_pc_datum.ready = true;
+    mqtt_datum_update(&battery_mv_datum, v);
+    mqtt_datum_update(&battery_pc_datum, pc);
 }
-
 
 void sound_query() {
     long double vrms = 0;

@@ -7,6 +7,7 @@
 #include "stats.h"
 #include "logging.h"
 #include "mqtt-sn.h"
+#include "config.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
 #define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
@@ -32,11 +33,8 @@ void sample(int32_t pm25_s, int32_t pm10_s) {
 }
 
 void hpm_setup() {
-    DEBUG_PRINTF("Init HPM");
-    const char *value = get_config("HPM");
-    enable = value[0] != '0';
+    enable = get_hpmen();
 }
-
 
 static void hpm_switch() {
     // Switch UART to HPM

@@ -11,9 +11,10 @@
 #include "pinmap.h"
 #include "logging.h"
 #include "stats.h"
+#include "config.h"
+
 #define READ_HOLDING_FUNC 3
 #define MODBUS_ERROR_MASK 0x80
-
 #define NUM_SAMPLES 1000
 
 static int32_t powerfactor[NUM_SAMPLES];
@@ -25,7 +26,6 @@ static int32_t voltage1[NUM_SAMPLES];
 static int32_t voltage2[NUM_SAMPLES];
 static int32_t voltage3[NUM_SAMPLES];
 
-static bool samples_ready = false;
 #define E53_ADDR 5
 
 /*         <               ADU                         >
@@ -331,6 +331,8 @@ static void smart_switch_switch() {
 
 esp_err_t smart_meter_setup() {
 
+    if(!get_socoen())
+        return ESP_OK;
     DEBUG_PRINTF("Init Smart Meter");
 
     smart_switch_switch();
@@ -407,6 +409,7 @@ unknown_device:
         DEBUG_PRINTF("soco[%d] == '%c';", i, soco[i]);
     }
     ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
+    sococonnected = 0;
     return ESP_FAIL;
 }
 
@@ -438,13 +441,15 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
         stats(voltage3, NUM_SAMPLES, &voltage3_stats);
         stats(powerfactor, NUM_SAMPLES, &pf_stats);
         stats(leadlag, NUM_SAMPLES, &pf_sign_stats);
-        samples_ready = true;
         sample_no = 0;
     }
 }
 
 void smart_meter_query()
 {
+    if(!sococonnected)
+        return;
+
     smart_switch_switch();
     static int count = 1;
     count--;
@@ -462,10 +467,11 @@ void smart_meter_query()
          * But the import energy does not need to be queried nearly as often
          * so I set this countdown so that it gets queried hourly instead
          */
-        sense_modbus_read_value(36, &import_energy_datum.value, sizeof(import_energy_datum.value));
-        sense_modbus_read_value(37, &export_energy_datum.value, sizeof(export_energy_datum.value));
-        export_energy_datum.ready = true;
-        import_energy_datum.ready = true;
+        int32_t import, export;
+        sense_modbus_read_value(36, &import, sizeof(import_energy_datum.value));
+        sense_modbus_read_value(37, &export, sizeof(export_energy_datum.value));
+        mqtt_datum_update(&import_energy_datum, import);
+        mqtt_datum_update(&export_energy_datum, export);
         count = 3600;
     }
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));

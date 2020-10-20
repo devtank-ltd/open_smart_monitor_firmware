@@ -15,14 +15,13 @@
 #include "config.h"
 
 void measurements_task(void *pvParameters) {
-    uint8_t soco_en = get_socoen();
     uint8_t hpm_en = get_hpmen();
 
     if(hpm_en) hpm_setup();
     adc_setup();
     tsl_setup();
     volume_setup();
-    if(soco_en) smart_meter_setup();
+    smart_meter_setup();
 
     // Take a few samples from various sensors;
     // This will stagger the times when they need to calculate averages etc
@@ -39,10 +38,8 @@ void measurements_task(void *pvParameters) {
         hpm_query();
         hpm_query();
     }
-    if(soco_en) {
-        smart_meter_query();
-        smart_meter_query();
-    }
+    smart_meter_query();
+    smart_meter_query();
 
     tsl_query();
 
@@ -56,7 +53,7 @@ void measurements_task(void *pvParameters) {
                 hdc_query();   // humidity and temperature
                 sound_query(); // sound
                 tsl_query();   // light
-                if(soco_en) smart_meter_query();
+                smart_meter_query();
                 //vTaskDelay(1000 / portTICK_PERIOD_MS);
             }
 

@@ -10,6 +10,7 @@
 #include "mac.h"
 #include "socomec.h"
 #include "config.h"
+#include "freertos/task.h"
 
 #define MQTT_SN_MAX_PACKET_LENGTH     (255)
 #define MQTT_SN_TYPE_PUBLISH          (0x0C)
@@ -230,99 +231,87 @@ int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, in
     return 0;
 }
 
-void mqtt_announce_datum(const char * key, mqtt_datum_t * datum) {
-    if(!datum->ready)
+void mqtt_announce_datum(const char * key, mqtt_datum_t * datum, TickType_t * next_delay) {
+    TickType_t nd = *next_delay;
+    TickType_t cd = datum->sent + datum->delta - xTaskGetTickCount();
+    if(cd < nd)
+        *next_delay = cd;
+
+    if(datum->sent > datum->updated)
         return; // The datum is not ready to be sent over.
     if(!mqtt_announce_int(key, datum->value))
-        datum->ready = 0; // Clear ready flag if MQTT packet sent successfully.
+        datum->sent = xTaskGetTickCount();
 }
 
-void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
+void mqtt_announce_stats(const char * key, mqtt_stats_t * stats, TickType_t * next_delay) {
+    TickType_t nd = *next_delay;
+    TickType_t cd = stats->sent + stats->delta - xTaskGetTickCount();
+    if(cd < nd)
+        *next_delay = cd;
+    
     char dkey[100];
     bool ready = true;
-    mqtt_datum_t datum;
-    if(!stats->ready)
-        return;
+    if(stats->sent > stats->updated + stats->delta)
+        return; // The datum is not ready to be sent over.
 
     strcpy(dkey, key);
     strcat(dkey, "-min");
-    datum.ready = true;
-    datum.value = stats->minimum;
-    mqtt_announce_datum(dkey, &datum);
-    ready &= datum.ready;
+    ready &= !mqtt_announce_int(dkey, stats->minimum);
 
     strcpy(dkey, key);
     strcat(dkey, "-max");
-    datum.ready = true;
-    datum.value = stats->maximum;
-    mqtt_announce_datum(dkey, &datum);
-    ready &= datum.ready;
+    ready &= mqtt_announce_int(dkey, stats->maximum);
 
     strcpy(dkey, key);
     strcat(dkey, "-avg");
-    datum.ready = true;
-    datum.value = stats->average;
-    mqtt_announce_datum(dkey, &datum);
-    ready &= datum.ready;
+    ready &= mqtt_announce_int(dkey, stats->average);
 
-    stats->ready = ready;
+    if(ready)
+        stats->sent = xTaskGetTickCount();
 }
 
-void mqtt_15mins() {
-    // Announce battery level more frequently if it's not full.
-    if(battery_pc_datum.value != 100) {
-        mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
-        mqtt_announce_datum("battery-percent", &battery_pc_datum);
-    }
-    mqtt_announce_stats("pm25", &pm25_stats);
-    mqtt_announce_stats("pm10", &pm10_stats);
-    mqtt_announce_stats("temperature", &temperature_stats);
-    mqtt_announce_stats("sound", &sound_stats);
-    vTaskDelay((15 * 60 * 1000) / portTICK_PERIOD_MS);
-} 
-
-void mqtt_30mins() {
-    mqtt_announce_stats("pm25", &pm25_stats);
-    mqtt_announce_stats("pm10", &pm10_stats);
-    mqtt_announce_stats("temperature", &temperature_stats);
-    mqtt_announce_stats("humidity", &humidity_stats);
-    mqtt_announce_stats("sound", &sound_stats);
-    mqtt_announce_stats("visible-light", &visible_light_stats);
-} 
-
-void mqtt_60mins() {
-    mqtt_announce_datum("ImportEnergy", &import_energy_datum);
-    mqtt_announce_datum("ExportEnergy", &export_energy_datum);
-    mqtt_announce_datum("WaterMeter", &water_meter_datum);
-    mqtt_announce_stats("PowerFactor", &pf_stats);
-    mqtt_announce_stats("PFLeadLag", &pf_sign_stats);
-    mqtt_announce_stats("Current1", &current1_stats);
-    mqtt_announce_stats("Current2", &current2_stats);
-    mqtt_announce_stats("Current3", &current3_stats);
-    mqtt_announce_stats("Voltage1", &voltage1_stats);
-    mqtt_announce_stats("Voltage2", &voltage2_stats);
-    mqtt_announce_stats("Voltage3", &voltage3_stats);
-    mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
-    mqtt_announce_datum("battery-percent", &battery_pc_datum);
+void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
+    datum->value = value;
+    datum->updated = xTaskGetTickCount();
+    if(datum->sent > datum->updated)
+        datum->sent = 0; // in case of roll-over.
 }
 
-void mqtt_daily() {
-    mqtt_announce_datum("WaterMeter", &water_meter_datum);
+void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins) {
+    datum->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
 
 void mqtt_task(void * pvParameters) {
     for(;;) {
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
+        TickType_t next_delay;
         for(int i = 0; i < 24; i++) {
-            mqtt_15mins();
-            mqtt_30mins();
-            mqtt_15mins();
-            mqtt_15mins();
-            mqtt_30mins();
-            mqtt_15mins();
-            mqtt_60mins();
+            mqtt_announce_datum("WaterMeter", &water_meter_datum, &next_delay);
+            mqtt_announce_stats("sound", &sound_stats, &next_delay);
+            mqtt_announce_stats("pm25", &pm25_stats, &next_delay);
+            mqtt_announce_stats("pm10", &pm10_stats, &next_delay);
+            mqtt_announce_stats("temperature", &temperature_stats, &next_delay);
+            mqtt_announce_stats("visible-light", &visible_light_stats, &next_delay);
+            mqtt_announce_stats("pm25", &pm25_stats, &next_delay);
+            mqtt_announce_stats("pm10", &pm10_stats, &next_delay);
+            mqtt_announce_stats("temperature", &temperature_stats, &next_delay);
+            mqtt_announce_stats("humidity", &humidity_stats, &next_delay);
+            mqtt_announce_stats("sound", &sound_stats, &next_delay);
+            mqtt_announce_datum("battery-percent", &battery_pc_datum, &next_delay);
+            mqtt_announce_datum("ImportEnergy", &import_energy_datum, &next_delay);
+            mqtt_announce_datum("ExportEnergy", &export_energy_datum, &next_delay);
+            mqtt_announce_datum("WaterMeter", &water_meter_datum, &next_delay);
+            mqtt_announce_stats("PowerFactor", &pf_stats, &next_delay);
+            mqtt_announce_stats("PFLeadLag", &pf_sign_stats, &next_delay);
+            mqtt_announce_stats("Current1", &current1_stats, &next_delay);
+            mqtt_announce_stats("Current2", &current2_stats, &next_delay);
+            mqtt_announce_stats("Current3", &current3_stats, &next_delay);
+            mqtt_announce_stats("Voltage1", &voltage1_stats, &next_delay);
+            mqtt_announce_stats("Voltage2", &voltage2_stats, &next_delay);
+            mqtt_announce_stats("Voltage3", &voltage3_stats, &next_delay);
+            mqtt_announce_datum("battery-millivolts", &battery_mv_datum, &next_delay);
+            vTaskDelay(next_delay);
         }
-        mqtt_daily();
     }
 }
