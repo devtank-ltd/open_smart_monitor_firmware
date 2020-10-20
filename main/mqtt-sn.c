@@ -271,6 +271,7 @@ void mqtt_announce_stats(const char * key, mqtt_stats_t * stats, TickType_t * ne
 void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
     datum->value = value;
     datum->updated = xTaskGetTickCount();
+    datum->ready = true;
     if(datum->sent > datum->updated)
         datum->sent = 0; // in case of roll-over.
 }

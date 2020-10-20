@@ -16,4 +16,5 @@ void stats(int32_t * arr, unsigned int len, mqtt_stats_t * stats) {
     }
     stats->average /= len;
     stats->updated = xTaskGetTickCount();
+    stats->ready=true;
 }
