@@ -14,10 +14,10 @@
 #include "volume.h"
 #include "config.h"
 
-void measurements_task(void *pvParameters) {
-    uint8_t hpm_en = get_hpmen();
+#define SAMPLE_RATE_MS 1000
+#define TIME_OFFSET (SAMPLE_RATE_MS / portTICK_PERIOD_MS)
 
-    if(hpm_en) hpm_setup();
+void measurements_task(void *pvParameters) {
     adc_setup();
     tsl_setup();
     volume_setup();
@@ -34,33 +34,29 @@ void measurements_task(void *pvParameters) {
     hdc_query();
     hdc_query();
 
-    if(hpm_en) {
-        hpm_query();
-        hpm_query();
-    }
+    hpm_query();
+    hpm_query();
     smart_meter_query();
     smart_meter_query();
 
     tsl_query();
 
     for(;;) {
+        TickType_t before = xTaskGetTickCount();
 
-        for(int i = 0; i < 10; i++) {
-            for(int j = 0; j < 600; j++) {
-                printf("sampling.\n");
-                // These need to be averaged over ten minutes.
-                if(hpm_en) hpm_query();   // smog sensor
-                hdc_query();   // humidity and temperature
-                sound_query(); // sound
-                tsl_query();   // light
-                smart_meter_query();
-                //vTaskDelay(1000 / portTICK_PERIOD_MS);
-            }
+        hpm_query();   // smog sensor
+        hdc_query();   // humidity and temperature
+        sound_query(); // sound
+        tsl_query();   // light
+        smart_meter_query();
+        query_pulsecount();
+        battery_query();
 
-            // These need to be announced once every ten minutes or whatever
-            query_pulsecount();
-            battery_query();
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        TickType_t after = xTaskGetTickCount();
+        TickType_t delay = (before + TIME_OFFSET) - after;
+
+        if(before + TIME_OFFSET > after) {
+            vTaskDelay(delay);
         }
     }
 }
