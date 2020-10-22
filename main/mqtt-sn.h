@@ -8,7 +8,7 @@ int mqtt_announce_int(const char * key, int val);
 int mqtt_announce_str(const char * key, const char * val);
 int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta);
 
-typedef struct _ {
+typedef volatile struct _ {
     bool ready;
     TickType_t updated;
     TickType_t sent;
@@ -16,7 +16,7 @@ typedef struct _ {
     int32_t value;
 } mqtt_datum_t;
 
-typedef struct __ {
+typedef volatile struct __ {
     bool ready;
     TickType_t updated;
     TickType_t sent;
@@ -26,26 +26,26 @@ typedef struct __ {
     int32_t maximum;
 } mqtt_stats_t;
 
-extern mqtt_stats_t humidity_stats;
-extern mqtt_stats_t sound_stats;
-extern mqtt_stats_t temperature_stats;
-extern mqtt_datum_t battery_mv_datum;
-extern mqtt_datum_t battery_pc_datum;
-extern mqtt_stats_t pm10_stats;
-extern mqtt_stats_t pm25_stats;
-extern mqtt_stats_t visible_light_stats;
-extern mqtt_stats_t current1_stats;
-extern mqtt_stats_t current2_stats;
-extern mqtt_stats_t current3_stats;
-extern mqtt_stats_t voltage1_stats;
-extern mqtt_stats_t voltage2_stats;
-extern mqtt_stats_t voltage3_stats;
-extern mqtt_datum_t water_meter_datum;
-extern mqtt_datum_t gas_meter_datum;
-extern mqtt_datum_t export_energy_datum;
-extern mqtt_datum_t import_energy_datum;
-extern mqtt_stats_t pf_stats;
-extern mqtt_stats_t pf_sign_stats;
+extern mqtt_stats_t mqtt_humidity_stats;
+extern mqtt_stats_t mqtt_sound_stats;
+extern mqtt_stats_t mqtt_temperature_stats;
+extern mqtt_datum_t mqtt_battery_mv_datum;
+extern mqtt_datum_t mqtt_battery_pc_datum;
+extern mqtt_stats_t mqtt_pm10_stats;
+extern mqtt_stats_t mqtt_pm25_stats;
+extern mqtt_stats_t mqtt_visible_light_stats;
+extern mqtt_stats_t mqtt_current1_stats;
+extern mqtt_stats_t mqtt_current2_stats;
+extern mqtt_stats_t mqtt_current3_stats;
+extern mqtt_stats_t mqtt_voltage1_stats;
+extern mqtt_stats_t mqtt_voltage2_stats;
+extern mqtt_stats_t mqtt_voltage3_stats;
+extern mqtt_datum_t mqtt_water_meter_datum;
+extern mqtt_datum_t mqtt_gas_meter_datum;
+extern mqtt_datum_t mqtt_export_energy_datum;
+extern mqtt_datum_t mqtt_import_energy_datum;
+extern mqtt_stats_t mqtt_pf_stats;
+extern mqtt_stats_t mqtt_pf_sign_stats;
 void mqtt_task(void *pvParameters);
 void mqtt_datum_update(mqtt_datum_t * datum, int32_t value);
 void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins);

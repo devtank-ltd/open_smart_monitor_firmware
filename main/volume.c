@@ -93,6 +93,6 @@ static void qry_frequency(const char * key, int which) {
 }
 */
 void query_pulsecount(const char * key, int multiplier, int which) {
-    mqtt_datum_update(&water_meter_datum, count1 * 10);
-    mqtt_datum_update(&gas_meter_datum, count2);
+    mqtt_datum_update(&mqtt_water_meter_datum, count1 * 10);
+    mqtt_datum_update(&mqtt_gas_meter_datum, count2);
 }

@@ -26,16 +26,16 @@ void sample(int32_t pm25_s, int32_t pm10_s) {
     pm25[sample_no] = pm25_s;
     sample_no++;
     if(sample_no >= SAMPLES) {
-        stats(pm10, SAMPLES, &pm10_stats);
-        stats(pm25, SAMPLES, &pm25_stats);
+        stats(pm10, SAMPLES, &mqtt_pm10_stats);
+        stats(pm25, SAMPLES, &mqtt_pm25_stats);
     }
     sample_no %= SAMPLES;
 }
 
 void hpm_setup() {
     enable = get_hpmen();
-    mqtt_stats_update_delta(&pm10_stats, 15);
-    mqtt_stats_update_delta(&pm25_stats, 15);
+    mqtt_stats_update_delta(&mqtt_pm10_stats, 15);
+    mqtt_stats_update_delta(&mqtt_pm25_stats, 15);
 }
 
 static void hpm_switch() {

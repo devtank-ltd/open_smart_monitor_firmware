@@ -433,14 +433,14 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
     voltage3[sample_no] = v3;
     sample_no++;
     if(sample_no > NUM_SAMPLES) {
-        stats(current1, NUM_SAMPLES, &current1_stats);
-        stats(current2, NUM_SAMPLES, &current2_stats);
-        stats(current3, NUM_SAMPLES, &current3_stats);
-        stats(voltage1, NUM_SAMPLES, &voltage1_stats);
-        stats(voltage2, NUM_SAMPLES, &voltage2_stats);
-        stats(voltage3, NUM_SAMPLES, &voltage3_stats);
-        stats(powerfactor, NUM_SAMPLES, &pf_stats);
-        stats(leadlag, NUM_SAMPLES, &pf_sign_stats);
+        stats(current1, NUM_SAMPLES, &mqtt_current1_stats);
+        stats(current2, NUM_SAMPLES, &mqtt_current2_stats);
+        stats(current3, NUM_SAMPLES, &mqtt_current3_stats);
+        stats(voltage1, NUM_SAMPLES, &mqtt_voltage1_stats);
+        stats(voltage2, NUM_SAMPLES, &mqtt_voltage2_stats);
+        stats(voltage3, NUM_SAMPLES, &mqtt_voltage3_stats);
+        stats(powerfactor, NUM_SAMPLES, &mqtt_pf_stats);
+        stats(leadlag, NUM_SAMPLES, &mqtt_pf_sign_stats);
         sample_no = 0;
     }
 }
@@ -468,10 +468,10 @@ void smart_meter_query()
          * so I set this countdown so that it gets queried hourly instead
          */
         int32_t import, export;
-        sense_modbus_read_value(36, &import, sizeof(import_energy_datum.value));
-        sense_modbus_read_value(37, &export, sizeof(export_energy_datum.value));
-        mqtt_datum_update(&import_energy_datum, import);
-        mqtt_datum_update(&export_energy_datum, export);
+        sense_modbus_read_value(36, &import, sizeof(mqtt_import_energy_datum.value));
+        sense_modbus_read_value(37, &export, sizeof(mqtt_export_energy_datum.value));
+        mqtt_datum_update(&mqtt_import_energy_datum, import);
+        mqtt_datum_update(&mqtt_export_energy_datum, export);
         count = 3600;
     }
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));

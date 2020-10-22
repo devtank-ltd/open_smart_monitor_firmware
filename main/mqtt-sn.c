@@ -26,26 +26,26 @@
 
 #define DR_REG_RNG_BASE                        0x3ff75144
 
-mqtt_stats_t humidity_stats = {0};
-mqtt_stats_t sound_stats = {0};
-mqtt_stats_t temperature_stats = {0};
-mqtt_datum_t battery_pc_datum = {0};
-mqtt_datum_t battery_mv_datum = {0};
-mqtt_datum_t import_energy_datum = {0};
-mqtt_datum_t export_energy_datum = {0};
-mqtt_datum_t water_meter_datum = {0};
-mqtt_datum_t gas_meter_datum = {0};
-mqtt_stats_t current1_stats = {0};
-mqtt_stats_t current2_stats = {0};
-mqtt_stats_t current3_stats = {0};
-mqtt_stats_t voltage1_stats = {0};
-mqtt_stats_t voltage2_stats = {0};
-mqtt_stats_t voltage3_stats = {0};
-mqtt_stats_t pf_stats = {0};
-mqtt_stats_t pf_sign_stats = {0};
-mqtt_stats_t pm10_stats = {0};
-mqtt_stats_t pm25_stats = {0};
-mqtt_stats_t visible_light_stats = {0};
+mqtt_stats_t mqtt_humidity_stats = {0};
+mqtt_stats_t mqtt_sound_stats = {0};
+mqtt_stats_t mqtt_temperature_stats = {0};
+mqtt_datum_t mqtt_battery_pc_datum = {0};
+mqtt_datum_t mqtt_battery_mv_datum = {0};
+mqtt_datum_t mqtt_import_energy_datum = {0};
+mqtt_datum_t mqtt_export_energy_datum = {0};
+mqtt_datum_t mqtt_water_meter_datum = {0};
+mqtt_datum_t mqtt_gas_meter_datum = {0};
+mqtt_stats_t mqtt_current1_stats = {0};
+mqtt_stats_t mqtt_current2_stats = {0};
+mqtt_stats_t mqtt_current3_stats = {0};
+mqtt_stats_t mqtt_voltage1_stats = {0};
+mqtt_stats_t mqtt_voltage2_stats = {0};
+mqtt_stats_t mqtt_voltage3_stats = {0};
+mqtt_stats_t mqtt_pf_stats = {0};
+mqtt_stats_t mqtt_pf_sign_stats = {0};
+mqtt_stats_t mqtt_pm10_stats = {0};
+mqtt_stats_t mqtt_pm25_stats = {0};
+mqtt_stats_t mqtt_visible_light_stats = {0};
 
 static volatile uint16_t dropped = 0;
 
@@ -279,35 +279,35 @@ void mqtt_task(void * pvParameters) {
         mqtt_announce_str("fw", GIT_COMMIT);
         for(int i = 0; i < 60; i++) {
             TickType_t before = xTaskGetTickCount();
-            mqtt_announce_datum("WaterMeter", &water_meter_datum);
-            mqtt_announce_stats("sound", &sound_stats);
-            mqtt_announce_stats("pm25", &pm25_stats);
-            mqtt_announce_stats("pm10", &pm10_stats);
-            mqtt_announce_stats("temperature", &temperature_stats);
-            mqtt_announce_stats("visible-light", &visible_light_stats);
-            mqtt_announce_stats("pm25", &pm25_stats);
-            mqtt_announce_stats("pm10", &pm10_stats);
-            mqtt_announce_stats("temperature", &temperature_stats);
-            mqtt_announce_stats("humidity", &humidity_stats);
-            mqtt_announce_stats("sound", &sound_stats);
-            mqtt_announce_datum("battery-percent", &battery_pc_datum);
-            mqtt_announce_datum("ImportEnergy", &import_energy_datum);
-            mqtt_announce_datum("ExportEnergy", &export_energy_datum);
-            mqtt_announce_datum("WaterMeter", &water_meter_datum);
-            mqtt_announce_stats("PowerFactor", &pf_stats);
-            mqtt_announce_stats("PFLeadLag", &pf_sign_stats);
-            mqtt_announce_stats("Current1", &current1_stats);
-            mqtt_announce_stats("Current2", &current2_stats);
-            mqtt_announce_stats("Current3", &current3_stats);
-            mqtt_announce_stats("Voltage1", &voltage1_stats);
-            mqtt_announce_stats("Voltage2", &voltage2_stats);
-            mqtt_announce_stats("Voltage3", &voltage3_stats);
-            mqtt_announce_datum("battery-millivolts", &battery_mv_datum);
+            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
+            mqtt_announce_stats("sound", &mqtt_sound_stats);
+            mqtt_announce_stats("pm25", &mqtt_pm25_stats);
+            mqtt_announce_stats("pm10", &mqtt_pm10_stats);
+            mqtt_announce_stats("temperature", &mqtt_temperature_stats);
+            mqtt_announce_stats("visible-light", &mqtt_visible_light_stats);
+            mqtt_announce_stats("pm25", &mqtt_pm25_stats);
+            mqtt_announce_stats("pm10", &mqtt_pm10_stats);
+            mqtt_announce_stats("temperature", &mqtt_temperature_stats);
+            mqtt_announce_stats("humidity", &mqtt_humidity_stats);
+            mqtt_announce_stats("sound", &mqtt_sound_stats);
+            mqtt_announce_datum("battery-percent", &mqtt_battery_pc_datum);
+            mqtt_announce_datum("ImportEnergy", &mqtt_import_energy_datum);
+            mqtt_announce_datum("ExportEnergy", &mqtt_export_energy_datum);
+            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
+            mqtt_announce_stats("PowerFactor", &mqtt_pf_stats);
+            mqtt_announce_stats("PFLeadLag", &mqtt_pf_sign_stats);
+            mqtt_announce_stats("Current1", &mqtt_current1_stats);
+            mqtt_announce_stats("Current2", &mqtt_current2_stats);
+            mqtt_announce_stats("Current3", &mqtt_current3_stats);
+            mqtt_announce_stats("Voltage1", &mqtt_voltage1_stats);
+            mqtt_announce_stats("Voltage2", &mqtt_voltage2_stats);
+            mqtt_announce_stats("Voltage3", &mqtt_voltage3_stats);
+            mqtt_announce_datum("battery-millivolts", &mqtt_battery_mv_datum);
             TickType_t after = xTaskGetTickCount();
             TickType_t window = 15 * 60 * 1000; // Fifteen minutes
             TickType_t delay = (before + window) - after;
 
-            INFO_PRINTF("Waiting %f minutes before doing another round of announcements\n", delay * 1.0 / portTICK_PERIOD_MS / 60);
+            INFO_PRINTF("Waiting %f minutes before doing another round of announcements\n", delay / 60.0 / portTICK_PERIOD_MS);
             vTaskDelay(delay);
         }
     }

@@ -47,8 +47,8 @@ void hdcsample(uint16_t temp, uint16_t hum) {
     humidity[sample_no] = hum;
     sample_no++;
     if(sample_no >= SAMPLES) {
-        stats(temperature, SAMPLES, &temperature_stats);
-        stats(humidity, SAMPLES, &humidity_stats);
+        stats(temperature, SAMPLES, &mqtt_temperature_stats);
+        stats(humidity, SAMPLES, &mqtt_humidity_stats);
     }
     sample_no %= SAMPLES;
 }
@@ -91,8 +91,8 @@ static void write_reg(uint8_t reg, uint8_t value) {
 
 static void hdc_init() {
     write_reg(CONFIG, MEAS_TRIG);
-    mqtt_stats_update_delta(&humidity_stats, 30);
-    mqtt_stats_update_delta(&temperature_stats, 15);
+    mqtt_stats_update_delta(&mqtt_humidity_stats, 30);
+    mqtt_stats_update_delta(&mqtt_temperature_stats, 15);
 }
 
 static void hdc_wait() {

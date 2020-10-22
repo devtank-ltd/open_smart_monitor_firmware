@@ -43,7 +43,7 @@ void tslsample(uint16_t l) {
     lux[sample_no] = l;
     sample_no++;
     if(sample_no >= SAMPLES) {
-        stats(lux, SAMPLES, &visible_light_stats);
+        stats(lux, SAMPLES, &mqtt_visible_light_stats);
     }
     sample_no %= SAMPLES;
 }
@@ -92,7 +92,7 @@ void tsl_setup() {
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
     INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
-    mqtt_stats_update_delta(&visible_light_stats, 30);
+    mqtt_stats_update_delta(&mqtt_visible_light_stats, 30);
 }
 
 #define CH_SCALE 10
