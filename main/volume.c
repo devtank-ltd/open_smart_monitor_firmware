@@ -63,6 +63,8 @@ static void freq_compute(void * arg) {
 }
 
 void volume_setup() {
+    mqtt_datum_update_delta(&mqtt_water_meter_datum, 1440);
+    mqtt_datum_update_delta(&mqtt_gas_meter_datum, 1440);
     DEBUG_PRINTF("Setting the volume measurement gpio up");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
