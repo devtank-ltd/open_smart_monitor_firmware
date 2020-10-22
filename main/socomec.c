@@ -334,6 +334,16 @@ esp_err_t smart_meter_setup() {
     if(!get_socoen())
         return ESP_OK;
     DEBUG_PRINTF("Init Smart Meter");
+    mqtt_stats_update_delta(&mqtt_current1_stats, 30);
+    mqtt_stats_update_delta(&mqtt_current2_stats, 30);
+    mqtt_stats_update_delta(&mqtt_current3_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage1_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage2_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage3_stats, 30);
+    mqtt_stats_update_delta(&mqtt_pf_stats, 360);
+    mqtt_stats_update_delta(&mqtt_pf_sign_stats, 360);
+    mqtt_datum_update_delta(&mqtt_import_energy_datum, 60);
+    mqtt_datum_update_delta(&mqtt_export_energy_datum, 60);
 
     smart_switch_switch();
 
