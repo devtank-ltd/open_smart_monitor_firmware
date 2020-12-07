@@ -9,6 +9,7 @@
 #include "commit.h"
 #include "mac.h"
 #include "socomec.h"
+#include "status_led.h"
 #include "config.h"
 #include "freertos/task.h"
 
@@ -173,8 +174,10 @@ static int mqtt_sn_send(const char topic[2], const char * message)
         sendthebytes(message, len);
         sendthebytes(crcstr, 4);
         if(await_ack()) {
+            status_led_set_status(STATUS_LED_OK);
             return 0;
         } else {
+            status_led_set_status(STATUS_LED_TROUBLE);
             printf("ACK not received!\n");
             uint32_t randomNumber = READ_PERI_REG(DR_REG_RNG_BASE) & 0x3ff;
             printf("Sleeping for %u ticks.", randomNumber);

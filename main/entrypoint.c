@@ -121,6 +121,7 @@ void app_main(void)
     getmac();
     lora_uart_setup();
     device_uart_setup();
+    status_led_set_status(STATUS_LED_OK);
 
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
