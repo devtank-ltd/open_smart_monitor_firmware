@@ -58,7 +58,7 @@
 #define LORA_UART_CTS 23
 
 #define PULSE_IN_1  32
-#define PULSE_IN_2  35
+#define DS_GPIO     14
 #define LIGHT_INT   4
 #define TEMP_INT    26
 #define I2CBUS I2C_NUM_0

@@ -97,13 +97,15 @@ uint8_t get_hpmen() {
 
 void set_socoen(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "soco_en", en);
-    ERROR_PRINTF("(%s) setting soco_en!", esp_err_to_name(err));
+    if(err !=ESP_OK)
+        ERROR_PRINTF("(%s) setting soco_en!", esp_err_to_name(err));
 }
 
 uint8_t get_socoen() {
     uint8_t en = 0;
     esp_err_t err = nvs_get_u8(calibration_handle(), "soco_en", &en);
-    ERROR_PRINTF("(%s) getting soco_en!", esp_err_to_name(err));
+    if(err !=ESP_OK)
+        ERROR_PRINTF("(%s) getting soco_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
         set_socoen(!get_hpmen());
         return get_socoen();
@@ -114,13 +116,15 @@ uint8_t get_socoen() {
 
 void set_mqtten(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "mqtt_en", en);
-    ERROR_PRINTF("(%s) setting mqtt_en!", esp_err_to_name(err));
+    if(err !=ESP_OK)
+        ERROR_PRINTF("(%s) setting mqtt_en!", esp_err_to_name(err));
 }
 
 uint8_t get_mqtten() {
     uint8_t en = 0;
     esp_err_t err = nvs_get_u8(calibration_handle(), "mqtt_en", &en);
-    ERROR_PRINTF("(%s) getting mqtt_en!", esp_err_to_name(err));
+    if(err !=ESP_OK)
+        ERROR_PRINTF("(%s) getting mqtt_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
         set_mqtten(0);
         return get_mqtten();

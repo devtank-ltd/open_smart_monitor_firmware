@@ -13,48 +13,53 @@
 #include "socomec.h"
 #include "volume.h"
 #include "config.h"
+#include "ds18b20.h"
+
+#define SAMPLE_RATE_MS 1000
+#define TIME_OFFSET (SAMPLE_RATE_MS / portTICK_PERIOD_MS)
 
 void measurements_task(void *pvParameters) {
-    uint8_t soco_en = get_socoen();
-    uint8_t hpm_en = get_hpmen();
-
-    if(hpm_en) hpm_setup();
     adc_setup();
     tsl_setup();
     volume_setup();
-    if(soco_en) smart_meter_setup();
+    smart_meter_setup();
+    ds18b20_init();
 
+    // Take a few samples from various sensors;
+    // This will stagger the times when they need to calculate averages etc
+    sound_query();
+    sound_query();
+    sound_query();
+    sound_query();
 
+    hdc_query();
+    hdc_query();
+    hdc_query();
+
+    hpm_query();
+    hpm_query();
+    smart_meter_query();
+    smart_meter_query();
+
+    tsl_query();
+    int i = 1;
     for(;;) {
-        // These need to be announced very rarely.
-        mqtt_announce_str("sku", "ENV-01");
-        mqtt_announce_str("fw", GIT_COMMIT);
+        TickType_t before = xTaskGetTickCount();
+    
+        printf("Sample %d\n", i++);
+        hpm_query();   // smog sensor
+        hdc_query();   // humidity and temperature
+        sound_query(); // sound
+        tsl_query();   // light
+        smart_meter_query();
+        query_pulsecount();
+        battery_query();
+        printf("Temperature: %f\n", ds18b20_get_temp());
+        TickType_t after = xTaskGetTickCount();
+        TickType_t delay = (before + TIME_OFFSET) - after;
 
-        for(int i = 0; i < 10; i++) {
-            for(int j = 0; j < 600; j++) {
-                printf("sampling.\n");
-                // These need to be averaged over ten minutes.
-                if(hpm_en) hpm_query();   // smog sensor
-                hdc_query();   // humidity and temperature
-                sound_query(); // sound
-                tsl_query();   // light
-                if(soco_en) smart_meter_query();
-                //vTaskDelay(1000 / portTICK_PERIOD_MS);
-            }
-            printf("announcing.\n");
-
-            // Also announce the averages, minima, etc.
-            if(hpm_en) hpm_announce();
-            hdc_announce();
-            sound_announce();
-            if(soco_en) smart_meter_announce();
-
-            // These need to be announced once every ten minutes or whatever
-            tsl_announce();   // light
-            water_volume_query();
-            light_volume_query();
-            battery_query();
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
+        if(before + TIME_OFFSET > after) {
+            vTaskDelay(delay);
         }
     }
 }

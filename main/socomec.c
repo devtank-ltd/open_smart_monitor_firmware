@@ -11,9 +11,10 @@
 #include "pinmap.h"
 #include "logging.h"
 #include "stats.h"
+#include "config.h"
+
 #define READ_HOLDING_FUNC 3
 #define MODBUS_ERROR_MASK 0x80
-
 #define NUM_SAMPLES 1000
 
 static int32_t powerfactor[NUM_SAMPLES];
@@ -25,7 +26,6 @@ static int32_t voltage1[NUM_SAMPLES];
 static int32_t voltage2[NUM_SAMPLES];
 static int32_t voltage3[NUM_SAMPLES];
 
-static bool samples_ready = false;
 #define E53_ADDR 5
 
 /*         <               ADU                         >
@@ -331,7 +331,19 @@ static void smart_switch_switch() {
 
 esp_err_t smart_meter_setup() {
 
+    if(!get_socoen())
+        return ESP_OK;
     DEBUG_PRINTF("Init Smart Meter");
+    mqtt_stats_update_delta(&mqtt_current1_stats, 30);
+    mqtt_stats_update_delta(&mqtt_current2_stats, 30);
+    mqtt_stats_update_delta(&mqtt_current3_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage1_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage2_stats, 30);
+    mqtt_stats_update_delta(&mqtt_voltage3_stats, 30);
+    mqtt_stats_update_delta(&mqtt_pf_stats, 360);
+    mqtt_stats_update_delta(&mqtt_pf_sign_stats, 360);
+    mqtt_datum_update_delta(&mqtt_import_energy_datum, 60);
+    mqtt_datum_update_delta(&mqtt_export_energy_datum, 60);
 
     smart_switch_switch();
 
@@ -407,6 +419,7 @@ unknown_device:
         DEBUG_PRINTF("soco[%d] == '%c';", i, soco[i]);
     }
     ERROR_PRINTF("I don't know what this means, but it probably means that I'm not connected to a Socomec brand smart meter.");
+    sococonnected = 0;
     return ESP_FAIL;
 }
 
@@ -430,16 +443,27 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
     voltage3[sample_no] = v3;
     sample_no++;
     if(sample_no > NUM_SAMPLES) {
-        samples_ready = true;
+        stats(current1, NUM_SAMPLES, &mqtt_current1_stats);
+        stats(current2, NUM_SAMPLES, &mqtt_current2_stats);
+        stats(current3, NUM_SAMPLES, &mqtt_current3_stats);
+        stats(voltage1, NUM_SAMPLES, &mqtt_voltage1_stats);
+        stats(voltage2, NUM_SAMPLES, &mqtt_voltage2_stats);
+        stats(voltage3, NUM_SAMPLES, &mqtt_voltage3_stats);
+        stats(powerfactor, NUM_SAMPLES, &mqtt_pf_stats);
+        stats(leadlag, NUM_SAMPLES, &mqtt_pf_sign_stats);
         sample_no = 0;
     }
 }
 
 void smart_meter_query()
 {
-    smart_switch_switch();
+    if(!sococonnected)
+        return;
 
-    uint32_t hourmeter     = 0;
+    smart_switch_switch();
+    static int count = 1;
+    count--;
+
     uint32_t powerfactor   = 0;
     uint32_t voltage1      = 0;
     uint32_t voltage2      = 0;
@@ -448,7 +472,18 @@ void smart_meter_query()
     uint32_t current2      = 0;
     uint32_t current3      = 0;
 
-    sense_modbus_read_value(0,  &hourmeter,     sizeof(hourmeter));
+    if(!count) {
+        /* I am expecting this function to be called once per second.
+         * But the import energy does not need to be queried nearly as often
+         * so I set this countdown so that it gets queried hourly instead
+         */
+        int32_t import, export;
+        sense_modbus_read_value(36, &import, sizeof(mqtt_import_energy_datum.value));
+        sense_modbus_read_value(37, &export, sizeof(mqtt_export_energy_datum.value));
+        mqtt_datum_update(&mqtt_import_energy_datum, import);
+        mqtt_datum_update(&mqtt_export_energy_datum, export);
+        count = 3600;
+    }
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
     sense_modbus_read_value(30, &voltage1,      sizeof(voltage1));
     sense_modbus_read_value(31, &voltage2,      sizeof(voltage2));
@@ -458,58 +493,4 @@ void smart_meter_query()
     sense_modbus_read_value(35, &current3,      sizeof(current3));
 
     elecsample(powerfactor, current1, current2, current3, voltage1, voltage2, voltage3);
-}
-
-void smart_meter_announce() {
-    uint32_t importenergy  = 0;
-    uint32_t exportenergy  = 0;
-    sense_modbus_read_value(36, &importenergy,  sizeof(importenergy));
-    sense_modbus_read_value(37, &exportenergy,  sizeof(exportenergy));
-    
-    if(samples_ready) {
-        int32_t max;
-        int32_t min;
-        int64_t avg;
-        stats(powerfactor, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("PowerFactor-avg", avg);
-        mqtt_announce_int("PowerFactor-min", min);
-        mqtt_announce_int("PowerFactor-max", max);
-
-        stats(leadlag, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("PowerFactor-LeadOrLag", avg);
-
-        stats(current1, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("current1-avg", avg);
-        mqtt_announce_int("current1-min", min);
-        mqtt_announce_int("current1-max", max);
-
-        stats(current2, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("current2-avg", avg);
-        mqtt_announce_int("current2-min", min);
-        mqtt_announce_int("current2-max", max);
-
-        stats(current3, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("current3-avg", avg);
-        mqtt_announce_int("current3-min", min);
-        mqtt_announce_int("current3-max", max);
-
-        stats(voltage1, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("voltage1-avg", avg);
-        mqtt_announce_int("voltage1-min", min);
-        mqtt_announce_int("voltage1-max", max);
-
-        stats(voltage2, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("voltage2-avg", avg);
-        mqtt_announce_int("voltage2-min", min);
-        mqtt_announce_int("voltage2-max", max);
-
-        stats(voltage3, NUM_SAMPLES, &avg, &min, &max);
-        mqtt_announce_int("voltage3-avg", avg);
-        mqtt_announce_int("voltage3-min", min);
-        mqtt_announce_int("voltage3-max", max);
-
-    }
-
-    mqtt_announce_int("ExportEnergy", exportenergy);
-    mqtt_announce_int("ImportEnergy", importenergy);
 }

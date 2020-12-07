@@ -7,6 +7,7 @@
 #include "stats.h"
 #include "logging.h"
 #include "mqtt-sn.h"
+#include "config.h"
 
 // Number of FreeRTOS ticks to wait while trying to receive
 #define TICKS_TO_WAIT 250 /* Datasheet says <6 seconds! Not as slow as that though.*/
@@ -24,36 +25,18 @@ void sample(int32_t pm25_s, int32_t pm10_s) {
     pm10[sample_no] = pm10_s;
     pm25[sample_no] = pm25_s;
     sample_no++;
+    if(sample_no >= SAMPLES) {
+        stats(pm10, SAMPLES, &mqtt_pm10_stats);
+        stats(pm25, SAMPLES, &mqtt_pm25_stats);
+    }
     sample_no %= SAMPLES;
 }
 
-void hpm_announce() {
-    int32_t pm25min = 0;
-    int32_t pm25max = 0;
-    int64_t pm25avg = 0;
-
-    int32_t pm10min = 0;
-    int32_t pm10max = 0;
-    int64_t pm10avg = 0;
-
-    stats(pm25, SAMPLES, &pm25avg, &pm25min, &pm25max);
-    stats(pm10, SAMPLES, &pm10avg, &pm10min, &pm10max);
-
-    mqtt_announce_int("pm25avg", pm25avg);
-    mqtt_announce_int("pm25min", pm25min);
-    mqtt_announce_int("pm25max", pm25max);
-    mqtt_announce_int("pm10avg", pm10avg);
-    mqtt_announce_int("pm10min", pm10min);
-    mqtt_announce_int("pm10max", pm10max);
-
-}
-
 void hpm_setup() {
-    DEBUG_PRINTF("Init HPM");
-    const char *value = get_config("HPM");
-    enable = value[0] != '0';
+    enable = get_hpmen();
+    mqtt_stats_update_delta(&mqtt_pm10_stats, 15);
+    mqtt_stats_update_delta(&mqtt_pm25_stats, 15);
 }
-
 
 static void hpm_switch() {
     // Switch UART to HPM

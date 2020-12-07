@@ -29,33 +29,15 @@ static unsigned adc_values_index = 0;
 float midpoint = 0;
 
 int32_t db[SAMPLES];
-bool samples_ready = false;
 
 void soundsample(uint16_t db_s) {
     static int sample_no = 0;
     db[sample_no] = db_s;
     sample_no++;
     if(sample_no >= SAMPLES) {
-        samples_ready = true;
+       stats(db, SAMPLES, &mqtt_sound_stats);
     }
     sample_no %= SAMPLES;
-}
-
-void sound_announce() {
-    int32_t max;
-    int32_t min;
-    int64_t avg;
-
-    if(!samples_ready) {
-        printf("Not enough samples to know how loud it is.");
-        return;
-    }
-
-    stats(db, SAMPLES, &avg, &min, &max);
-
-    mqtt_announce_int("sound-avg", avg);
-    mqtt_announce_int("sound-min", min);
-    mqtt_announce_int("sound-max", max);
 }
 
 void adc_setup() {
@@ -91,6 +73,9 @@ void adc_setup() {
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
+    mqtt_stats_update_delta(&mqtt_sound_stats, 15);
+    mqtt_datum_update_delta(&mqtt_battery_mv_datum, 15);
+    mqtt_datum_update_delta(&mqtt_battery_pc_datum, 15);
 }
 
 static uint16_t adc2_safe_get(adc2_channel_t channel) {
@@ -115,7 +100,6 @@ static double adc_avg_get(unsigned index) {
     return r / (double)ADC_AVG_SLOTS;
 }
 
-
 double voltagecalc(int adc_count){
       if(adc_count < 1 || adc_count > 4095) return 0;
       return -6.20034e-27 * pow(adc_count, 8)\
@@ -138,18 +122,16 @@ int db_correction(int db) {
 }
 
 void battery_query() {
-    int adc = adc_avg_get(1);
-    printf("adc = %i\n", adc);
-    printf("polynomial = %f\n", voltagecalc(adc));
-    //float v = adc_avg_get(1) / 4095.0 * 3.2;
     int v = voltagecalc(adc_avg_get(1)) * 3197;
-    mqtt_announce_int("battery-millivolts", v);
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
-    mqtt_announce_int("battery-percent", pc);
+    mqtt_datum_update(&mqtt_battery_mv_datum, v);
+    mqtt_datum_update(&mqtt_battery_pc_datum, pc);
+    int delta = pc == 100 ? 120 : 10;
+    mqtt_datum_update_delta(&mqtt_battery_mv_datum, delta);
+    mqtt_datum_update_delta(&mqtt_battery_pc_datum, delta);
 }
-
 
 void sound_query() {
     long double vrms = 0;

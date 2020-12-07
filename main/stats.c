@@ -1,15 +1,20 @@
 #include "stats.h"
+#include "mqtt-sn.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-void stats(int32_t * arr, unsigned int len, int64_t * avg, int32_t * min, int32_t * max) {
-    *min = arr[0];
-    *max = arr[0];
-    *avg = 0;
+void stats(int32_t * arr, unsigned int len, mqtt_stats_t * stats) {
+    stats->minimum = arr[0];
+    stats->maximum = arr[0];
+    stats->average = 0;
 
     for(int i = 0; i < len; i++) {
         uint16_t samp = arr[i];
-        if(*min > samp) *min = samp;
-        if(*max < samp) *max = samp;
-        *avg += samp;
+        if(stats->minimum > samp) stats->minimum = samp;
+        if(stats->maximum < samp) stats->maximum = samp;
+        stats->average += samp;
     }
-    *avg /= len;
+    stats->average /= len;
+    stats->updated = xTaskGetTickCount();
+    stats->ready=true;
 }
