@@ -10,10 +10,7 @@
 #define DEBOUNCE_WAIT 1000
 
 static volatile int count1 = 0;
-static volatile int count2 = 0;
 static volatile int freq1 = 0;
-static volatile int freq2 = 0;
-
 
 static inline int debounce(int64_t * old_time, int * old_level, int new_level) {
     // esp_timer_get_time returns in microseconds, the time since startup.
@@ -34,13 +31,6 @@ static inline int debounce(int64_t * old_time, int * old_level, int new_level) {
 }
 
 
-static void IRAM_ATTR isr_p2(void * arg) {
-    static int level;
-    static int64_t previous_edge = 0;
-    int new_level = gpio_get_level(PULSE_IN_2);
-    if(debounce(&previous_edge, &level, new_level) && new_level) count2++;
-}
-
 static void IRAM_ATTR isr_p1(void * arg) {
     static int level;
     static int64_t previous_edge = 0;
@@ -55,20 +45,16 @@ static void freq_compute(void * arg) {
     // Have this function run every second, and it will compute the
     // frequency of both pulses. In hertz.
     static int old_count1 = 0;
-    static int old_count2 = 0;
     freq1 = count1 - old_count1;
-    freq2 = count2 - old_count2;
     old_count1 = count1;
-    old_count2 = count2;
 }
 
 void volume_setup() {
     mqtt_datum_update_delta(&mqtt_water_meter_datum, 1440);
-    mqtt_datum_update_delta(&mqtt_gas_meter_datum, 1440);
     DEBUG_PRINTF("Setting the volume measurement gpio up");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
-        .pin_bit_mask = (1ULL << PULSE_IN_1) | (1ULL << PULSE_IN_2),
+        .pin_bit_mask = (1ULL << PULSE_IN_1),
         .mode = GPIO_MODE_INPUT,
         .pull_up_en = 1
     };
@@ -86,7 +72,6 @@ void volume_setup() {
 
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
     ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_1, isr_p1, (void*) PULSE_IN_1));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
     ESP_ERROR_CHECK(gpio_isr_handler_add(POWER_INT,  isr_p3, (void*) POWER_INT));
 }
 /*
@@ -96,5 +81,4 @@ static void qry_frequency(const char * key, int which) {
 */
 void query_pulsecount(const char * key, int multiplier, int which) {
     mqtt_datum_update(&mqtt_water_meter_datum, count1 * 10);
-    mqtt_datum_update(&mqtt_gas_meter_datum, count2);
 }
