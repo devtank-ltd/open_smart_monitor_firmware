@@ -242,8 +242,10 @@ void mqtt_announce_datum(const char * key, mqtt_datum_t * datum) {
 void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
     char dkey[100];
     bool ready = true;
-    if(!stats->ready || (xTaskGetTickCount() < stats->updated + stats->delta))
+    if(!stats->ready || !(xTaskGetTickCount() < stats->updated + stats->delta)) {
+        printf("%s Not ready to post:\nready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
         return; // The datum is not ready to be sent over.
+    }
 
     strcpy(dkey, key);
     strcat(dkey, "-min");
@@ -270,10 +272,10 @@ void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
 }
 
 void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins) {
-    stats->delta = mins * 60 * 1000 * portTICK_PERIOD_MS;
+    stats->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
 void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins) {
-    datum->delta = mins * 60 * 1000 * portTICK_PERIOD_MS;
+    datum->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
 
 void mqtt_task(void * pvParameters) {
@@ -281,7 +283,7 @@ void mqtt_task(void * pvParameters) {
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
         for(int i = 0; i < 60; i++) {
-            TickType_t before = xTaskGetTickCount();
+            printf("Announce loop\n");
             mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
             mqtt_announce_stats("sound", &mqtt_sound_stats);
             mqtt_announce_stats("pm25", &mqtt_pm25_stats);
@@ -306,12 +308,7 @@ void mqtt_task(void * pvParameters) {
             mqtt_announce_stats("Voltage2", &mqtt_voltage2_stats);
             mqtt_announce_stats("Voltage3", &mqtt_voltage3_stats);
             mqtt_announce_datum("battery-millivolts", &mqtt_battery_mv_datum);
-            TickType_t after = xTaskGetTickCount();
-            TickType_t window = 15 * 60 * 1000; // Fifteen minutes
-            TickType_t delay = (before + window) - after;
-
-            INFO_PRINTF("Waiting %f minutes before doing another round of announcements\n", delay / 60.0 / portTICK_PERIOD_MS);
-            vTaskDelay(delay);
+            vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }
 }
