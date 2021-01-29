@@ -90,16 +90,23 @@ void i2c_setup() {
     conf.scl_io_num = I2CPIN_MASTER_SCL;
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = 10000;
+    conf.master.clk_speed = 100000;
+    conf.clk_flags = 0;
 
-    if (i2c_param_config(I2CBUS, &conf) != ESP_OK) {
-        ERROR_PRINTF("Error configuring I2C.");
+    esp_err_t err = i2c_param_config(I2CBUS, &conf);
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Error (%s) configuring I2C.", esp_err_to_name(err));
         return;
+    } else {
+        DEBUG_PRINTF("(%s) configuring I2C.", esp_err_to_name(err));
     }
 
-    if (i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0) != ESP_OK) {
-        ERROR_PRINTF("Error setting I2C to master.");
+    err = i2c_driver_install(I2CBUS, I2C_MODE_MASTER, 0, 0, 0);
+    if(err != ESP_OK) {
+        ERROR_PRINTF("Error (%s) setting I2C to master.",esp_err_to_name(err));
         return;
+    } else {
+        DEBUG_PRINTF("(%s) configuring I2C.", esp_err_to_name(err));
     }
 }
 

@@ -18,7 +18,11 @@
 #include "driver/gpio.h"
 #include "rom/ets_sys.h"
 #include "pinmap.h"
+#include "stats.h"
+#include "mqtt-sn.h"
+#define SAMPLES 100
 
+int32_t tmp[SAMPLES] = {0};
 
 int init=0;
 /// Sends one bit to bus
@@ -90,6 +94,7 @@ bool ds18b20_RST_PULSE(void) {
 
 // Returns temperature from sensor
 float ds18b20_get_temp(void) {
+    static int sample_no = 0;
     if(init == 1) {
         unsigned char check;
         char temp1 = 0, temp2 = 0;
@@ -105,7 +110,12 @@ float ds18b20_get_temp(void) {
             temp2 = ds18b20_read_byte();
             check = ds18b20_RST_PULSE();
             float temp=0;
-            temp = (float)(temp1+(temp2*256))/16;
+            tmp[sample_no] = ((float)(temp1+(temp2*256))/16) * 10;
+            sample_no++;
+            if(sample_no > SAMPLES) {
+                stats(tmp, SAMPLES, &mqtt_external_temp);
+                sample_no = 0;
+            }
             return temp;
         } else {
             return 0;
@@ -119,4 +129,5 @@ float ds18b20_get_temp(void) {
 void ds18b20_init() {
     gpio_pad_select_gpio(DS_GPIO);
     init=1;
+    mqtt_stats_update_delta(&mqtt_external_temp, 60);
 }
