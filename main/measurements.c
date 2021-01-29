@@ -54,7 +54,8 @@ void measurements_task(void *pvParameters) {
         smart_meter_query();
         query_pulsecount();
         battery_query();
-        printf("Temperature: %f\n", ds18b20_get_temp());
+        ds18b20_get_temp();
+
         TickType_t after = xTaskGetTickCount();
         TickType_t delay = (before + TIME_OFFSET) - after;
 
