@@ -20,3 +20,4 @@ void set_socoen(uint8_t en);
 uint8_t get_socoen();
 void set_hpmen(uint8_t en);
 uint8_t get_hpmen();
+uint32_t get_wateroffset();
