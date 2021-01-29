@@ -98,7 +98,7 @@ uint32_t get_wateroffset() {
     esp_err_t err = nvs_get_u32(calibration_handle(), "water_offs", &offs);
     ERROR_PRINTF("(%s) getting water_offset!", esp_err_to_name(err));
     if(err != ESP_OK) {
-        if(!strcmp(mac_addr, "98f4ab14737d")) nvs_set_u32(calibration_handle(), "water_offs", 1);
+        nvs_set_u32(calibration_handle(), "water_offs", 0);
         return 0;
     } else {
        return offs;
