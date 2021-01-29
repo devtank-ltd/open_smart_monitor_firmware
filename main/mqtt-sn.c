@@ -47,7 +47,7 @@ mqtt_stats_t mqtt_pf_sign_stats = {0};
 mqtt_stats_t mqtt_pm10_stats = {0};
 mqtt_stats_t mqtt_pm25_stats = {0};
 mqtt_stats_t mqtt_visible_light_stats = {0};
-mqtt_stats_t mqtt_external_tempi = {0};
+mqtt_stats_t mqtt_external_temp = {0};
 
 static volatile uint16_t dropped = 0;
 

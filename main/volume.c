@@ -5,6 +5,7 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "logging.h"
+#include "config.h"
 
 // 1000 microseconds is 1 millisecond.
 #define DEBOUNCE_WAIT 1000
@@ -80,5 +81,5 @@ static void qry_frequency(const char * key, int which) {
 }
 */
 void query_pulsecount(const char * key, int multiplier, int which) {
-    mqtt_datum_update(&mqtt_water_meter_datum, count1 * 10);
+    mqtt_datum_update(&mqtt_water_meter_datum, get_wateroffset() + count1 * 10);
 }
