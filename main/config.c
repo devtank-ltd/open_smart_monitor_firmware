@@ -157,7 +157,7 @@ uint8_t get_mqtten() {
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) getting mqtt_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
-        set_mqtten(0);
+        set_mqtten(1);
         return get_mqtten();
     } else {
        return en;
