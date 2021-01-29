@@ -47,6 +47,7 @@ mqtt_stats_t mqtt_pf_sign_stats = {0};
 mqtt_stats_t mqtt_pm10_stats = {0};
 mqtt_stats_t mqtt_pm25_stats = {0};
 mqtt_stats_t mqtt_visible_light_stats = {0};
+mqtt_stats_t mqtt_external_tempi = {0};
 
 static volatile uint16_t dropped = 0;
 
@@ -243,9 +244,10 @@ void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
     char dkey[100];
     bool ready = true;
     if(!stats->ready || !(xTaskGetTickCount() < stats->updated + stats->delta)) {
-        printf("%s Not ready to post:\nready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
+        printf("%-20s not ready:\t ready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
         return; // The datum is not ready to be sent over.
     }
+    printf("%-20s ready:\t ready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
 
     strcpy(dkey, key);
     strcat(dkey, "-min");
@@ -282,9 +284,10 @@ void mqtt_task(void * pvParameters) {
     for(;;) {
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
+        mqtt_announce_dropped();
         for(int i = 0; i < 60; i++) {
             printf("Announce loop\n");
-            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
+/*            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
             mqtt_announce_stats("sound", &mqtt_sound_stats);
             mqtt_announce_stats("pm25", &mqtt_pm25_stats);
             mqtt_announce_stats("pm10", &mqtt_pm10_stats);
@@ -307,7 +310,8 @@ void mqtt_task(void * pvParameters) {
             mqtt_announce_stats("Voltage1", &mqtt_voltage1_stats);
             mqtt_announce_stats("Voltage2", &mqtt_voltage2_stats);
             mqtt_announce_stats("Voltage3", &mqtt_voltage3_stats);
-            mqtt_announce_datum("battery-millivolts", &mqtt_battery_mv_datum);
+            mqtt_announce_datum("battery-millivolts", &mqtt_battery_mv_datum); */
+            mqtt_announce_stats("external-temperature", &mqtt_external_temp);
             vTaskDelay(10000 / portTICK_PERIOD_MS);
         }
     }
