@@ -34,18 +34,10 @@
 #define ABS(x)  (x<0)?-x:x
 #define LUM_DELTA 4
 
-#define SAMPLES 1000
-
-int32_t lux[SAMPLES] = {0};
-
 void tslsample(uint16_t l) {
-    static int sample_no = 0;
-    lux[sample_no] = l;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-        stats(lux, SAMPLES, &mqtt_visible_light_stats);
-    }
-    sample_no %= SAMPLES;
+    int sample = l;
+    if (xQueueSend(queues[light], &sample, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for light\n");
 }
 
 static uint8_t read_tsl_reg(uint8_t reg) {
