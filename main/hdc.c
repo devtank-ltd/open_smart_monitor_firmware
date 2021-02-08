@@ -27,13 +27,6 @@
 #define TEMP_DELTA 2
 #define RH_DELTA   5
 
-#define SAMPLES 1000
-bool hdc_samples_ready = false;
-
-int32_t temperature[SAMPLES] = {0};
-int32_t humidity[SAMPLES] = {0};
-static int sample_no = 0;
-
 typedef union {
     uint16_t d;
     struct {
@@ -42,15 +35,11 @@ typedef union {
     };
 } unit_entry_t;
 
-void hdcsample(uint16_t temp, uint16_t hum) {
-    temperature[sample_no] = temp;
-    humidity[sample_no] = hum;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-        stats(temperature, SAMPLES, &mqtt_temperature_stats);
-        stats(humidity, SAMPLES, &mqtt_humidity_stats);
-    }
-    sample_no %= SAMPLES;
+void hdcsample(int temp, int hum) {
+    if (xQueueSend(queues[temperature], &temp, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for temperature\n");
+    if (xQueueSend(queues[humidity], &hum, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for humidity\n");
 }
 
 static esp_err_t read_reg(uint8_t reg, uint8_t * val) {
