@@ -24,20 +24,12 @@ static unsigned adc_values_index = 0;
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
 
-#define SAMPLES 1000 // 100 000 is too much for dram0_0_seg.
-
 float midpoint = 0;
 
-int32_t db[SAMPLES];
-
 void soundsample(uint16_t db_s) {
-    static int sample_no = 0;
-    db[sample_no] = db_s;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-       stats(db, SAMPLES, &mqtt_sound_stats);
-    }
-    sample_no %= SAMPLES;
+    int sample = db_s;
+    if(xQueueSend(queues[sound_level], &sample, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for sound level");
 }
 
 void adc_setup() {
