@@ -75,19 +75,18 @@ float get_midpoint() {
     }
 }
 
-void set_wateren(uint8_t en) {
+void set_pulsein(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "water_en", en);
     ERROR_PRINTF("(%s) setting water_en!", esp_err_to_name(err));
 }
 
-uint8_t get_wateren() {
+uint8_t get_pulsein() {
     uint8_t en = 0;
     esp_err_t err = nvs_get_u8(calibration_handle(), "water_en", &en);
     ERROR_PRINTF("(%s) getting water_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
-        if(!strcmp(mac_addr, "98f4ab14737d")) set_wateren(1);
-        else set_wateren(0);
-        return get_wateren();
+        set_pulsein(PULSEIN_UNUSED);
+        return get_pulsein();
     } else {
        return en;
     }
@@ -116,10 +115,7 @@ uint8_t get_hpmen() {
     esp_err_t err = nvs_get_u8(calibration_handle(), "hpm_en", &en);
     ERROR_PRINTF("(%s) getting hpm_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
-             if(!strcmp(mac_addr, "98f4ab147441")) set_hpmen(0);
-        else if(!strcmp(mac_addr, "98f4ab147445")) set_hpmen(0);
-        else if(!strcmp(mac_addr, "98f4ab147409")) set_hpmen(0);
-        else set_hpmen(1);
+        set_hpmen(0);
         return get_hpmen();
     } else {
        return en;
