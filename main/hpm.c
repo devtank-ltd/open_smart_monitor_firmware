@@ -15,21 +15,11 @@ static int enable = 0;
 
 #define ABS(x)  (x<0)?-x:x
 
-#define SAMPLES 1000
-
-int32_t pm25[SAMPLES] = {0};
-int32_t pm10[SAMPLES] = {0};
-
 void sample(int32_t pm25_s, int32_t pm10_s) {
-    static int sample_no = 0;
-    pm10[sample_no] = pm10_s;
-    pm25[sample_no] = pm25_s;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-        stats(pm10, SAMPLES, &mqtt_pm10_stats);
-        stats(pm25, SAMPLES, &mqtt_pm25_stats);
-    }
-    sample_no %= SAMPLES;
+    if (xQueueSend(queues[pm25], &pm25_s, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for PM2.5\n");
+    if (xQueueSend(queues[pm10], &pm10_s, portMAX_DELAY) != pdPASS)
+        ERROR_PRINTF("Caution: skipping a sample for PM10\n");
 }
 
 void hpm_setup() {
