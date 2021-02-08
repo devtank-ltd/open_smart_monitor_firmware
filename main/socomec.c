@@ -17,15 +17,6 @@
 #define MODBUS_ERROR_MASK 0x80
 #define NUM_SAMPLES 1000
 
-static int32_t powerfactor[NUM_SAMPLES];
-static int32_t leadlag[NUM_SAMPLES];
-static int32_t current1[NUM_SAMPLES];
-static int32_t current2[NUM_SAMPLES];
-static int32_t current3[NUM_SAMPLES];
-static int32_t voltage1[NUM_SAMPLES];
-static int32_t voltage2[NUM_SAMPLES];
-static int32_t voltage3[NUM_SAMPLES];
-
 #define E53_ADDR 5
 
 /*         <               ADU                         >
@@ -424,35 +415,23 @@ unknown_device:
 }
 
 void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int32_t v2, int32_t v3) {
-    static int sample_no = 0;
+    int leadlag = 0;
     if(pf < 0) {
-        powerfactor[sample_no] = -pf;
-        leadlag[sample_no] = -1000;
+        pf = -pf;
+        leadlag = -1000;
     } else if(pf > 0) {
-        powerfactor[sample_no] = pf;
-        leadlag[sample_no] = 1000;
+        leadlag = 1000;
     } else {
-        powerfactor[sample_no] = 0;
-        leadlag[sample_no] = 0;
+        leadlag = 0;
     }
-    current1[sample_no] = i1;
-    current2[sample_no] = i2;
-    current3[sample_no] = i3;
-    voltage1[sample_no] = v1;
-    voltage2[sample_no] = v2;
-    voltage3[sample_no] = v3;
-    sample_no++;
-    if(sample_no > NUM_SAMPLES) {
-        stats(current1, NUM_SAMPLES, &mqtt_current1_stats);
-        stats(current2, NUM_SAMPLES, &mqtt_current2_stats);
-        stats(current3, NUM_SAMPLES, &mqtt_current3_stats);
-        stats(voltage1, NUM_SAMPLES, &mqtt_voltage1_stats);
-        stats(voltage2, NUM_SAMPLES, &mqtt_voltage2_stats);
-        stats(voltage3, NUM_SAMPLES, &mqtt_voltage3_stats);
-        stats(powerfactor, NUM_SAMPLES, &mqtt_pf_stats);
-        stats(leadlag, NUM_SAMPLES, &mqtt_pf_sign_stats);
-        sample_no = 0;
-    }
+    xQueueSend(queues[powerfactor], &pf, portMAX_DELAY);
+    xQueueSend(queues[pfleadlag], &leadlag, portMAX_DELAY);
+    xQueueSend(queues[current1], &i1, portMAX_DELAY);
+    xQueueSend(queues[current2], &i2, portMAX_DELAY);
+    xQueueSend(queues[current3], &i3, portMAX_DELAY);
+    xQueueSend(queues[voltage1], &v1, portMAX_DELAY);
+    xQueueSend(queues[voltage2], &v2, portMAX_DELAY);
+    xQueueSend(queues[voltage3], &v3, portMAX_DELAY);
 }
 
 void smart_meter_query()
