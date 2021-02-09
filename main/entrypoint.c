@@ -7,6 +7,7 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
+#include "uplink.h"
 
 #include "pinmap.h"
 
@@ -17,6 +18,7 @@
 #include "logging.h"
 #include "commit.h"
 #include "math.h"
+#include "stats.h"
 #include "measurements.h"
 
 #define LEDSTACKSIZE 1000
@@ -124,11 +126,13 @@ StackType_t  xMQTTStack[MEASSTACKSIZE];
 
 void app_main(void)
 {
+    stats_init();
     i2c_setup();
     getmac();
     lora_uart_setup();
     device_uart_setup();
     status_led_set_status(STATUS_LED_OK);
+    uplink_init();
 
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
