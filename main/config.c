@@ -92,6 +92,11 @@ uint8_t get_pulsein() {
     }
 }
 
+void set_wateroffset(uint32_t offs) {
+    esp_err_t err = nvs_set_u32(calibration_handle(), "water_offs", offs);
+    ERROR_PRINTF("(%s) setting water_offs!", esp_err_to_name(err));
+}
+
 uint32_t get_wateroffset() {
     uint32_t offs;
     esp_err_t err = nvs_get_u32(calibration_handle(), "water_offs", &offs);

@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #define BUFLEN 256
 #define KEYLEN 16
 #define VALLEN 50
@@ -40,3 +41,4 @@ uint8_t get_hpmen();
 void set_pulsein(uint8_t en);
 uint8_t get_pulsein();
 uint32_t get_wateroffset();
+void set_wateroffset(uint32_t);
