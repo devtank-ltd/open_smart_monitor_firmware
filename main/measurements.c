@@ -46,7 +46,6 @@ void measurements_task(void *pvParameters) {
     for(;;) {
         TickType_t before = xTaskGetTickCount();
     
-        printf("Sample %d\n", i++);
         hpm_query();   // smog sensor
         hdc_query();   // humidity and temperature
         sound_query(); // sound
