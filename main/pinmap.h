@@ -64,3 +64,5 @@
 
 #define BAT_MON ADC2_CHANNEL_4
 #define POWER_INT 14
+
+#define UPLINK_UART  UART_NUM_0
