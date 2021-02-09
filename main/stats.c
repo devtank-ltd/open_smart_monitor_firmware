@@ -46,9 +46,11 @@ void stats_task(void *pvParameters) {
              */
             if(stats[i].updated + stats[i].delta < xTaskGetTickCount()) {
                 stats[i].updated = xTaskGetTickCount();
-                mqtt_enqueue_int(parameter_names[i], "min", stats[i].minimum);
-                mqtt_enqueue_int(parameter_names[i], "max", stats[i].maximum);
-                mqtt_enqueue_int(parameter_names[i], "avg", stats[i].cumulative / stats[i].sample_count);
+                if(stats[i].sample_count) {
+                    mqtt_enqueue_int(parameter_names[i], "min", stats[i].minimum);
+                    mqtt_enqueue_int(parameter_names[i], "max", stats[i].maximum);
+                    mqtt_enqueue_int(parameter_names[i], "avg", stats[i].cumulative / stats[i].sample_count);
+                }
             }
 
             vTaskDelay(100 / portTICK_PERIOD_MS);
