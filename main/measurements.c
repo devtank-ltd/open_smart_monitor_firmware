@@ -25,24 +25,6 @@ void measurements_task(void *pvParameters) {
     smart_meter_setup();
     ds18b20_init();
 
-    // Take a few samples from various sensors;
-    // This will stagger the times when they need to calculate averages etc
-    sound_query();
-    sound_query();
-    sound_query();
-    sound_query();
-
-    hdc_query();
-    hdc_query();
-    hdc_query();
-
-    hpm_query();
-    hpm_query();
-    smart_meter_query();
-    smart_meter_query();
-
-    tsl_query();
-    int i = 1;
     for(;;) {
         TickType_t before = xTaskGetTickCount();
     
