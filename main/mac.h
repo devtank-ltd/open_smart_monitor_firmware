@@ -1,3 +1,4 @@
 #pragma once
-extern char mac_addr[13];
+#define MACLEN 13
+extern char mac_addr[MACLEN];
 void getmac();
