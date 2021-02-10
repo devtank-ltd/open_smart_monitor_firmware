@@ -8,6 +8,7 @@
 #include "mqtt-sn.h"
 #include "commit.h"
 #include "mac.h"
+#include "mqtt.h"
 #include "socomec.h"
 #include "status_led.h"
 #include "config.h"
@@ -26,6 +27,13 @@
 #define ABS(x)  (x<0)?-x:x
 
 #define DR_REG_RNG_BASE                        0x3ff75144
+
+#define STACKSIZE 1000
+
+TaskHandle_t xMQTTHandle = NULL;
+StaticTask_t xMQTTBuffer;
+StackType_t  xMQTTStack[STACKSIZE];
+
 
 mqtt_stats_t mqtt_humidity_stats = {0};
 mqtt_stats_t mqtt_sound_stats = {0};
@@ -272,47 +280,28 @@ void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
     if(datum->sent > datum->updated)
         datum->sent = 0; // in case of roll-over.
 }
-
+/*
 void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins) {
     stats->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
 void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins) {
     datum->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
 }
-
+*/
 void mqtt_task(void * pvParameters) {
+    char topic[TOPICLEN + SUFFIXLEN + 2];
     for(;;) {
+        msg_t msg;
+        // 1200000 milliseconds is twenty minutes
+        while(xQueueReceive(mqtt_queue, &msg, pdMS_TO_TICKS(1200000) == pdTRUE)) {
+            strcpy(topic, msg.topic);
+            strcat(topic, "-");
+            strcat(topic, msg.suffix);
+
+            mqtt_announce_str(topic, msg.payload);
+        }
         mqtt_announce_str("sku", "ENV-01");
         mqtt_announce_str("fw", GIT_COMMIT);
         mqtt_announce_dropped();
-        for(int i = 0; i < 60; i++) {
-            printf("Announce loop\n");
-            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
-            mqtt_announce_stats("sound", &mqtt_sound_stats);
-            mqtt_announce_stats("pm25", &mqtt_pm25_stats);
-            mqtt_announce_stats("pm10", &mqtt_pm10_stats);
-            mqtt_announce_stats("temperature", &mqtt_temperature_stats);
-            mqtt_announce_stats("visible-light", &mqtt_visible_light_stats);
-            mqtt_announce_stats("pm25", &mqtt_pm25_stats);
-            mqtt_announce_stats("pm10", &mqtt_pm10_stats);
-            mqtt_announce_stats("temperature", &mqtt_temperature_stats);
-            mqtt_announce_stats("humidity", &mqtt_humidity_stats);
-            mqtt_announce_stats("sound", &mqtt_sound_stats);
-            mqtt_announce_datum("battery-percent", &mqtt_battery_pc_datum);
-            mqtt_announce_datum("ImportEnergy", &mqtt_import_energy_datum);
-            mqtt_announce_datum("ExportEnergy", &mqtt_export_energy_datum);
-            mqtt_announce_datum("WaterMeter", &mqtt_water_meter_datum);
-            mqtt_announce_stats("PowerFactor", &mqtt_pf_stats);
-            mqtt_announce_stats("PFLeadLag", &mqtt_pf_sign_stats);
-            mqtt_announce_stats("Current1", &mqtt_current1_stats);
-            mqtt_announce_stats("Current2", &mqtt_current2_stats);
-            mqtt_announce_stats("Current3", &mqtt_current3_stats);
-            mqtt_announce_stats("Voltage1", &mqtt_voltage1_stats);
-            mqtt_announce_stats("Voltage2", &mqtt_voltage2_stats);
-            mqtt_announce_stats("Voltage3", &mqtt_voltage3_stats);
-            mqtt_announce_datum("battery-millivolts", &mqtt_battery_mv_datum);
-            mqtt_announce_stats("external-temperature", &mqtt_external_temp);
-            vTaskDelay(10000 / portTICK_PERIOD_MS);
-        }
     }
 }
