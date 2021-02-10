@@ -2,13 +2,13 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
+#include "logging.h"
 #include "mac.h"
 #include "mqtt.h"
+#include "string.h"
 
+#define QDELAY 2000
 #define QUEUESIZE 100
-#define SUFFIXLEN 4
-#define TOPICLEN 20
-#define PAYLOADLEN 20
 
 xQueueHandle mqtt_queue = 0;
 
@@ -28,7 +28,7 @@ void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
     snprintf(msg.payload, PAYLOADLEN, "%d,", val);
     strstr(msg.payload, ",")[0] = '\0';
 
-    if(xQueueSend(mqtt_queue, msg, QDELAY) != pdPASS)
+    if(xQueueSend(mqtt_queue, &msg, QDELAY) != pdPASS)
         ERROR_PRINTF("Error enqueueing MQTT %s-%s %d\n", parameter, suffix, val);
 
 }
