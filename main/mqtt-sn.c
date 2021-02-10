@@ -130,10 +130,12 @@ int await_ack() {
             return 1; // found it
         }
     }
-    ERROR_PRINTF("No ACK received\n");
+    /*
+    ERROR_PRINTF("No ACK received");
     INFO_PRINTF("Here's the ackmsg for comparison");
     for(int i = 0; i < received; i++)
         INFO_PRINTF("\t%2x %2x\t%c %c", ackbuf[i], ackmsg[i], ackbuf[i], ackmsg[i]);
+    */
 
     return 0; // not found
 }
@@ -179,9 +181,7 @@ static int mqtt_sn_send(const char topic[2], const char * message)
             return 0;
         } else {
             status_led_set_status(STATUS_LED_TROUBLE);
-            printf("ACK not received!\n");
             uint32_t randomNumber = READ_PERI_REG(DR_REG_RNG_BASE) & 0x3ff;
-            printf("Sleeping for %u ticks.", randomNumber);
             vTaskDelay(randomNumber);
             if(i > 3) {
                 printf("Giving up after %d goes.\n", i + 1);

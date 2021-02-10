@@ -29,7 +29,6 @@ bool beginswith(const char * haystack, const char * needle, int * argument) {
 void uplink_task(void *pvParameters) {
 
     for(;;) {
-        INFO_PRINTF("uplink_task iteration\n");
         char line[LINELENGTH];
         int received = uart_read_bytes(UPLINK_UART, line, LINELENGTH, 2000 / portTICK_PERIOD_MS);
         if(!received) {
