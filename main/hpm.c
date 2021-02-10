@@ -24,8 +24,6 @@ void sample(int32_t pm25_s, int32_t pm10_s) {
 
 void hpm_setup() {
     enable = get_hpmen();
-    mqtt_stats_update_delta(&mqtt_pm10_stats, 15);
-    mqtt_stats_update_delta(&mqtt_pm25_stats, 15);
 }
 
 static void hpm_switch() {

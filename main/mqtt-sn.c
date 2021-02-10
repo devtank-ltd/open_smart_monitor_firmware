@@ -280,14 +280,7 @@ void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
     if(datum->sent > datum->updated)
         datum->sent = 0; // in case of roll-over.
 }
-/*
-void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins) {
-    stats->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
-}
-void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins) {
-    datum->delta = mins * 60 * 1000 / portTICK_PERIOD_MS;
-}
-*/
+
 void mqtt_task(void * pvParameters) {
     char topic[TOPICLEN + SUFFIXLEN + 2];
     for(;;) {

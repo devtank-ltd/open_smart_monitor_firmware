@@ -49,5 +49,5 @@ extern mqtt_stats_t mqtt_pf_sign_stats;
 extern mqtt_stats_t mqtt_external_temp;
 void mqtt_task(void *pvParameters);
 void mqtt_datum_update(mqtt_datum_t * datum, int32_t value);
-void mqtt_datum_update_delta(mqtt_datum_t * datum, int32_t mins);
-void mqtt_stats_update_delta(mqtt_stats_t * stats, int32_t mins);
+
+void mqtt_sn_init();

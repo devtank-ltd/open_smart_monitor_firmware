@@ -78,8 +78,6 @@ static void write_reg(uint8_t reg, uint8_t value) {
 
 static void hdc_init() {
     write_reg(CONFIG, MEAS_TRIG);
-    mqtt_stats_update_delta(&mqtt_humidity_stats, 30);
-    mqtt_stats_update_delta(&mqtt_temperature_stats, 15);
 }
 
 static void hdc_wait() {

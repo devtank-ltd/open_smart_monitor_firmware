@@ -84,7 +84,6 @@ void tsl_setup() {
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
     INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
-    mqtt_stats_update_delta(&mqtt_visible_light_stats, 30);
 }
 
 #define CH_SCALE 10
