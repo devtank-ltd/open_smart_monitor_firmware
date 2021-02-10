@@ -4,7 +4,7 @@
 #define TOPICLEN 20
 #define PAYLOADLEN 20
 
-extern xQueueHandle mqttqueue;
+extern xQueueHandle mqtt_queue;
 
 typedef struct {
     char topic[TOPICLEN];

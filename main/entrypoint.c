@@ -8,6 +8,7 @@
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
 #include "uplink.h"
+#include "mqtt-sn.h"
 
 #include "pinmap.h"
 
@@ -119,11 +120,11 @@ StackType_t  xLEDStack[LEDSTACKSIZE];
 TaskHandle_t xMeasureHandle = NULL;
 StaticTask_t xMeasureBuffer;
 StackType_t  xMeasureStack[MEASSTACKSIZE];
-
+/*
 TaskHandle_t xMQTTHandle = NULL;
 StaticTask_t xMQTTBuffer;
 StackType_t  xMQTTStack[MEASSTACKSIZE];
-
+*/
 void app_main(void)
 {
     stats_init();
@@ -133,6 +134,8 @@ void app_main(void)
     device_uart_setup();
     status_led_set_status(STATUS_LED_OK);
     uplink_init();
+
+    mqtt_sn_init();
 
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
@@ -152,15 +155,6 @@ void app_main(void)
                       tskIDLE_PRIORITY + 1,
                       xMeasureStack,
                       &xMeasureBuffer);
-
-    xMeasureHandle = xTaskCreateStatic(
-                      mqtt_task,
-                      "MQTT-SN",
-                      MEASSTACKSIZE,
-                      (void*)1,
-                      tskIDLE_PRIORITY + 1,
-                      xMQTTStack,
-                      &xMQTTBuffer);
 
     for(;;) vTaskDelay(INT_MAX);
     esp_restart();

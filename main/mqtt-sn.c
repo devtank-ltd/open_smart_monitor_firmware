@@ -305,3 +305,14 @@ void mqtt_task(void * pvParameters) {
         mqtt_announce_dropped();
     }
 }
+
+void mqtt_sn_init() {
+    xMQTTHandle = xTaskCreateStatic(
+                      mqtt_task,
+                      "MQTT-SN",
+                      STACKSIZE,
+                      (void*)1,
+                      tskIDLE_PRIORITY + 1,
+                      xMQTTStack,
+                      &xMQTTBuffer);
+}
