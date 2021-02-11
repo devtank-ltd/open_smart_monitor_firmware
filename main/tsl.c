@@ -34,11 +34,6 @@
 #define ABS(x)  (x<0)?-x:x
 #define LUM_DELTA 4
 
-void tslsample(uint16_t l) {
-    int sample = l;
-    if (xQueueSend(queues[light], &sample, portMAX_DELAY) != pdPASS)
-        ERROR_PRINTF("Caution: skipping a sample for light\n");
-}
 
 static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
@@ -142,8 +137,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     else if(r < 1.30) lux = 0.00146 * ch0 - 0.00112 * ch1;
     else lux = 0;
 
-    int32_t vis = lux;
-    tslsample(vis);
+    stats_enqueue_sample(light, lux);
 }
 
 

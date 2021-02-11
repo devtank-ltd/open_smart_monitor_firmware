@@ -414,14 +414,14 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
     } else {
         leadlag = 0;
     }
-    xQueueSend(queues[powerfactor], &pf, portMAX_DELAY);
-    xQueueSend(queues[pfleadlag], &leadlag, portMAX_DELAY);
-    xQueueSend(queues[current1], &i1, portMAX_DELAY);
-    xQueueSend(queues[current2], &i2, portMAX_DELAY);
-    xQueueSend(queues[current3], &i3, portMAX_DELAY);
-    xQueueSend(queues[voltage1], &v1, portMAX_DELAY);
-    xQueueSend(queues[voltage2], &v2, portMAX_DELAY);
-    xQueueSend(queues[voltage3], &v3, portMAX_DELAY);
+    stats_enqueue_sample(powerfactor, pf);
+    stats_enqueue_sample(pfleadlag, leadlag);
+    stats_enqueue_sample(current1, i1);
+    stats_enqueue_sample(current2, i2);
+    stats_enqueue_sample(current3, i3);
+    stats_enqueue_sample(voltage1, v1);
+    stats_enqueue_sample(voltage2, v2);
+    stats_enqueue_sample(voltage3, v3);
 }
 
 void smart_meter_query()

@@ -37,6 +37,11 @@ static const char * parameter_names[] = {
     FOREACH_PARAM(GENERATE_STRING)
 };
 
-extern xQueueHandle queues[ARRAY_SIZE(parameter_names)];
+typedef struct {
+    enum parameters parameter;
+    int sample;
+} sample_t;
+
 
 void stats_init();
+void stats_enqueue_sample(int parameter, int sample);

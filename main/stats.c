@@ -4,9 +4,13 @@
 #include "freertos/queue.h"
 #include "freertos/FreeRTOS.h"
 #include "mqtt.h"
+#include "status_led.h"
+#include "logging.h"
 
 #define QUEUESIZE 50
 #define STACKSIZE 10000
+
+// FIXME: change this to use one queue instead of a fazillion.
 
 typedef volatile struct __ {
     bool ready;
@@ -22,24 +26,26 @@ typedef volatile struct __ {
 
 int last_updated[ARRAY_SIZE(parameter_names)] = {0};
 stats_t stats[ARRAY_SIZE(parameter_names)];
-xQueueHandle queues[ARRAY_SIZE(parameter_names)] = {0};
+xQueueHandle stats_queue = {0};
 
 TaskHandle_t xStatsHandle = NULL;
 StaticTask_t xStatsBuffer;
 StackType_t  xStatsStack[STACKSIZE];
 
 void stats_task(void *pvParameters) {
-    int datum;
+    sample_t sample;
     for(;;) {
-        for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
 
-            // Read as many values from the queue as possible
-            while(xQueueReceive(queues[i], &datum, 0) == pdTRUE) {
-			    stats[i].cumulative += datum;
-                if(datum < stats[i].minimum) stats[i].minimum = datum;
-                if(datum > stats[i].maximum) stats[i].maximum = datum;
-                stats[i].sample_count++;
-            }
+        // Read as many values from the queue as possible
+        while(xQueueReceive(stats_queue, &sample, 0) == pdTRUE) {
+            // FIXME: the maximum and minimum need to be assigned if the sample count is zero
+            stats[sample.parameter].cumulative += sample.sample;
+            if(sample.sample < stats[sample.parameter].minimum) stats[sample.parameter].minimum = sample.sample;
+            if(sample.sample > stats[sample.parameter].maximum) stats[sample.parameter].maximum = sample.sample;
+            stats[sample.parameter].sample_count++;
+        }
+
+        for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
 
             /* If enough time has elapsed, then compute the average, and
              * publish the other data
@@ -58,10 +64,20 @@ void stats_task(void *pvParameters) {
     }
 }
 
+void stats_enqueue_sample(int parameter, int value) {
+    sample_t sample;
+    sample.parameter = parameter;
+    sample.sample = value;
+    if(xQueueSend(stats_queue, &sample, pdMS_TO_TICKS(100)) != pdPASS) {
+        DEBUG_PRINTF("Could not enqueue a sample for %s", parameter_names[parameter]);
+        status_led_set_status(STATUS_LED_TROUBLE);
+    }
+}
+
+
 void stats_init() {
     // Populate the array of queues
     for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
-        queues[i] = xQueueCreate(QUEUESIZE, sizeof(int));
         stats[i].ready = false;
         stats[i].updated = 0;
         stats[i].sent = 0;

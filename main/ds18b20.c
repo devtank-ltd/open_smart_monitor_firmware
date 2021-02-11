@@ -106,7 +106,7 @@ float ds18b20_get_temp(void) {
             check = ds18b20_RST_PULSE();
             float temp = ((float)(temp1+(temp2*256))/16) * 10;
             int i = temp;
-            xQueueSend(queues[external_temperature], &i, portMAX_DELAY);
+            stats_enqueue_sample(external_temperature, i);
             return temp;
         } else {
             return 0;

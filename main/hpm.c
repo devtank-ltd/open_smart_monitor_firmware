@@ -15,13 +15,6 @@ static int enable = 0;
 
 #define ABS(x)  (x<0)?-x:x
 
-void sample(int32_t pm25_s, int32_t pm10_s) {
-    if (xQueueSend(queues[pm25], &pm25_s, portMAX_DELAY) != pdPASS)
-        ERROR_PRINTF("Caution: skipping a sample for PM2.5\n");
-    if (xQueueSend(queues[pm10], &pm10_s, portMAX_DELAY) != pdPASS)
-        ERROR_PRINTF("Caution: skipping a sample for PM10\n");
-}
-
 void hpm_setup() {
     enable = get_hpmen();
 }
@@ -66,10 +59,11 @@ static int process_part_measure_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25 = {.h = data[3], .l = data[4]};
-    unit_entry_t pm10 = {.h = data[5], .l = data[6]};
+    unit_entry_t pm25_entry = {.h = data[3], .l = data[4]};
+    unit_entry_t pm10_entry = {.h = data[5], .l = data[6]};
 
-    sample(pm25.d, pm10.d);
+    stats_enqueue_sample(pm25, pm25_entry.d);
+    stats_enqueue_sample(pm10, pm10_entry.d);
     return 8;
 }
 
@@ -94,11 +88,12 @@ static int process_part_measure_long_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25 = {.h = data[6], .l = data[7]};
-    unit_entry_t pm10 = {.h = data[8], .l = data[9]};
+    unit_entry_t pm25_entry = {.h = data[6], .l = data[7]};
+    unit_entry_t pm10_entry = {.h = data[8], .l = data[9]};
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-    sample(pm25.d, pm10.d);
+    stats_enqueue_sample(pm25, pm25_entry.d);
+    stats_enqueue_sample(pm10, pm10_entry.d);
     return 32;
 }
 

@@ -26,12 +26,6 @@ static unsigned adc_values_index = 0;
 
 float midpoint = 0;
 
-void soundsample(uint16_t db_s) {
-    int sample = db_s;
-    if(xQueueSend(queues[sound_level], &sample, portMAX_DELAY) != pdPASS)
-        ERROR_PRINTF("Caution: skipping a sample for sound level");
-}
-
 void adc_setup() {
     midpoint = get_midpoint();
     int i2s_num = EXAMPLE_I2S_NUM;
@@ -139,9 +133,6 @@ void sound_query() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    soundsample(db * 10);
-
-//    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
-//    printf("%fdB\n", db);
+    stats_enqueue_sample(sound_level, db * 10);
 }
 
