@@ -26,7 +26,7 @@ typedef volatile struct __ {
 
 int last_updated[ARRAY_SIZE(parameter_names)] = {0};
 stats_t stats[ARRAY_SIZE(parameter_names)];
-xQueueHandle stats_queue = {0};
+xQueueHandle stats_queue;
 
 TaskHandle_t xStatsHandle = NULL;
 StaticTask_t xStatsBuffer;
@@ -76,6 +76,7 @@ void stats_enqueue_sample(int parameter, int value) {
 
 
 void stats_init() {
+    stats_queue = xQueueCreate(QUEUESIZE, sizeof(msg_t));
     // Populate the array of queues
     for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
         stats[i].ready = false;
