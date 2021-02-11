@@ -117,7 +117,6 @@ void battery_query() {
     if(pc > 100) pc = 100;
     mqtt_datum_update(&mqtt_battery_mv_datum, v);
     mqtt_datum_update(&mqtt_battery_pc_datum, pc);
-    int delta = pc == 100 ? 120 : 10;
 }
 
 void sound_query() {
