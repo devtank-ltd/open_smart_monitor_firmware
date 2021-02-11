@@ -65,6 +65,7 @@ void stats_task(void *pvParameters) {
                     mqtt_enqueue_int(parameter_names[i], "avg", stats[i].cumulative / stats[i].sample_count);
                     mqtt_enqueue_int(parameter_names[i], "cnt", stats[i].sample_count);
                     stats[i].sample_count = 0;
+                    stats[i].cumulative = 0;
                 }
             }
 
@@ -80,6 +81,8 @@ void stats_enqueue_sample(int parameter, int value) {
     if(xQueueSend(stats_queue, &sample, pdMS_TO_TICKS(100)) != pdPASS) {
         DEBUG_PRINTF("Could not enqueue a sample for %s", parameter_names[parameter]);
         status_led_set_status(STATUS_LED_TROUBLE);
+    } else {
+        DEBUG_PRINTF("Enqueued %d for %s", value, parameter_names[parameter]);
     }
 }
 
