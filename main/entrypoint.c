@@ -10,10 +10,11 @@
 #include "nvs_flash.h"
 #include "uplink.h"
 #include "mqtt-sn.h"
+#include "mqtt-dbg.h"
 
 #include "pinmap.h"
 
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "mac.h"
 #include "config.h"
 #include "status_led.h"
@@ -138,7 +139,13 @@ void app_main(void)
     status_led_set_status(STATUS_LED_OK);
     uplink_init();
 
-    mqtt_sn_init();
+    set_mqtten(MQTT_LOG_TO_USB);
+
+    if(get_mqtten() == MQTTSN_OVER_LORA)
+        mqtt_sn_init();
+
+    if(get_mqtten() == MQTT_LOG_TO_USB)
+        mqtt_dbg_init();
 
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */

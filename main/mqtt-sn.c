@@ -30,9 +30,9 @@
 
 #define STACKSIZE 9000
 
-TaskHandle_t xMQTTHandle = NULL;
-StaticTask_t xMQTTBuffer;
-StackType_t  xMQTTStack[STACKSIZE];
+static TaskHandle_t xMQTTHandle = NULL;
+static StaticTask_t xMQTTBuffer;
+static StackType_t  xMQTTStack[STACKSIZE];
 
 static volatile uint16_t dropped = 0;
 
@@ -210,7 +210,7 @@ int mqtt_announce_str(const char * key, const char * val) {
 }
 
 
-void mqtt_task(void * pvParameters) {
+void mqtt_sn_task(void * pvParameters) {
     char topic[TOPICLEN + SUFFIXLEN + 2];
     for(;;) {
         msg_t msg;
@@ -230,7 +230,7 @@ void mqtt_task(void * pvParameters) {
 
 void mqtt_sn_init() {
     xMQTTHandle = xTaskCreateStatic(
-                      mqtt_task,
+                      mqtt_sn_task,
                       "MQTT-SN",
                       STACKSIZE,
                       (void*)1,
