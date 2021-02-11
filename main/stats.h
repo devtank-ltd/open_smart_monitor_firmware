@@ -21,6 +21,8 @@
     FN(pfleadlag) \
     FN(freq1) \
     FN(freq2) \
+    FN(pulse1) \
+    FN(pulse2) \
     FN(external_temperature)
 
 #define GENERATE_ENUM(ENUM) ENUM,
