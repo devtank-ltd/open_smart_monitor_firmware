@@ -6,6 +6,7 @@
 #include "mac.h"
 #include "mqtt.h"
 #include "string.h"
+#include "status_led.h"
 
 #define QDELAY 2000
 #define QUEUESIZE 100
@@ -28,8 +29,10 @@ void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
     snprintf(msg.payload, PAYLOADLEN, "%d,", val);
     strstr(msg.payload, ",")[0] = '\0';
 
-    if(xQueueSend(mqtt_queue, &msg, QDELAY) != pdPASS)
+    if(xQueueSend(mqtt_queue, &msg, QDELAY) != pdPASS) {
+        status_led_set_status(STATUS_LED_TROUBLE);
         ERROR_PRINTF("Error enqueueing MQTT %s-%s %d\n", parameter, suffix, val);
+    }
 
 }
 
