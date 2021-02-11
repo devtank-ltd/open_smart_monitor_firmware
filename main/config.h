@@ -13,12 +13,9 @@
  * Use pulse counters for things like gas meters and turnstiles
  * Use frequency counters for things like speedometers and whatnot
  */
-#define PULSEIN_UNUSED      0  // Don't use either pulse input
-#define PULSEIN_1FREQ       1  // Use P1 as a frequency counter and leave P2 unused
-#define PULSEIN_2FREQ       2  // Use both P1 and P2 as frequency counters 
-#define PULSEIN_1FREQ1PULSE 3  // Use P1 as a frequency counter, P2 as a pulse counter
-#define PULSEIN_1PULSE      4  // Use P1 as a pulse counter, leave P2 unused
-#define PULSEIN_2PULSE      5  // Use both P1 and P2 as pules counters
+#define PULSEIN_UNUSED      0  // Don't use the pulse input
+#define PULSEIN_FREQ        1  // Use the pulse input as a frequency counter
+#define PULSEIN_PULSE       2  // Use the pulse input as a pulse counter
 
 #define MQTT_DISABLE        0
 #define MQTTSN_OVER_LORA    1
@@ -38,7 +35,9 @@ void set_socoen(uint8_t en);
 uint8_t get_socoen();
 void set_hpmen(uint8_t en);
 uint8_t get_hpmen();
-void set_pulsein(uint8_t en);
-uint8_t get_pulsein();
+void set_pulsein1(uint8_t en);
+uint8_t get_pulsein1();
+void set_pulsein2(uint8_t en);
+uint8_t get_pulsein2();
 uint32_t get_wateroffset();
 void set_wateroffset(uint32_t);

@@ -75,18 +75,35 @@ float get_midpoint() {
     }
 }
 
-void set_pulsein(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "water_en", en);
-    ERROR_PRINTF("(%s) setting water_en!", esp_err_to_name(err));
+void set_pulsein1(uint8_t en) {
+    esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein1", en);
+    ERROR_PRINTF("(%s) setting pulsein1!", esp_err_to_name(err));
 }
 
-uint8_t get_pulsein() {
+uint8_t get_pulsein1() {
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "water_en", &en);
-    ERROR_PRINTF("(%s) getting water_en!", esp_err_to_name(err));
+    esp_err_t err = nvs_get_u8(calibration_handle(), "pulsein1", &en);
+    ERROR_PRINTF("(%s) getting pulsein1!", esp_err_to_name(err));
     if(err != ESP_OK) {
-        set_pulsein(PULSEIN_UNUSED);
-        return get_pulsein();
+        set_pulsein1(PULSEIN_UNUSED);
+        return get_pulsein1();
+    } else {
+       return en;
+    }
+}
+
+void set_pulsein2(uint8_t en) {
+    esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein2", en);
+    ERROR_PRINTF("(%s) setting pulsein2!", esp_err_to_name(err));
+}
+
+uint8_t get_pulsein2() {
+    uint8_t en = 0;
+    esp_err_t err = nvs_get_u8(calibration_handle(), "pulsein2", &en);
+    ERROR_PRINTF("(%s) getting pulsein2!", esp_err_to_name(err));
+    if(err != ESP_OK) {
+        set_pulsein2(PULSEIN_UNUSED);
+        return get_pulsein2();
     } else {
        return en;
     }

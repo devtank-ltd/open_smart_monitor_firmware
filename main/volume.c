@@ -1,6 +1,7 @@
 #include "driver/gpio.h"
 #include "pinmap.h"
-#include "mqtt-sn.h"
+#include "mqtt.h"
+#include "stats.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -10,8 +11,13 @@
 // 1000 microseconds is 1 millisecond.
 #define DEBOUNCE_WAIT 1000
 
-static volatile int count1 = 0;
-static volatile int freq1 = 0;
+static int setup1;
+static int setup2;
+
+static volatile int pin_count1 = 0;
+static volatile int pin_freq1 = 0;
+static volatile int pin_count2 = 0;
+static volatile int pin_freq2 = 0;
 
 static inline int debounce(int64_t * old_time, int * old_level, int new_level) {
     // esp_timer_get_time returns in microseconds, the time since startup.
@@ -36,21 +42,38 @@ static void IRAM_ATTR isr_p1(void * arg) {
     static int level;
     static int64_t previous_edge = 0;
     int new_level = gpio_get_level(PULSE_IN_1);
-    if(debounce(&previous_edge, &level, new_level) && new_level) count1++;
+    if(debounce(&previous_edge, &level, new_level) && new_level) pin_count1++;
+}
+
+static void IRAM_ATTR isr_p2(void * arg) {
+    static int level;
+    static int64_t previous_edge = 0;
+    int new_level = gpio_get_level(PULSE_IN_2);
+    if(debounce(&previous_edge, &level, new_level) && new_level) pin_count2++;
 }
 
 static void IRAM_ATTR isr_p3(void * arg) {
 }
 
-static void freq_compute(void * arg) {
+static void freq_compute1(void * arg) {
     // Have this function run every second, and it will compute the
     // frequency of both pulses. In hertz.
     static int old_count1 = 0;
-    freq1 = count1 - old_count1;
-    old_count1 = count1;
+    pin_freq1 = pin_count1 - old_count1;
+    old_count1 = pin_count1;
+}
+
+static void freq_compute2(void * arg) {
+    // Have this function run every second, and it will compute the
+    // frequency of both pulses. In hertz.
+    static int old_count2 = 0;
+    pin_freq2 = pin_count2 - old_count2;
+    old_count2 = pin_count2;
 }
 
 void volume_setup() {
+    int setup1 = get_pulsein1();
+    int setup2 = get_pulsein2();
     DEBUG_PRINTF("Setting the volume measurement gpio up");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
@@ -59,26 +82,38 @@ void volume_setup() {
         .pull_up_en = 1
     };
 
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &freq_compute,
-        .name = "freq_report"
-    };
+    if(setup1 == PULSEIN_FREQ) {
+        const esp_timer_create_args_t periodic_timer_args = {
+            .callback = &freq_compute1,
+            .name = "freq_compute1",
+        };
+        esp_timer_handle_t periodic_timer;
+        ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+        ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000)); // fire the timer every second
+    }
 
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000)); // fire the timer every second
+    if(setup2 == PULSEIN_FREQ) {
+        const esp_timer_create_args_t periodic_timer_args = {
+            .callback = &freq_compute2,
+            .name = "freq_compute2",
+        };
+        esp_timer_handle_t periodic_timer;
+        ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+        ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000)); // fire the timer every second
+    }
 
     ESP_ERROR_CHECK(gpio_config(&io_conf));
 
     ESP_ERROR_CHECK(gpio_install_isr_service(0));
-    ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_1, isr_p1, (void*) PULSE_IN_1));
+    if(setup1 != PULSEIN_UNUSED) ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_1, isr_p1, (void*) PULSE_IN_1));
+    if(setup2 != PULSEIN_UNUSED) ESP_ERROR_CHECK(gpio_isr_handler_add(PULSE_IN_2, isr_p2, (void*) PULSE_IN_2));
     ESP_ERROR_CHECK(gpio_isr_handler_add(POWER_INT,  isr_p3, (void*) POWER_INT));
 }
-/*
-static void qry_frequency(const char * key, int which) {
-    mqtt_announce_int(key, (which ? freq1 : freq2));
-}
-*/
+
 void query_pulsecount(const char * key, int multiplier, int which) {
-    mqtt_datum_update(&mqtt_water_meter_datum, get_wateroffset() + count1 * 10);
+    if(setup1 == PULSEIN_FREQ) stats_enqueue_sample(pulse1, freq1);
+    if(setup2 == PULSEIN_FREQ) stats_enqueue_sample(pulse2, freq2);
+
+    if(setup1 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[pulse1], NULL, pin_count1);
+    if(setup2 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[pulse2], NULL, pin_count2);
 }
