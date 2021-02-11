@@ -40,8 +40,15 @@ void stats_task(void *pvParameters) {
         while(xQueueReceive(stats_queue, &sample, 0) == pdTRUE) {
             // FIXME: the maximum and minimum need to be assigned if the sample count is zero
             stats[sample.parameter].cumulative += sample.sample;
-            if(sample.sample < stats[sample.parameter].minimum) stats[sample.parameter].minimum = sample.sample;
-            if(sample.sample > stats[sample.parameter].maximum) stats[sample.parameter].maximum = sample.sample;
+            if(!stats[sample.parameter]) {
+                stats[sample.parameter].minimum = sample.sample;
+                stats[sample.parameter].maximum = sample.sample;
+            } else {
+                if(sample.sample < stats[sample.parameter].minimum) 
+                    stats[sample.parameter].minimum = sample.sample;
+                if(sample.sample > stats[sample.parameter].maximum)
+                    stats[sample.parameter].maximum = sample.sample;
+            }
             stats[sample.parameter].sample_count++;
         }
 
