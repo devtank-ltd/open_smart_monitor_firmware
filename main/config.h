@@ -21,11 +21,9 @@
 #define MQTTSN_OVER_LORA    1
 #define MQTTSN_OVER_LORAWAN 2
 #define MQTT3_OVER_WIFI     3
+#define MQTT_LOG_TO_USB     4
 
 void configure();
-void store_config(char * key, char * val);
-const char* get_config(const char * key);
-
 
 void set_midpoint(float v);
 float get_midpoint();
@@ -41,3 +39,5 @@ void set_pulsein2(uint8_t en);
 uint8_t get_pulsein2();
 uint32_t get_wateroffset();
 void set_wateroffset(uint32_t);
+uint32_t get_timedelta(const char * parameter);
+void set_timedelta(const char * parameter, uint32_t delta);

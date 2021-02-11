@@ -23,21 +23,19 @@ static inline char * getfield(char * f) {
     return f;
 }
 
-void store_config(char * key, char * val) {
+nvs_handle_t calibration_handle() {
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ERROR_PRINTF("Error (%s) opening NVS handle!", esp_err_to_name(err));
-        return;
+        return (nvs_handle_t)NULL;
     }
-
-    nvs_set_str(my_handle, key, val);
-    nvs_commit(my_handle);
+    return my_handle;
 }
 
-nvs_handle_t calibration_handle() {
+nvs_handle_t delta_handle() {
     nvs_handle_t my_handle;
-    esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
+    esp_err_t err = nvs_open("delta", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ERROR_PRINTF("Error (%s) opening NVS handle!", esp_err_to_name(err));
         return (nvs_handle_t)NULL;
@@ -179,5 +177,22 @@ uint8_t get_mqtten() {
         return get_mqtten();
     } else {
        return en;
+    }
+}
+
+void set_timedelta(const char * parameter, uint32_t delta) {
+    esp_err_t err = nvs_set_u32(delta_handle(), parameter, delta);
+    if(err !=ESP_OK)
+        ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter);
+}
+
+uint32_t get_timedelta(const char * parameter) {
+    uint32_t delta = 0;
+    esp_err_t err = nvs_get_u32(calibration_handle(), parameter, &delta);
+    if(err != ESP_OK) {
+        ERROR_PRINTF("(%s) getting timedelta for %s!", esp_err_to_name(err), parameter);
+        return 15 * 60;
+    } else {
+        return delta;
     }
 }
