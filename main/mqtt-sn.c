@@ -28,7 +28,7 @@
 
 #define DR_REG_RNG_BASE                        0x3ff75144
 
-#define STACKSIZE 1000
+#define STACKSIZE 9000
 
 TaskHandle_t xMQTTHandle = NULL;
 StaticTask_t xMQTTBuffer;
