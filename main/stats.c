@@ -40,7 +40,7 @@ void stats_task(void *pvParameters) {
         while(xQueueReceive(stats_queue, &sample, 0) == pdTRUE) {
             // FIXME: the maximum and minimum need to be assigned if the sample count is zero
             stats[sample.parameter].cumulative += sample.sample;
-            if(!stats[sample.parameter]) {
+            if(!stats[sample.parameter].sample_count) {
                 stats[sample.parameter].minimum = sample.sample;
                 stats[sample.parameter].maximum = sample.sample;
             } else {
@@ -63,6 +63,7 @@ void stats_task(void *pvParameters) {
                     mqtt_enqueue_int(parameter_names[i], "min", stats[i].minimum);
                     mqtt_enqueue_int(parameter_names[i], "max", stats[i].maximum);
                     mqtt_enqueue_int(parameter_names[i], "avg", stats[i].cumulative / stats[i].sample_count);
+                    mqtt_enqueue_int(parameter_names[i], "cnt", stats[i].sample_count);
                 }
             }
 
