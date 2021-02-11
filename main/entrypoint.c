@@ -7,6 +7,7 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
+#include "nvs_flash.h"
 #include "uplink.h"
 #include "mqtt-sn.h"
 
@@ -127,6 +128,8 @@ StackType_t  xMQTTStack[MEASSTACKSIZE];
 */
 void app_main(void)
 {
+    nvs_flash_init();
+    mqtt_init();
     stats_init();
     i2c_setup();
     getmac();

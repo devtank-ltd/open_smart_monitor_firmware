@@ -7,7 +7,6 @@ uint8_t mac[6];
 char mac_addr[13];
 
 void getmac() {
-    nvs_flash_init();
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     esp_err_t err;
 
