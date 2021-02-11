@@ -34,29 +34,6 @@ TaskHandle_t xMQTTHandle = NULL;
 StaticTask_t xMQTTBuffer;
 StackType_t  xMQTTStack[STACKSIZE];
 
-
-mqtt_stats_t mqtt_humidity_stats = {0};
-mqtt_stats_t mqtt_sound_stats = {0};
-mqtt_stats_t mqtt_temperature_stats = {0};
-mqtt_datum_t mqtt_battery_pc_datum = {0};
-mqtt_datum_t mqtt_battery_mv_datum = {0};
-mqtt_datum_t mqtt_import_energy_datum = {0};
-mqtt_datum_t mqtt_export_energy_datum = {0};
-mqtt_datum_t mqtt_water_meter_datum = {0};
-mqtt_datum_t mqtt_gas_meter_datum = {0};
-mqtt_stats_t mqtt_current1_stats = {0};
-mqtt_stats_t mqtt_current2_stats = {0};
-mqtt_stats_t mqtt_current3_stats = {0};
-mqtt_stats_t mqtt_voltage1_stats = {0};
-mqtt_stats_t mqtt_voltage2_stats = {0};
-mqtt_stats_t mqtt_voltage3_stats = {0};
-mqtt_stats_t mqtt_pf_stats = {0};
-mqtt_stats_t mqtt_pf_sign_stats = {0};
-mqtt_stats_t mqtt_pm10_stats = {0};
-mqtt_stats_t mqtt_pm25_stats = {0};
-mqtt_stats_t mqtt_visible_light_stats = {0};
-mqtt_stats_t mqtt_external_temp = {0};
-
 static volatile uint16_t dropped = 0;
 
 static void sendthebytes(const char * str, size_t len) {
@@ -210,13 +187,12 @@ static int mqtt_update(const char ident, const char * msg) {
     return mqtt_sn_send(topic, msg);
 }
 
-int heartbeat() {
-    return mqtt_update('f', "I'm alive");
-}
-
-int mqtt_announce_dropped() {
+void mqtt_announce_dropped() {
     static uint16_t old_dropped = 0;
-    return mqtt_delta_announce_int("mqtt_dropped", (uint16_t*)&dropped, &old_dropped, 1);
+    if(ABS(dropped - old_dropped) > 5) {
+        old_dropped = dropped;
+        mqtt_enqueue_int("mqtt_dropped", NULL, dropped);
+    }
 }
 
 int mqtt_announce_int(const char * key, int val) {
@@ -233,53 +209,6 @@ int mqtt_announce_str(const char * key, const char * val) {
     return mqtt_update('I', msg);
 }
 
-int mqtt_delta_announce_int(const char * key, uint16_t * val, uint16_t * old, int delta) {
-    if(ABS(*val - *old) > delta) {
-        *old = *val;
-        return mqtt_announce_int(key, * val);
-    }
-    return 0;
-}
-
-void mqtt_announce_datum(const char * key, mqtt_datum_t * datum) {
-    if(!datum->ready || (xTaskGetTickCount() < datum->updated + datum->delta))
-        return; // The datum is not ready to be sent over.
-    if(!mqtt_announce_int(key, datum->value))
-        datum->sent = xTaskGetTickCount();
-}
-
-void mqtt_announce_stats(const char * key, mqtt_stats_t * stats) {
-    char dkey[100];
-    bool ready = true;
-    if(!stats->ready || !(xTaskGetTickCount() < stats->updated + stats->delta)) {
-        printf("%-20s not ready:\t ready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
-        return; // The datum is not ready to be sent over.
-    }
-    printf("%-20s ready:\t ready = %d\tupdated = %d\tdelta = %d\tnow = %d\n", key, stats->ready, stats->updated, stats->delta, xTaskGetTickCount());
-
-    strcpy(dkey, key);
-    strcat(dkey, "-min");
-    ready &= !mqtt_announce_int(dkey, stats->minimum);
-
-    strcpy(dkey, key);
-    strcat(dkey, "-max");
-    ready &= mqtt_announce_int(dkey, stats->maximum);
-
-    strcpy(dkey, key);
-    strcat(dkey, "-avg");
-    ready &= mqtt_announce_int(dkey, stats->average);
-
-    if(ready)
-        stats->sent = xTaskGetTickCount();
-}
-
-void mqtt_datum_update(mqtt_datum_t * datum, int32_t value) {
-    datum->value = value;
-    datum->updated = xTaskGetTickCount();
-    datum->ready = true;
-    if(datum->sent > datum->updated)
-        datum->sent = 0; // in case of roll-over.
-}
 
 void mqtt_task(void * pvParameters) {
     char topic[TOPICLEN + SUFFIXLEN + 2];
