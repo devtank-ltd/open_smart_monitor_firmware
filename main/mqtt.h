@@ -19,3 +19,4 @@ typedef struct {
 } msg_t;
 
 void mqtt_enqueue_int(const char * parameter, const char * suffix, int val);
+void mqtt_init();
