@@ -3,7 +3,7 @@
 #include "adc.h"
 #include "pinmap.h"
 #include "logging.h"
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "config.h"
 #include "math.h"
 #include "driver/i2s.h"
@@ -105,12 +105,17 @@ int db_correction(int db) {
 }
 
 void battery_query() {
+    static int oldpc = 0;
     int v = voltagecalc(adc_avg_get(1)) * 3197;
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
-    mqtt_datum_update(&mqtt_battery_mv_datum, v);
-    mqtt_datum_update(&mqtt_battery_pc_datum, pc);
+
+    if(oldpc != pc) {
+        oldpc = pc;
+        mqtt_enqueue_int("battery_mv", NULL, v);
+        mqtt_enqueue_int("battery_pc", NULL, pc);
+    }
 }
 
 void sound_query() {

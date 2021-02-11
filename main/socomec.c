@@ -6,7 +6,7 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "driver/uart.h"
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "driver/gpio.h"
 #include "pinmap.h"
 #include "logging.h"
@@ -447,10 +447,10 @@ void smart_meter_query()
          * so I set this countdown so that it gets queried hourly instead
          */
         int32_t import, export;
-        sense_modbus_read_value(36, &import, sizeof(mqtt_import_energy_datum.value));
-        sense_modbus_read_value(37, &export, sizeof(mqtt_export_energy_datum.value));
-        mqtt_datum_update(&mqtt_import_energy_datum, import);
-        mqtt_datum_update(&mqtt_export_energy_datum, export);
+        sense_modbus_read_value(36, &import, sizeof(import));
+        sense_modbus_read_value(37, &export, sizeof(export));
+        mqtt_enqueue_int("ImportEnergy", NULL, import);
+        mqtt_enqueue_int("ExportEnergy", NULL, export);
         count = 3600;
     }
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
