@@ -64,6 +64,7 @@ void stats_task(void *pvParameters) {
                     mqtt_enqueue_int(parameter_names[i], "max", stats[i].maximum);
                     mqtt_enqueue_int(parameter_names[i], "avg", stats[i].cumulative / stats[i].sample_count);
                     mqtt_enqueue_int(parameter_names[i], "cnt", stats[i].sample_count);
+                    stats[i].sample_count = 0;
                 }
             }
 
