@@ -80,10 +80,10 @@ static void hdc_wait() {
         esp_err_t err = read_reg(CONFIG, &config);
 
         if(err != ESP_OK) {
-            vTaskDelay(500);
+            vTaskDelay(pdMS_TO_TICKS(5));
         } else if (config && MEAS_TRIG) {
             INFO_PRINTF("Waiting %d for HDC2080", i);
-            vTaskDelay(500);
+            vTaskDelay(pdMS_TO_TICKS(5));
         } else {
             INFO_PRINTF("HDC2080 reports being ready");
             return;
