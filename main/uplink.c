@@ -20,7 +20,7 @@ StackType_t  xUplinkStack[STACKSIZE];
 bool beginswith(const char * haystack, const char * needle, int * argument) {
     int length = strlen(needle);
     if(!strncmp(haystack, needle, length)) {
-        *argument = atoi(haystack);
+        *argument = atoi(haystack + length);
         return true;
     }
     return false;
