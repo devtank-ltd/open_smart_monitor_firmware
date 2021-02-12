@@ -205,19 +205,21 @@ uint8_t get_mqtten() {
     }
 }
 
-void set_timedelta(const char * parameter, uint32_t delta) {
-    esp_err_t err = nvs_set_u32(delta_handle(), parameter, delta);
+void set_timedelta(int parameter, uint32_t delta) {
+    const char * parameter_name = parameter_names[parameter];
+    esp_err_t err = nvs_set_u32(delta_handle(), parameter_name, delta);
     if(err !=ESP_OK)
-        ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter);
+        ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter_name);
     err = nvs_commit(delta_handle());
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
-uint32_t get_timedelta(const char * parameter) {
+uint32_t get_timedelta(int parameter) {
+    const char * parameter_name = parameter_names[parameter];
     uint32_t delta = 0;
-    esp_err_t err = nvs_get_u32(calibration_handle(), parameter, &delta);
+    esp_err_t err = nvs_get_u32(calibration_handle(), parameter_name, &delta);
     if(err != ESP_OK) {
-        ERROR_PRINTF("(%s) getting timedelta for %s!", esp_err_to_name(err), parameter);
+        ERROR_PRINTF("(%s) getting timedelta for %s!", esp_err_to_name(err), parameter_name);
         return 15 * 60;
     } else {
         return delta;

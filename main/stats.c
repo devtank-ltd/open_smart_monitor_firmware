@@ -97,7 +97,7 @@ void stats_init() {
         stats[i].minimum = 0;
         stats[i].maximum = 0;
         stats[i].sample_count = 0;
-        stats[i].delta = get_timedelta(parameter_names[i]);
+        stats[i].delta = get_timedelta(i);
     }
 
     xStatsHandle = xTaskCreateStatic(
