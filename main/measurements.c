@@ -24,6 +24,7 @@ void measurements_task(void *pvParameters) {
     volume_setup();
     smart_meter_setup();
     ds18b20_init();
+    hpm_setup();
 
     for(;;) {
         TickType_t before = xTaskGetTickCount();
