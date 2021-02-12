@@ -41,3 +41,5 @@ uint32_t get_wateroffset();
 void set_wateroffset(uint32_t);
 uint32_t get_timedelta(const char * parameter);
 void set_timedelta(const char * parameter, uint32_t delta);
+void set_sample_rate(int parameter, uint32_t delta);
+uint32_t get_sample_rate(int parameter);

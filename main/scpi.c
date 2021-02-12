@@ -39,11 +39,21 @@ int scpi_stack_query(struct scpi_node_t * n) {
 
 // SMART FACTORY SPECIFIC STUFF STARTS HERE
 #include "volume.h"
+#include "stats.h"
+#include "config.h"
+
 struct scpi_node_t frequency_node;
 struct scpi_node_t pulse_node;
 struct scpi_node_t pulsein1;
 struct scpi_node_t pulsein2;
+struct scpi_node_t hpm_pm25;
+struct scpi_node_t hpm_pm10;
 
+int scpi_node_to_param() {
+    if(scpi_stack_query(&hpm_pm25)) return pm25;
+    if(scpi_stack_query(&hpm_pm10)) return pm10;
+    return 0;
+}
 
 void idn_query(void * node) {
     SCPI_PRINTF("Devtank;OSM-1");
@@ -62,6 +72,15 @@ void frequency_query(void * node) {
     scpi_error(SCPI_UNKNOWN);
 }
 
+void scpi_set_sample_rate(void * argument) {
+    int sample = atoi((char *)argument);
+    set_sample_rate(scpi_node_to_param(), sample);
+}
+
+void scpi_get_sample_rate(void * nothing) {
+    SCPI_PRINTF("%d", get_sample_rate(scpi_node_to_param()));
+}
+
 struct scpi_node_t frequency_node = {
     .name = "FREQuency",
     .children = {},
@@ -69,11 +88,33 @@ struct scpi_node_t frequency_node = {
     .setter_fn = NULL
 };
 
+struct scpi_node_t sample_rate = {
+    .name = "SAMPlerate",
+    .children = {},
+    .query_fn = scpi_get_sample_rate,
+    .setter_fn = scpi_set_sample_rate,
+};
+
 struct scpi_node_t pulse_node = {
     .name = "PULSe",
     .children = {},
     .query_fn = frequency_query,
     .setter_fn = NULL,
+};
+
+#define hpm_children {&sample_rate, NULL}
+struct scpi_node_t hpm_pm25 = {
+    .name = "PM25",
+    .children = hpm_children,
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
+struct scpi_node_t hpm_pm10 = {
+    .name = "PM10",
+    .children = hpm_children,
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
 };
 
 #define pulse_children {&pulse_node, &frequency_node, NULL}
@@ -104,7 +145,7 @@ struct scpi_node_t idn = {
 // THE ROOT NODE AND CODE TO TRAVERSE THE PARSE TREE
 struct scpi_node_t root = {
     .name = "ROOT",
-    .children = {&pulsein1, &pulsein2, &idn, NULL},
+    .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {

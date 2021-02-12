@@ -6,6 +6,7 @@
 #include "nvs.h"
 #include "config.h"
 #include "logging.h"
+#include "stats.h"
 #include "mac.h"
 
 static char value[VALLEN];
@@ -38,6 +39,16 @@ nvs_handle_t delta_handle() {
     esp_err_t err = nvs_open("delta", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
         ERROR_PRINTF("Error (%s) opening NVS handle!", esp_err_to_name(err));
+        return (nvs_handle_t)NULL;
+    }
+    return my_handle;
+}
+
+nvs_handle_t samplerate_handle() {
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open("samplerate", NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) {
+        ERROR_PRINTF("Error (%s) opening NVS handle samplerate!", esp_err_to_name(err));
         return (nvs_handle_t)NULL;
     }
     return my_handle;
@@ -210,5 +221,26 @@ uint32_t get_timedelta(const char * parameter) {
         return 15 * 60;
     } else {
         return delta;
+    }
+}
+
+void set_sample_rate(int parameter, uint32_t delta) {
+    const char * parameter_name = parameter_names[parameter];
+    esp_err_t err = nvs_set_u32(samplerate_handle(), parameter_name, delta);
+    if(err != ESP_OK)
+        ERROR_PRINTF("(%s) setting sample rate to %d for %s!", esp_err_to_name(err), delta, parameter_name);
+    err = nvs_commit(delta_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+}
+
+uint32_t get_sample_rate(int parameter) {
+    const char * parameter_name = parameter_names[parameter];
+    uint32_t rate = 0;
+    esp_err_t err = nvs_get_u32(samplerate_handle(), parameter_name, &rate);
+    if(err != ESP_OK) {
+        ERROR_PRINTF("(%s) getting sample rate for %s!", esp_err_to_name(err), parameter_name);
+        return 1;
+    } else {
+        return rate;
     }
 }
