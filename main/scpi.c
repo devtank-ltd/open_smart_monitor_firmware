@@ -108,6 +108,15 @@ struct scpi_node_t root = {
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {
+    // FIXME:
+    // For a given command, say "CHANnel1:FREQuency?", we need to match
+    // CHAN1:FREQ?
+    // CHANNEL1:FREQ?
+    // chan1:frequency?
+    //
+    // i.e. a case-insensitive match of either all letters in the node's
+    // name, or only the capital letters in the name.
+    // strncmp won't cut the mustard.
     DEBUG_PRINTF("%s", string);
     DEBUG_PRINTF("looking for %s\nin node %s", string, node->name);
 
