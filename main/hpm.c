@@ -137,7 +137,16 @@ static hpm_response_t responses[] = {
 
 
 int hpm_query() {
-    if(!enable) return 0;
+    // the variable in non-volatile storage is set to 0 for disable, or a positive integer for "sample every n seconds"
+    // delay will keep being read from non-volatile storage if disabled, 
+    // otherwise will count down until it's time to read a sample from the device
+    static int delay = -1;
+    if(delay < 1)
+        delay = get_sample_rate(pm25) - 1;
+    if(delay > 0)
+        delay--;
+    if(delay)
+        return;
 
     hpm_switch();
 

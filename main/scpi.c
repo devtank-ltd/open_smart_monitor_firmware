@@ -72,6 +72,19 @@ void frequency_query(void * node) {
     scpi_error(SCPI_UNKNOWN);
 }
 
+void pulse_query(void * node) {
+    if(scpi_stack_query(&pulsein1)) {
+        SCPI_PRINTF("%d", pulse_get1());
+        return;
+    }
+    if(scpi_stack_query(&pulsein2)) {
+        SCPI_PRINTF("%d", pulse_get2());
+        return;
+    }
+    
+    scpi_error(SCPI_UNKNOWN);
+}
+
 void scpi_set_update_rate(void * argument) {
     int sample = atoi((char *)argument);
     set_sample_rate(scpi_node_to_param(), sample);
@@ -83,7 +96,7 @@ void scpi_get_update_rate(void * nothing) {
 
 void scpi_set_sample_rate(void * argument) {
     int sample = atoi((char *)argument);
-    set_timedelta(scpi_node_to_param(), sample);
+    set_sample_rate(scpi_node_to_param(), sample);
 }
 
 void scpi_get_sample_rate(void * nothing) {
