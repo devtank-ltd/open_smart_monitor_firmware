@@ -53,6 +53,8 @@ const char* get_config(const char * key) {
 void set_midpoint(float v) {
     esp_err_t err = nvs_set_u32(calibration_handle(), "midpoint", v * 10000);
     ERROR_PRINTF("(%s) setting midpoint!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 float get_midpoint() {
@@ -76,6 +78,8 @@ float get_midpoint() {
 void set_pulsein1(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein1", en);
     ERROR_PRINTF("(%s) setting pulsein1!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint8_t get_pulsein1() {
@@ -93,6 +97,8 @@ uint8_t get_pulsein1() {
 void set_pulsein2(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein2", en);
     ERROR_PRINTF("(%s) setting pulsein2!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint8_t get_pulsein2() {
@@ -110,6 +116,8 @@ uint8_t get_pulsein2() {
 void set_wateroffset(uint32_t offs) {
     esp_err_t err = nvs_set_u32(calibration_handle(), "water_offs", offs);
     ERROR_PRINTF("(%s) setting water_offs!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint32_t get_wateroffset() {
@@ -128,12 +136,14 @@ uint32_t get_wateroffset() {
 void set_hpmen(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "hpm_en", en);
     ERROR_PRINTF("(%s) setting hpm_en!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint8_t get_hpmen() {
     uint8_t en = 0;
     esp_err_t err = nvs_get_u8(calibration_handle(), "hpm_en", &en);
-    ERROR_PRINTF("(%s) getting hpm_en!", esp_err_to_name(err));
+    ERROR_PRINTF("(%s) getting hpm_en; it's %d.!", esp_err_to_name(err), (int)en);
     if(err != ESP_OK) {
         set_hpmen(0);
         return get_hpmen();
@@ -146,6 +156,8 @@ void set_socoen(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "soco_en", en);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting soco_en!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint8_t get_socoen() {
@@ -165,6 +177,8 @@ void set_mqtten(uint8_t en) {
     esp_err_t err = nvs_set_u8(calibration_handle(), "mqtt_en", en);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting mqtt_en!", esp_err_to_name(err));
+    err = nvs_commit(calibration_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint8_t get_mqtten() {
@@ -184,6 +198,8 @@ void set_timedelta(const char * parameter, uint32_t delta) {
     esp_err_t err = nvs_set_u32(delta_handle(), parameter, delta);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter);
+    err = nvs_commit(delta_handle());
+    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
 }
 
 uint32_t get_timedelta(const char * parameter) {
