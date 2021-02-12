@@ -1,0 +1,152 @@
+#include "scpi.h"
+#include "stdio.h"
+#include "string.h"
+#include "logging.h"
+#define NOTQUESTIONABLE 1
+#define NOTSETTABLE     2
+#define SCPI_UNKNOWN    3
+
+typedef void (*scpi_operation)(void * node);
+
+struct scpi_node_t {
+    const char * name;
+    scpi_operation query_fn;
+    scpi_operation setter_fn;
+    struct scpi_node_t * children[];
+};
+
+#define MAXPARSEDEPTH 20
+#define ERRORQUEUELEN 20
+#define SCPI_PRINTF(f_, ...) printf(("\033[39m" f_ "\n"), ##__VA_ARGS__)
+
+struct scpi_node_t * stack[MAXPARSEDEPTH] = {0};
+int error_queue[ERRORQUEUELEN] = {0};
+static int stackpointer = 0;
+
+void scpi_error(int error_code) {
+    static int in = 0;
+    error_queue[in++] = error_code;
+    in %= ERRORQUEUELEN;
+    DEBUG_PRINTF("Enqueuing error code %d", error_code);
+}
+
+int scpi_stack_query(struct scpi_node_t * n) {
+    for(int ptr = stackpointer; ptr >= 0; ptr--) {
+        if(stack[ptr] == n) return 1;
+    }
+    return 0;
+}
+
+// SMART FACTORY SPECIFIC STUFF STARTS HERE
+#include "volume.h"
+struct scpi_node_t frequency_node;
+struct scpi_node_t pulse_node;
+struct scpi_node_t pulsein1;
+struct scpi_node_t pulsein2;
+
+
+void idn_query(void * node) {
+    SCPI_PRINTF("Devtank;OSM-1");
+}
+
+void frequency_query(void * node) {
+    if(scpi_stack_query(&pulsein1)) {
+        SCPI_PRINTF("%dHZ", freq_get1());
+        return;
+    }
+    if(scpi_stack_query(&pulsein2)) {
+        SCPI_PRINTF("%dHZ", freq_get2());
+        return;
+    }
+    
+    scpi_error(SCPI_UNKNOWN);
+}
+
+struct scpi_node_t frequency_node = {
+    .name = "FREQuency",
+    .children = {},
+    .query_fn = frequency_query,
+    .setter_fn = NULL
+};
+
+struct scpi_node_t pulse_node = {
+    .name = "PULSe",
+    .children = {},
+    .query_fn = frequency_query,
+    .setter_fn = NULL,
+};
+
+#define pulse_children {&pulse_node, &frequency_node, NULL}
+
+struct scpi_node_t pulsein1 = {
+    .name = "CHANnel1",
+    .children = pulse_children,
+    .query_fn = NULL,
+    .setter_fn = NULL,
+};
+
+struct scpi_node_t pulsein2 = {
+    .name = "CHANnel2",
+    .children = pulse_children,
+    .query_fn = NULL,
+    .setter_fn = NULL,
+};
+
+// IEEE-448.1 STUFF GOES HERE
+struct scpi_node_t idn = {
+    .name = "*IDN",
+    .children = {NULL},
+    .query_fn = idn_query,
+    .setter_fn = NULL,
+};
+
+
+// THE ROOT NODE AND CODE TO TRAVERSE THE PARSE TREE
+struct scpi_node_t root = {
+    .name = "ROOT",
+    .children = {&pulsein1, &pulsein2, &idn, NULL},
+};
+
+void scpi_parse_node(const char * string, struct scpi_node_t * node) {
+    DEBUG_PRINTF("%s", string);
+    DEBUG_PRINTF("looking for %s\nin node %s", string, node->name);
+
+    if(!strncmp(string, "?", 1)) {
+        DEBUG_PRINTF("invoking query for node %s\n", node->name);
+        if(node->query_fn) node->query_fn(node);
+        else scpi_error(NOTQUESTIONABLE);
+        return;
+    }
+
+    if(!strncmp(string, " ", 1) || !strncmp(string, ";", 1)) {
+        DEBUG_PRINTF("invoking setter for node %s\n", node->name);
+        if(node->setter_fn) node->setter_fn((void *) string);
+        else scpi_error(NOTSETTABLE);
+        return;
+    }
+
+    if(!strncmp(string, ":", 1))
+        string++;
+
+    for(int i = 0; node->children[i]; i++) {
+        char needle[20] = {0};
+        char haystack[20] = {0};
+        strncpy(needle, string, strlen(node->children[i]->name));
+        strncpy(haystack, node->children[i]->name, strlen(node->children[i]->name));
+        DEBUG_PRINTF("NEEDLE %s\n", needle);
+        DEBUG_PRINTF("HAYSTACK %s\n", haystack);
+
+        if(!strncmp(node->children[i]->name, string, strlen(node->children[i]->name))) {
+            stack[stackpointer++] = node->children[i];
+            scpi_parse_node(string + strlen(node->children[i]->name), node->children[i]);
+            return;
+        }
+    }
+
+    scpi_error(SCPI_UNKNOWN);
+}
+
+void scpi_parse(char * string) {
+    stackpointer = 0;
+    scpi_parse_node(string, &root);
+}
