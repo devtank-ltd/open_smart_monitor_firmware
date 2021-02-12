@@ -8,6 +8,7 @@
 //#include "mqtt.h"
 #include "string.h"
 #include "logging.h"
+#include "nvs_flash.h"
 
 #define LINELENGTH 80
 #define QUEUESIZE 50
@@ -45,6 +46,9 @@ void uplink_task(void *pvParameters) {
 
         if(beginswith(line, "set midpoint ", &argument))
             set_midpoint(argument);
+
+        if(beginswith(line, "hpm_enable ", &argument))
+            set_hpmen(argument);
 
     }
 }
