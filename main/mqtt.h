@@ -5,7 +5,7 @@
 #include "mac.h"
 
 #define SUFFIXLEN 4
-#define TOPICLEN 20
+#define TOPICLEN 30
 #define PAYLOADLEN 20
 
 extern xQueueHandle mqtt_queue;
