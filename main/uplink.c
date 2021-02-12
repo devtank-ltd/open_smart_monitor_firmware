@@ -8,7 +8,7 @@
 //#include "mqtt.h"
 #include "string.h"
 #include "logging.h"
-#include "nvs_flash.h"
+#include "scpi.h"
 
 #define LINELENGTH 80
 #define QUEUESIZE 50
@@ -41,14 +41,23 @@ void uplink_task(void *pvParameters) {
 
         int argument;
 
-        if(beginswith(line, "set wateroffset ", &argument))
+        if(beginswith(line, "set wateroffset ", &argument)) {
             set_wateroffset(argument);
+            continue;
+        }
 
-        if(beginswith(line, "set midpoint ", &argument))
+        if(beginswith(line, "set midpoint ", &argument)) {
             set_midpoint(argument);
+            continue;
+        }
 
-        if(beginswith(line, "hpm_enable ", &argument))
+        if(beginswith(line, "hpm_enable ", &argument)) {
             set_hpmen(argument);
+            continue;
+        }
+
+        DEBUG_PRINTF("going to send %s to the SCPI parser", line);
+        scpi_parse(line);
 
     }
 }
