@@ -72,9 +72,18 @@ void frequency_query(void * node) {
     scpi_error(SCPI_UNKNOWN);
 }
 
-void scpi_set_sample_rate(void * argument) {
+void scpi_set_update_rate(void * argument) {
     int sample = atoi((char *)argument);
     set_sample_rate(scpi_node_to_param(), sample);
+}
+
+void scpi_get_update_rate(void * nothing) {
+    SCPI_PRINTF("%d", get_timedelta(scpi_node_to_param()));
+}
+
+void scpi_set_sample_rate(void * argument) {
+    int sample = atoi((char *)argument);
+    set_timedelta(scpi_node_to_param(), sample);
 }
 
 void scpi_get_sample_rate(void * nothing) {
@@ -86,6 +95,13 @@ struct scpi_node_t frequency_node = {
     .children = {},
     .query_fn = frequency_query,
     .setter_fn = NULL
+};
+
+struct scpi_node_t update_rate = {
+    .name = "UPDaterate",
+    .children = {},
+    .query_fn = scpi_get_update_rate,
+    .setter_fn = scpi_set_update_rate,
 };
 
 struct scpi_node_t sample_rate = {
