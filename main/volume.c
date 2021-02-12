@@ -71,6 +71,22 @@ static void freq_compute2(void * arg) {
     old_count2 = pin_count2;
 }
 
+static int freq_get1() {
+    return pin_freq1;
+}
+
+static int freq_get2() {
+    return pin_freq2;
+}
+
+static int pulse_get1() {
+    return pin_count1;
+}
+
+static int pulse_count() {
+    return pin_freq2;
+}
+
 void volume_setup() {
     int setup1 = get_pulsein1();
     int setup2 = get_pulsein2();
