@@ -50,6 +50,7 @@ static esp_err_t read_reg(uint8_t reg, uint8_t * val) {
     esp_err_t err = i2c_master_cmd_begin(I2CBUS, cmd, 100);
     if(err != ESP_OK) {
         i2c_cmd_link_delete(cmd);
+        ERROR_PRINTF("(%s) in comms with HDC2080", esp_err_to_name(err));
         return err;
     }
     i2c_cmd_link_delete(cmd);
