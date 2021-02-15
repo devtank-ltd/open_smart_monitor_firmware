@@ -105,8 +105,11 @@ float ds18b20_get_temp(void) {
             temp2 = ds18b20_read_byte();
             check = ds18b20_RST_PULSE();
             float temp = ((float)(temp1+(temp2*256))/16) * 10;
+
+            // A temperature of 40959 is what we get if it's not plugged in
             int i = temp;
-            stats_enqueue_sample(external_temperature, i);
+            if(i != 40959)
+                stats_enqueue_sample(external_temperature, i);
             return temp;
         } else {
             return 0;
