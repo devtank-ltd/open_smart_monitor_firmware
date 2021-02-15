@@ -56,7 +56,6 @@ void uplink_task(void *pvParameters) {
             continue;
         }
 
-        DEBUG_PRINTF("going to send %s to the SCPI parser", line);
         scpi_parse(line);
 
     }
