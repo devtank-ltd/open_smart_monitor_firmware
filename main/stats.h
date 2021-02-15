@@ -4,6 +4,8 @@
 
 #include "stdint.h"
 
+// Because these tokens are used as strings for the NVS keys, none of them may
+// be longer than 15 characters.
 #define FOREACH_PARAM(FN) \
     FN(temperature) \
     FN(humidity) \
@@ -23,7 +25,7 @@
     FN(freq2) \
     FN(pulse1) \
     FN(pulse2) \
-    FN(external_temperature)
+    FN(temp_probe)
 
 #define GENERATE_ENUM(ENUM) ENUM,
 #define GENERATE_STRING(STRING) #STRING,
