@@ -7,7 +7,7 @@
 #include "status_led.h"
 #include "logging.h"
 
-#define QUEUESIZE 50
+#define QUEUESIZE 500
 #define STACKSIZE 10000
 
 // FIXME: change this to use one queue instead of a fazillion.
