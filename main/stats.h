@@ -27,6 +27,8 @@
     FN(pulse2) \
     FN(temp_probe)
 
+#define GENERATE_GETTER(ENUM) get_ ## ENUM,
+#define DECLARE_GETTER(ENUM) void get_ ## ENUM ();
 #define GENERATE_ENUM(ENUM) parameter_ ## ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 #define ARRAY_SIZE(_a) (sizeof(_a)/sizeof(_a[0]))
@@ -39,6 +41,14 @@ enum parameters {
 static const char * parameter_names[] = {
     // this macro will expand to "temperature", "sound_level", "humidity", etc.
     FOREACH_PARAM(GENERATE_STRING)
+};
+
+// this macro will expand to void get_temperature();, void get_sound_level();, void get_humidity();, etc.
+FOREACH_PARAM(DECLARE_GETTER);
+
+static void (*parameter_getters[ARRAY_SIZE(parameter_names)])() __attribute__((unused)) = {
+    // this macro will expand to get_temperature, get_sound_level, get_humidity, etc.
+    FOREACH_PARAM(GENERATE_GETTER)
 };
 
 typedef struct {
