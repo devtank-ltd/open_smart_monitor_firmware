@@ -139,8 +139,6 @@ void app_main(void)
     status_led_set_status(STATUS_LED_OK);
     uplink_init();
 
-    set_mqtten(MQTT_LOG_TO_USB);
-
     if(get_mqtten() == MQTTSN_OVER_LORA)
         mqtt_sn_init();
 

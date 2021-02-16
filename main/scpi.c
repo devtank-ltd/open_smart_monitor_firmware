@@ -162,6 +162,55 @@ struct scpi_node_t pulsein2 = {
     .setter_fn = NULL,
 };
 
+
+void scpi_mqtt_query(void * argument) {
+    uint8_t s = get_mqtten();
+    switch(s) {
+    case MQTT_DISABLE:
+        SCPI_PRINTF("DISABLED");
+        break;
+    case MQTT_LOG_TO_USB:
+        SCPI_PRINTF("USBLOG");
+        break;
+    case MQTTSN_OVER_LORA:
+        SCPI_PRINTF("LORA");
+        break;
+    default:
+        scpi_error(SCPI_UNKNOWN);
+        break;
+    }
+}
+
+void scpi_mqtt_setter(void * argument) {
+    char * arg = argument;
+    DEBUG_PRINTF("argument to SCPI command \"MQTT\": -%s-", arg);
+    if(strstr(arg, "DISABLED")) {
+        set_mqtten(MQTT_DISABLE);
+        DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
+        return;
+    }
+    if(strstr(arg, "USBLOG")) {
+        set_mqtten(MQTT_LOG_TO_USB);
+        DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
+        return;
+    }
+    if(strstr(arg, "LORA")) {
+        set_mqtten(MQTTSN_OVER_LORA);
+        DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
+        return;
+    }
+    scpi_error(SCPI_UNKNOWN);
+}
+
+
+struct scpi_node_t mqtt = {
+    .name = "MQTT",
+    .children = {NULL},
+    .query_fn = scpi_mqtt_query,
+    .setter_fn = scpi_mqtt_setter
+};
+
+
 // IEEE-448.1 STUFF GOES HERE
 struct scpi_node_t idn = {
     .name = "*IDN",
@@ -174,7 +223,7 @@ struct scpi_node_t idn = {
 // THE ROOT NODE AND CODE TO TRAVERSE THE PARSE TREE
 struct scpi_node_t root = {
     .name = "ROOT",
-    .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, NULL},
+    .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {

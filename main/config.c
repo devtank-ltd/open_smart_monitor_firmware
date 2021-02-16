@@ -190,16 +190,15 @@ void set_mqtten(uint8_t en) {
         ERROR_PRINTF("(%s) setting mqtt_en!", esp_err_to_name(err));
     err = nvs_commit(calibration_handle());
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    get_mqtten();
 }
 
 uint8_t get_mqtten() {
     uint8_t en = 0;
     esp_err_t err = nvs_get_u8(calibration_handle(), "mqtt_en", &en);
-    if(err !=ESP_OK)
-        ERROR_PRINTF("(%s) getting mqtt_en!", esp_err_to_name(err));
+    ERROR_PRINTF("(%s) getting mqtt_en, it's %d!", esp_err_to_name(err), (int)en);
     if(err != ESP_OK) {
-        set_mqtten(1);
-        return get_mqtten();
+        return MQTTSN_OVER_LORA;
     } else {
        return en;
     }
