@@ -9,7 +9,7 @@
 #define FOREACH_PARAM(FN) \
     FN(temperature) \
     FN(humidity) \
-    FN(sound_level) \
+    FN(sound) \
     FN(pm10) \
     FN(pm25) \
     FN(light) \
