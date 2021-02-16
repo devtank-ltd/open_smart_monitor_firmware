@@ -217,8 +217,10 @@ void mqtt_sn_task(void * pvParameters) {
         // 1200000 milliseconds is twenty minutes
         while(xQueueReceive(mqtt_queue, &msg, pdMS_TO_TICKS(1200000) == pdTRUE)) {
             strcpy(topic, msg.topic);
-            if(strlen(msg.suffix)) strcat(topic, "-");
-            strcat(topic, msg.suffix);
+            if(strlen(msg.suffix)) {
+                strcat(topic, "-");
+                strcat(topic, msg.suffix);
+            }
 
             mqtt_announce_str(topic, msg.payload);
         }
