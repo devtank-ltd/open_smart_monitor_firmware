@@ -27,7 +27,7 @@
     FN(pulse2) \
     FN(temp_probe)
 
-#define GENERATE_ENUM(ENUM) ENUM,
+#define GENERATE_ENUM(ENUM) parameter_ ## ENUM,
 #define GENERATE_STRING(STRING) #STRING,
 #define ARRAY_SIZE(_a) (sizeof(_a)/sizeof(_a[0]))
 

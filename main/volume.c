@@ -127,9 +127,9 @@ void volume_setup() {
 }
 
 void query_pulsecount(const char * key, int multiplier, int which) {
-    if(setup1 == PULSEIN_FREQ) stats_enqueue_sample(pulse1, freq1);
-    if(setup2 == PULSEIN_FREQ) stats_enqueue_sample(pulse2, freq2);
+    if(setup1 == PULSEIN_FREQ) stats_enqueue_sample(parameter_pulse1, pin_freq1);
+    if(setup2 == PULSEIN_FREQ) stats_enqueue_sample(parameter_pulse2, pin_freq2);
 
-    if(setup1 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[pulse1], NULL, pin_count1);
-    if(setup2 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[pulse2], NULL, pin_count2);
+    if(setup1 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[parameter_pulse1], NULL, pin_count1);
+    if(setup2 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[parameter_pulse2], NULL, pin_count2);
 }

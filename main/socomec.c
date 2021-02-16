@@ -414,14 +414,14 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
     } else {
         leadlag = 0;
     }
-    stats_enqueue_sample(powerfactor, pf);
-    stats_enqueue_sample(pfleadlag, leadlag);
-    stats_enqueue_sample(current1, i1);
-    stats_enqueue_sample(current2, i2);
-    stats_enqueue_sample(current3, i3);
-    stats_enqueue_sample(voltage1, v1);
-    stats_enqueue_sample(voltage2, v2);
-    stats_enqueue_sample(voltage3, v3);
+    stats_enqueue_sample(parameter_powerfactor, pf);
+    stats_enqueue_sample(parameter_pfleadlag, leadlag);
+    stats_enqueue_sample(parameter_current1, i1);
+    stats_enqueue_sample(parameter_current2, i2);
+    stats_enqueue_sample(parameter_current3, i3);
+    stats_enqueue_sample(parameter_voltage1, v1);
+    stats_enqueue_sample(parameter_voltage2, v2);
+    stats_enqueue_sample(parameter_voltage3, v3);
 }
 
 void smart_meter_query()

@@ -111,9 +111,9 @@ void hdc_query() {
     if(q16(HUM_L, HUM_H, &hum) != ESP_OK) return;
     int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
 
-    stats_enqueue_sample(humidity, relative_humidity);
+    stats_enqueue_sample(parameter_humidity, relative_humidity);
     if(temp_celsius > -300) {
-        stats_enqueue_sample(temperature, temp_celsius);
+        stats_enqueue_sample(parameter_temperature, temp_celsius);
     } else {
         ERROR_PRINTF("I refuse to believe it's less than -30 degrees here.");
     }

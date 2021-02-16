@@ -62,8 +62,8 @@ static int process_part_measure_response(uint8_t *data) {
     unit_entry_t pm25_entry = {.h = data[3], .l = data[4]};
     unit_entry_t pm10_entry = {.h = data[5], .l = data[6]};
 
-    stats_enqueue_sample(pm25, pm25_entry.d);
-    stats_enqueue_sample(pm10, pm10_entry.d);
+    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
+    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
     return 8;
 }
 
@@ -92,8 +92,8 @@ static int process_part_measure_long_response(uint8_t *data) {
     unit_entry_t pm10_entry = {.h = data[8], .l = data[9]};
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-    stats_enqueue_sample(pm25, pm25_entry.d);
-    stats_enqueue_sample(pm10, pm10_entry.d);
+    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
+    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
     return 32;
 }
 
@@ -142,7 +142,7 @@ int hpm_query() {
     // otherwise will count down until it's time to read a sample from the device
     static int delay = -1;
     if(delay < 1)
-        delay = get_sample_rate(pm25) - 1;
+        delay = get_sample_rate(parameter_pm25) - 1;
     if(delay > 0)
         delay--;
     if(delay)

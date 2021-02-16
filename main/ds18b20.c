@@ -109,7 +109,7 @@ float ds18b20_get_temp(void) {
             // A temperature of 40959 is what we get if it's not plugged in
             int i = temp;
             if(i != 40959)
-                stats_enqueue_sample(external_temperature, i);
+                stats_enqueue_sample(parameter_temp_probe, i);
             return temp;
         } else {
             return 0;

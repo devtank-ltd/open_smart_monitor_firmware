@@ -50,8 +50,8 @@ struct scpi_node_t hpm_pm25;
 struct scpi_node_t hpm_pm10;
 
 int scpi_node_to_param() {
-    if(scpi_stack_query(&hpm_pm25)) return pm25;
-    if(scpi_stack_query(&hpm_pm10)) return pm10;
+    if(scpi_stack_query(&hpm_pm25)) return parameter_pm25;
+    if(scpi_stack_query(&hpm_pm10)) return parameter_pm10;
     return 0;
 }
 

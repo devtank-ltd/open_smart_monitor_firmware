@@ -137,7 +137,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     else if(r < 1.30) lux = 0.00146 * ch0 - 0.00112 * ch1;
     else lux = 0;
 
-    stats_enqueue_sample(light, lux);
+    stats_enqueue_sample(parameter_light, lux);
 }
 
 
