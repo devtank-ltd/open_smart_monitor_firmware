@@ -80,7 +80,7 @@ int await_ack() {
 
     // We've just received some number of bytes, which should contain an ACK message
     char ackmsg[ACKBUFLEN];
-    const char example[25] = {
+    const char template[25] = {
        	0x19,
 	    0x0c,
 	    0x62,
@@ -107,7 +107,7 @@ int await_ack() {
 	    0x6b,
 	    0x5d
     };
-    memcpy(ackmsg, example, example[0]);
+    memcpy(ackmsg, template, template[0]);
     memcpy(ackmsg + 8, mac_addr, 12);
 
     for(int i = 0; i <= received - 25; i++) {
