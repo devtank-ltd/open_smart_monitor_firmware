@@ -118,7 +118,7 @@ void battery_query() {
     }
 }
 
-void sound_query() {
+void get_sound() {
     long double vrms = 0;
     size_t bytes_read;
     i2s_read(EXAMPLE_I2S_NUM, (void*)micvolts, ADCBUFLEN, &bytes_read, portMAX_DELAY);
