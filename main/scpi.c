@@ -131,28 +131,28 @@ void scpi_get_sample_rate(void * nothing) {
 
 struct scpi_node_t frequency_node = {
     .name = "FREQuency",
-    .children = {},
+    .children = {NULL},
     .query_fn = frequency_query,
     .setter_fn = NULL
 };
 
 struct scpi_node_t update_rate = {
     .name = "UPDaterate",
-    .children = {},
+    .children = {NULL},
     .query_fn = scpi_get_update_rate,
     .setter_fn = scpi_set_update_rate,
 };
 
 struct scpi_node_t sample_rate = {
     .name = "SAMPlerate",
-    .children = {},
+    .children = {NULL},
     .query_fn = scpi_get_sample_rate,
     .setter_fn = scpi_set_sample_rate,
 };
 
 struct scpi_node_t pulse_node = {
     .name = "PULSe",
-    .children = {},
+    .children = {NULL},
     .query_fn = frequency_query,
     .setter_fn = NULL,
 };
