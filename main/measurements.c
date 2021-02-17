@@ -37,8 +37,10 @@ void measurements_task(void *pvParameters) {
         
         for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
             if(next_due[i] < before) {
+                int samplerate = get_sample_rate(i);
+                if(!samplerate) continue;
                 parameter_getters[i]();
-                TickType_t offs = pdMS_TO_TICKS(get_sample_rate(i) * 1000);
+                TickType_t offs = pdMS_TO_TICKS(samplerate * 1000);
                 next_due[i] = before + offs;
             }
         }
