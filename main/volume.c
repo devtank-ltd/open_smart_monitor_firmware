@@ -126,10 +126,18 @@ void volume_setup() {
     ESP_ERROR_CHECK(gpio_isr_handler_add(POWER_INT,  isr_p3, (void*) POWER_INT));
 }
 
-void query_pulsecount(const char * key, int multiplier, int which) {
+void get_freq1() {
     if(setup1 == PULSEIN_FREQ) stats_enqueue_sample(parameter_pulse1, pin_freq1);
-    if(setup2 == PULSEIN_FREQ) stats_enqueue_sample(parameter_pulse2, pin_freq2);
+}
 
+void get_freq2() {
+    if(setup2 == PULSEIN_FREQ) stats_enqueue_sample(parameter_pulse2, pin_freq2);
+}
+
+void get_pulse1() {
     if(setup1 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[parameter_pulse1], NULL, pin_count1);
+}
+
+void get_pulse2() {
     if(setup2 == PULSEIN_PULSE) mqtt_enqueue_int(parameter_names[parameter_pulse2], NULL, pin_count2);
 }
