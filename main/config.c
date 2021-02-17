@@ -24,7 +24,7 @@ static inline char * getfield(char * f) {
     return f;
 }
 
-nvs_handle_t calibration_handle() {
+nvs_handle_t get_calibration_handle() {
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);
     if (err != ESP_OK) {
@@ -55,22 +55,29 @@ nvs_handle_t samplerate_handle() {
 }
 
 const char* get_config(const char * key) {
+    // TODO: Can this function be nixxed?
     size_t len = VALLEN;
-    nvs_get_str(calibration_handle(), key, value, &len);
+    nvs_handle_t handle = get_calibration_handle();
+    nvs_get_str(handle, key, value, &len);
     INFO_PRINTF("%s %s %s", mac_addr, key, value);
+    nvs_close(handle);
     return value;
 }
 
 void set_midpoint(float v) {
-    esp_err_t err = nvs_set_u32(calibration_handle(), "midpoint", v * 10000);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u32(handle, "midpoint", v * 10000);
     ERROR_PRINTF("(%s) setting midpoint!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 float get_midpoint() {
     unsigned int millivolts = 0;
-    esp_err_t err = nvs_get_u32(calibration_handle(), "midpoint", &millivolts);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u32(handle, "midpoint", &millivolts);
+    nvs_close(handle);
     if(err != ESP_OK) {
              if(!strcmp(mac_addr, "98f4ab14737d")) set_midpoint(1.630500);
         else if(!strcmp(mac_addr, "98f4ab147445")) set_midpoint(1.635000);
@@ -87,16 +94,20 @@ float get_midpoint() {
 }
 
 void set_pulsein1(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein1", en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u8(handle, "pulsein1", en);
     ERROR_PRINTF("(%s) setting pulsein1!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint8_t get_pulsein1() {
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "pulsein1", &en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u8(handle, "pulsein1", &en);
     ERROR_PRINTF("(%s) getting pulsein1!", esp_err_to_name(err));
+    nvs_close(handle);
     if(err != ESP_OK) {
         set_pulsein1(PULSEIN_UNUSED);
         return get_pulsein1();
@@ -106,16 +117,20 @@ uint8_t get_pulsein1() {
 }
 
 void set_pulsein2(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "pulsein2", en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u8(handle, "pulsein2", en);
     ERROR_PRINTF("(%s) setting pulsein2!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint8_t get_pulsein2() {
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "pulsein2", &en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u8(handle, "pulsein2", &en);
     ERROR_PRINTF("(%s) getting pulsein2!", esp_err_to_name(err));
+    nvs_close(handle);
     if(err != ESP_OK) {
         set_pulsein2(PULSEIN_UNUSED);
         return get_pulsein2();
@@ -125,78 +140,104 @@ uint8_t get_pulsein2() {
 }
 
 void set_wateroffset(uint32_t offs) {
-    esp_err_t err = nvs_set_u32(calibration_handle(), "water_offs", offs);
+    // Can this function  be nixxed?
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u32(handle, "water_offs", offs);
     ERROR_PRINTF("(%s) setting water_offs!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint32_t get_wateroffset() {
+    // Can this function  be nixxed?
     uint32_t offs;
-    esp_err_t err = nvs_get_u32(calibration_handle(), "water_offs", &offs);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u32(handle, "water_offs", &offs);
     if(err != ESP_OK) {
         ERROR_PRINTF("(%s) getting water_offset!", esp_err_to_name(err));
-        nvs_set_u32(calibration_handle(), "water_offs", 0);
+        nvs_set_u32(handle, "water_offs", 0);
+        nvs_close(handle);
         return 0;
     } else {
+       nvs_close(handle);
        return offs;
     }
 }
 
 
 void set_hpmen(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "hpm_en", en);
+    // Can this function  be nixxed?
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u8(handle, "hpm_en", en);
     ERROR_PRINTF("(%s) setting hpm_en!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint8_t get_hpmen() {
+    // Can this function  be nixxed?
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "hpm_en", &en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u8(handle, "hpm_en", &en);
     ERROR_PRINTF("(%s) getting hpm_en; it's %d.!", esp_err_to_name(err), (int)en);
     if(err != ESP_OK) {
         set_hpmen(0);
+        nvs_close(handle);
         return get_hpmen();
     } else {
-       return en;
+        nvs_close(handle);
+        return en;
     }
 }
 
 void set_socoen(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "soco_en", en);
+    // Can this function  be nixxed?
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u8(handle, "soco_en", en);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting soco_en!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint8_t get_socoen() {
+    // Can this function  be nixxed?
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "soco_en", &en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u8(handle, "soco_en", &en);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) getting soco_en!", esp_err_to_name(err));
     if(err != ESP_OK) {
         set_socoen(!get_hpmen());
+        nvs_close(handle);
         return get_socoen();
     } else {
-       return en;
+        nvs_close(handle);
+        return en;
     }
 }
 
 void set_mqtten(uint8_t en) {
-    esp_err_t err = nvs_set_u8(calibration_handle(), "mqtt_en", en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_set_u8(handle, "mqtt_en", en);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting mqtt_en!", esp_err_to_name(err));
-    err = nvs_commit(calibration_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
     get_mqtten();
+    nvs_close(handle);
 }
 
 uint8_t get_mqtten() {
+    // Can this function  be nixxed?
     uint8_t en = 0;
-    esp_err_t err = nvs_get_u8(calibration_handle(), "mqtt_en", &en);
+    nvs_handle_t handle = get_calibration_handle();
+    esp_err_t err = nvs_get_u8(handle, "mqtt_en", &en);
     ERROR_PRINTF("(%s) getting mqtt_en, it's %d!", esp_err_to_name(err), (int)en);
+    nvs_close(handle);
     if(err != ESP_OK) {
         return MQTTSN_OVER_LORA;
     } else {
@@ -206,17 +247,21 @@ uint8_t get_mqtten() {
 
 void set_timedelta(int parameter, uint32_t delta) {
     const char * parameter_name = parameter_names[parameter];
-    esp_err_t err = nvs_set_u32(delta_handle(), parameter_name, delta);
+    nvs_handle_t handle = delta_handle();
+    esp_err_t err = nvs_set_u32(handle, parameter_name, delta);
     if(err !=ESP_OK)
         ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter_name);
-    err = nvs_commit(delta_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint32_t get_timedelta(int parameter) {
     const char * parameter_name = parameter_names[parameter];
     uint32_t delta = 0;
-    esp_err_t err = nvs_get_u32(calibration_handle(), parameter_name, &delta);
+    nvs_handle_t handle = delta_handle();
+    esp_err_t err = nvs_get_u32(handle, parameter_name, &delta);
+    nvs_close(handle);
     if(err != ESP_OK) {
         ERROR_PRINTF("(%s) getting timedelta for %s!", esp_err_to_name(err), parameter_name);
         return 15 * 60;
@@ -227,19 +272,24 @@ uint32_t get_timedelta(int parameter) {
 
 void set_sample_rate(int parameter, uint32_t delta) {
     const char * parameter_name = parameter_names[parameter];
-    esp_err_t err = nvs_set_u32(samplerate_handle(), parameter_name, delta);
+    nvs_handle_t handle = samplerate_handle();
+    esp_err_t err = nvs_set_u32(handle, parameter_name, delta);
     if(err != ESP_OK)
         ERROR_PRINTF("(%s) setting sample rate to %d for %s!", esp_err_to_name(err), delta, parameter_name);
-    err = nvs_commit(delta_handle());
+    err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
+    nvs_close(handle);
 }
 
 uint32_t get_sample_rate(int parameter) {
     const char * parameter_name = parameter_names[parameter];
     uint32_t rate = 0;
-    esp_err_t err = nvs_get_u32(samplerate_handle(), parameter_name, &rate);
+    nvs_handle_t handle = samplerate_handle();
+    esp_err_t err = nvs_get_u32(handle, parameter_name, &rate);
+    nvs_close(handle);
     if(err != ESP_OK) {
         ERROR_PRINTF("(%s) getting sample rate for %s!", esp_err_to_name(err), parameter_name);
+        set_sample_rate(parameter, 1);
         return 1;
     } else {
         return rate;
