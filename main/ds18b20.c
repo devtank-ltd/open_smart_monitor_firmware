@@ -88,8 +88,8 @@ bool ds18b20_RST_PULSE(void) {
 
 }
 
-// Returns temperature from sensor
-float ds18b20_get_temp(void) {
+// Gets temperature from probe and enqueues the sample
+void get_temp_probe(void) {
     if(init == 1) {
         unsigned char check;
         char temp1 = 0, temp2 = 0;
@@ -110,13 +110,7 @@ float ds18b20_get_temp(void) {
             int i = temp;
             if(i != 40959)
                 stats_enqueue_sample(parameter_temp_probe, i);
-            return temp;
-        } else {
-            return 0;
         }
-    }
-    else {
-        return 0;
     }
 }
 
