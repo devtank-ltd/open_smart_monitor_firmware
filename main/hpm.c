@@ -36,6 +36,8 @@ typedef union {
     };
 } unit_entry_t;
 
+unit_entry_t pm25_entry = {0};
+unit_entry_t pm10_entry = {0};
 
 static int process_part_measure_response(uint8_t *data) {
 
@@ -59,11 +61,11 @@ static int process_part_measure_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25_entry = {.h = data[3], .l = data[4]};
-    unit_entry_t pm10_entry = {.h = data[5], .l = data[6]};
+    pm25_entry.h = data[3];
+    pm25_entry.l = data[4];
+    pm10_entry.h = data[5];
+    pm10_entry.l = data[6];
 
-    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
-    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
     return 8;
 }
 
@@ -88,12 +90,12 @@ static int process_part_measure_long_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25_entry = {.h = data[6], .l = data[7]};
-    unit_entry_t pm10_entry = {.h = data[8], .l = data[9]};
+    pm25_entry.h = data[6];
+    pm25_entry.l = data[7];
+    pm10_entry.h = data[8];
+    pm10_entry.l = data[9];
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
-    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
     return 32;
 }
 
@@ -137,16 +139,11 @@ static hpm_response_t responses[] = {
 
 
 int hpm_query() {
-    // the variable in non-volatile storage is set to 0 for disable, or a positive integer for "sample every n seconds"
-    // delay will keep being read from non-volatile storage if disabled, 
-    // otherwise will count down until it's time to read a sample from the device
-    static int delay = -1;
-    if(delay < 1)
-        delay = get_sample_rate(parameter_pm25) - 1;
-    if(delay > 0)
-        delay--;
-    if(delay)
-        return;
+    // Don't bothre taking the measurements again if it last happened less than a second ago.
+    static TickType_t last_done = 0;
+    if(last_done > xTaskGetTickCount() - pdMS_TO_TICKS(1000))
+        return 0;
+    last_done = xTaskGetTickCount();
 
     hpm_switch();
 
@@ -223,3 +220,14 @@ unknown_response:
     uart_flush_input(DEVS_UART); /* Bin everything in hope to sync back up. */
     return -1;
 }
+
+void get_pm25() {
+    hpm_query();
+    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
+}
+
+void get_pm10() {
+    hpm_query();
+    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
+}
+
