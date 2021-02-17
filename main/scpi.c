@@ -48,10 +48,36 @@ struct scpi_node_t pulsein1;
 struct scpi_node_t pulsein2;
 struct scpi_node_t hpm_pm25;
 struct scpi_node_t hpm_pm10;
+struct scpi_node_t temperature;
+struct scpi_node_t humidity;
+struct scpi_node_t sound;
+struct scpi_node_t light;
+struct scpi_node_t phase1;
+struct scpi_node_t phase2;
+struct scpi_node_t phase3;
+struct scpi_node_t voltage;
+struct scpi_node_t current;
 
 int scpi_node_to_param() {
-    if(scpi_stack_query(&hpm_pm25)) return parameter_pm25;
-    if(scpi_stack_query(&hpm_pm10)) return parameter_pm10;
+    if(scpi_stack_query(&hpm_pm25))    return parameter_pm25;
+    if(scpi_stack_query(&hpm_pm10))    return parameter_pm10;
+    if(scpi_stack_query(&temperature)) return parameter_temperature;
+    if(scpi_stack_query(&humidity))    return parameter_humidity;
+    if(scpi_stack_query(&sound))       return parameter_sound;
+    if(scpi_stack_query(&light))       return parameter_light;
+    
+    if(scpi_stack_query(&phase1) &&
+       scpi_stack_query(&voltage))     return parameter_voltage1;
+    if(scpi_stack_query(&phase1) &&
+       scpi_stack_query(&current))     return parameter_current1;
+    if(scpi_stack_query(&phase2) &&
+       scpi_stack_query(&voltage))     return parameter_voltage2;
+    if(scpi_stack_query(&phase2) &&
+       scpi_stack_query(&current))     return parameter_current2;
+    if(scpi_stack_query(&phase3) &&
+       scpi_stack_query(&voltage))     return parameter_voltage3;
+    if(scpi_stack_query(&phase3) &&
+       scpi_stack_query(&current))     return parameter_current3;
     return 0;
 }
 
@@ -146,7 +172,47 @@ struct scpi_node_t hpm_pm10 = {
     .setter_fn = NULL
 };
 
+#define phase_children {&voltage, &current, NULL}
+struct scpi_node_t voltage = {
+    .name = "VOLTage", 
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
+struct scpi_node_t current = {
+    .name = "CURRent", 
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
+struct scpi_node_t phase1 = { .name = "PHase1", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
+struct scpi_node_t phase2 = { .name = "PHase2", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
+struct scpi_node_t phase3 = { .name = "PHase3", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
+
 #define pulse_children {&pulse_node, &frequency_node, NULL}
+
+struct scpi_node_t temperature = {
+    .name = "TEMPerature",
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
+
+struct scpi_node_t humidity = {
+    .name = "HUMidity",
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
+
+struct scpi_node_t sound = {
+    .name = "SOUNd",
+    .children = {&update_rate, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
 
 struct scpi_node_t pulsein1 = {
     .name = "CHANnel1",
@@ -223,7 +289,9 @@ struct scpi_node_t idn = {
 // THE ROOT NODE AND CODE TO TRAVERSE THE PARSE TREE
 struct scpi_node_t root = {
     .name = "ROOT",
-    .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt, NULL},
+    .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
+        &temperature, &humidity,
+       &phase1, &phase2, &phase3, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {
