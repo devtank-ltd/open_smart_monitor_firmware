@@ -97,25 +97,33 @@ static uint16_t q16(uint8_t reg_l, uint8_t reg_h, unit_entry_t * entry) {
     return read_reg(reg_l, &entry->l);
 }
 
-void hdc_query() {
+void get_temperature() {
 
     hdc_init();
     hdc_wait();
 
     unit_entry_t temp;
-    unit_entry_t hum;
 
     if(q16(TMP_L, TMP_H, &temp) != ESP_OK) return;
-    int32_t temp_celsius = (((int64_t)temp.d * 1000000 / (1 << 16)) * 165 / 100000) - 400;
+    int temp_celsius = (((int64_t)temp.d * 1000000 / (1 << 16)) * 165 / 100000) - 400;
 
-    if(q16(HUM_L, HUM_H, &hum) != ESP_OK) return;
-    int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
-
-    stats_enqueue_sample(parameter_humidity, relative_humidity);
     if(temp_celsius > -300) {
         stats_enqueue_sample(parameter_temperature, temp_celsius);
     } else {
         ERROR_PRINTF("I refuse to believe it's less than -30 degrees here.");
     }
 
+}
+
+void get_humidity() {
+
+    hdc_init();
+    hdc_wait();
+
+    unit_entry_t hum;
+
+    if(q16(HUM_L, HUM_H, &hum) != ESP_OK) return;
+    int32_t relative_humidity = (((int64_t)hum.d * 1000000 / (1 << 16)) * 100 / 100000);
+
+    stats_enqueue_sample(parameter_humidity, relative_humidity);
 }
