@@ -142,7 +142,7 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
 
 
 
-void light_getter() {
+void get_light() {
     uint16_t c0;
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;
