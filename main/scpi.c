@@ -257,13 +257,6 @@ void scpi_parse_node(const char * string, struct scpi_node_t * node) {
         string++;
 
     for(int i = 0; node->children[i]; i++) {
-        char needle[20] = {0};
-        char haystack[20] = {0};
-        strncpy(needle, string, strlen(node->children[i]->name));
-        strncpy(haystack, node->children[i]->name, strlen(node->children[i]->name));
-        DEBUG_PRINTF("NEEDLE %s\n", needle);
-        DEBUG_PRINTF("HAYSTACK %s\n", haystack);
-
         if(!strncmp(node->children[i]->name, string, strlen(node->children[i]->name))) {
             stack[stackpointer++] = node->children[i];
             scpi_parse_node(string + strlen(node->children[i]->name), node->children[i]);
