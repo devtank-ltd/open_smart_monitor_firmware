@@ -419,47 +419,64 @@ void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int3
     stats_enqueue_sample(parameter_current1, i1);
     stats_enqueue_sample(parameter_current2, i2);
     stats_enqueue_sample(parameter_current3, i3);
-    stats_enqueue_sample(parameter_voltage1, v1);
     stats_enqueue_sample(parameter_voltage2, v2);
     stats_enqueue_sample(parameter_voltage3, v3);
 }
 
-void smart_meter_query()
-{
-    if(!sococonnected)
-        return;
-
-    smart_switch_switch();
-    static int count = 1;
-    count--;
-
-    uint32_t powerfactor   = 0;
-    uint32_t voltage1      = 0;
-    uint32_t voltage2      = 0;
-    uint32_t voltage3      = 0;
-    uint32_t current1      = 0;
-    uint32_t current2      = 0;
-    uint32_t current3      = 0;
-
-    if(!count) {
-        /* I am expecting this function to be called once per second.
-         * But the import energy does not need to be queried nearly as often
-         * so I set this countdown so that it gets queried hourly instead
-         */
-        int32_t import, export;
-        sense_modbus_read_value(36, &import, sizeof(import));
-        sense_modbus_read_value(37, &export, sizeof(export));
-        mqtt_enqueue_int("ImportEnergy", NULL, import);
-        mqtt_enqueue_int("ExportEnergy", NULL, export);
-        count = 3600;
-    }
+void get_pfleadlag() {
+    int32_t powerfactor = 0;
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
-    sense_modbus_read_value(30, &voltage1,      sizeof(voltage1));
-    sense_modbus_read_value(31, &voltage2,      sizeof(voltage2));
-    sense_modbus_read_value(32, &voltage3,      sizeof(voltage3));
-    sense_modbus_read_value(33, &current1,      sizeof(current1));
-    sense_modbus_read_value(34, &current2,      sizeof(current2));
-    sense_modbus_read_value(35, &current3,      sizeof(current3));
+    if(powerfactor > 0)
+        stats_enqueue_sample(parameter_pfleadlag, 1000);
+    else if(powerfactor < 0)
+        stats_enqueue_sample(parameter_pfleadlag, -1000);
+    else
+        stats_enqueue_sample(parameter_pfleadlag, 0);
+}
 
-    elecsample(powerfactor, current1, current2, current3, voltage1, voltage2, voltage3);
+void get_powerfactor() {
+    int32_t powerfactor = 0;
+    sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
+    if(powerfactor > 0)
+        stats_enqueue_sample(parameter_pfleadlag, powerfactor);
+    else if(powerfactor < 0)
+        stats_enqueue_sample(parameter_pfleadlag, -powerfactor);
+    else
+        stats_enqueue_sample(parameter_pfleadlag, 0);
+}
+
+void get_voltage1() {
+    uint32_t voltage;
+    sense_modbus_read_value(30, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage1, voltage);
+}
+
+void get_voltage2() {
+    uint32_t voltage;
+    sense_modbus_read_value(31, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage2, voltage);
+}
+
+void get_voltage3() {
+    uint32_t voltage;
+    sense_modbus_read_value(32, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage3, voltage);
+}
+
+void get_current1() {
+    uint32_t current;
+    sense_modbus_read_value(33, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current1, current);
+}
+
+void get_current2() {
+    uint32_t current;
+    sense_modbus_read_value(34, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current2, current);
+}
+
+void get_current3() {
+    uint32_t current;
+    sense_modbus_read_value(35, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current3, current);
 }
