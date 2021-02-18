@@ -116,9 +116,9 @@ void pulse_query(void * node) {
 void scpi_set_update_rate(void * argument) {
     int sample = atoi((char *)argument);
     int parameter = scpi_node_to_param();
-    set_sample_rate(parameter, sample);
+    set_timedelta(parameter, sample);
     if(parameter == parameter_powerfactor)
-        set_sample_rate(parameter_pfleadlag, sample);
+        set_timedelta(parameter_pfleadlag, sample);
 }
 
 void scpi_get_update_rate(void * nothing) {
@@ -127,7 +127,10 @@ void scpi_get_update_rate(void * nothing) {
 
 void scpi_set_sample_rate(void * argument) {
     int sample = atoi((char *)argument);
-    set_sample_rate(scpi_node_to_param(), sample);
+    int parameter = scpi_node_to_param();
+    set_sample_rate(parameter, sample);
+    if(parameter == parameter_powerfactor)
+        set_sample_rate(parameter_pfleadlag, sample);
 }
 
 void scpi_get_sample_rate(void * nothing) {
