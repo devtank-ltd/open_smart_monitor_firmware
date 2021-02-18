@@ -128,7 +128,7 @@ int await_ack() {
 // This function was shamelessly stolen from
 // https://github.com/njh/DangerMinusOne/blob/master/DangerMinusOne.ino
 // and changed to Actual C by me.
-static int mqtt_sn_send(const char topic[2], const char * message)
+static int mqtt_sn_send(const char topic[2], const char * message, bool retry)
 {
     if(!get_mqtten()) return 0;
     char header[7];
@@ -161,6 +161,7 @@ static int mqtt_sn_send(const char topic[2], const char * message)
         sendthebytes(header, 7);
         sendthebytes(message, len);
         sendthebytes(crcstr, 4);
+        if(!retry) break;
         if(await_ack()) {
             status_led_set_status(STATUS_LED_OK);
             return 0;
@@ -179,14 +180,6 @@ static int mqtt_sn_send(const char topic[2], const char * message)
     return 0;
 }
 
-static int mqtt_update(const char ident, const char * msg) {
-    char topic[2];
-    topic[0] = SFNODE;
-    topic[1] = ident;
-    printf("%c%c: %s\n", topic[0], topic[1], msg);
-    return mqtt_sn_send(topic, msg);
-}
-
 void mqtt_announce_dropped() {
     static uint16_t old_dropped = 0;
     if(ABS(dropped - old_dropped) > 5) {
@@ -195,18 +188,15 @@ void mqtt_announce_dropped() {
     }
 }
 
-int mqtt_announce_int(const char * key, int val) {
+int mqtt_announce_str(const char * key, TickType_t time, const char * val, bool retry) {
     char msg[BUFFERLEN];
-    snprintf(msg, BUFFERLEN - 1, "[%s %s %d];", mac_addr, key, val);
-    // workaround for the fact that this snprintf isn't null-terminating the string
-    strstr(msg, ";")[0] = '\0';
-    return mqtt_update('I', msg);
-}
+    snprintf(msg, BUFFERLEN - 1, "[%s %d %s %s]", mac_addr, time, key, val);
+    DEBUG_PRINTF("[%s %d %s %s]", mac_addr, time, key, val);
 
-int mqtt_announce_str(const char * key, const char * val) {
-    char msg[BUFFERLEN];
-    snprintf(msg, BUFFERLEN - 1, "[%s %s %s]", mac_addr, key, val);
-    return mqtt_update('I', msg);
+    char topic[2];
+    topic[0] = SFNODE;
+    topic[1] = 'I';
+    return mqtt_sn_send(topic, msg, retry);
 }
 
 
@@ -222,10 +212,10 @@ void mqtt_sn_task(void * pvParameters) {
                 strcat(topic, msg.suffix);
             }
 
-            mqtt_announce_str(topic, msg.payload);
+            mqtt_announce_str(topic, msg.timestamp, msg.payload, 1);
         }
-        mqtt_announce_str("sku", "ENV-01");
-        mqtt_announce_str("fw", GIT_COMMIT);
+        mqtt_announce_str("sku", mqtt_get_time(), "ENV-01", 0);
+        mqtt_announce_str("fw", mqtt_get_time(), GIT_COMMIT, 0);
         mqtt_announce_dropped();
     }
 }

@@ -20,3 +20,4 @@ typedef struct {
 
 void mqtt_enqueue_int(const char * parameter, const char * suffix, int val);
 void mqtt_init();
+int mqtt_get_time();

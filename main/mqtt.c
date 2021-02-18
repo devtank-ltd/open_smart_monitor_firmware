@@ -12,12 +12,14 @@
 #define QDELAY 2000
 #define QUEUESIZE 100
 
+volatile int seconds = 0;
+
 xQueueHandle mqtt_queue = 0;
 
 void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
     msg_t msg;
 
-    msg.timestamp = esp_timer_get_time();
+    msg.timestamp = mqtt_get_time();
 
     strncpy(msg.topic, parameter, TOPICLEN);
     if(suffix) strncpy(msg.suffix, suffix,  SUFFIXLEN);
@@ -37,6 +39,22 @@ void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
 
 }
 
+static void seconds_increment(void * arg) {
+    seconds++;
+}
+
+int mqtt_get_time() {
+    return seconds;
+}
+
 void mqtt_init() {
+    const esp_timer_create_args_t periodic_timer_args = {
+        .callback = &seconds_increment,
+        .name = "seconds_increment",
+    };
+    esp_timer_handle_t periodic_timer;
+    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 1000000)); // fire the timer every second
+
     mqtt_queue = xQueueCreate(QUEUESIZE, sizeof(msg_t));
 }
