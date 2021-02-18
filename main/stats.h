@@ -2,6 +2,18 @@
 #include "freertos/task.h"
 #include "freertos/queue.h"
 
+/* Because we want to work in integers for runtime cost reasons, but also want
+ * to be able to report an approximation to a real number, we're going to
+ * multiply the sample as it's enqueued, and then insert a decimal place at the
+ * time that the number is reported, which is simply a matter of rendering
+ * or formatting.
+ *
+ * The amount by which we multiply it is PRECISION. PRECISION can be any 
+ * number, 1, 10, 100, 1000 etc. The number of zeroes is the number of decimal
+ * places in the reported measurement.
+ */
+#define PRECISION 100 
+
 #include "stdint.h"
 
 // Because these tokens are used as strings for the NVS keys, none of them may

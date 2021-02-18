@@ -7,6 +7,7 @@
 #include "mqtt.h"
 #include "string.h"
 #include "status_led.h"
+#include "stats.h"
 
 #define QDELAY 2000
 #define QUEUESIZE 100
@@ -26,7 +27,7 @@ void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
     /* This implementation of snprintf is not guaranteed to null-terminate the
      * string, hence the stupid strstr hack.
      */
-    snprintf(msg.payload, PAYLOADLEN, "%d,", val);
+    snprintf(msg.payload, PAYLOADLEN, "%d.%03d,", val / PRECISION, val % PRECISION);
     strstr(msg.payload, ",")[0] = '\0';
 
     if(xQueueSend(mqtt_queue, &msg, QDELAY) != pdPASS) {
