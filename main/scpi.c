@@ -57,6 +57,7 @@ struct scpi_node_t phase2;
 struct scpi_node_t phase3;
 struct scpi_node_t voltage;
 struct scpi_node_t current;
+struct scpi_node_t powerfactor;
 
 int scpi_node_to_param() {
     if(scpi_stack_query(&hpm_pm25))    return parameter_pm25;
@@ -65,6 +66,7 @@ int scpi_node_to_param() {
     if(scpi_stack_query(&humidity))    return parameter_humidity;
     if(scpi_stack_query(&sound))       return parameter_sound;
     if(scpi_stack_query(&light))       return parameter_light;
+    if(scpi_stack_query(&powerfactor)) return parameter_powerfactor;
     
     if(scpi_stack_query(&phase1) &&
        scpi_stack_query(&voltage))     return parameter_voltage1;
@@ -113,7 +115,10 @@ void pulse_query(void * node) {
 
 void scpi_set_update_rate(void * argument) {
     int sample = atoi((char *)argument);
-    set_sample_rate(scpi_node_to_param(), sample);
+    int parameter = scpi_node_to_param();
+    set_sample_rate(parameter, sample);
+    if(parameter == parameter_powerfactor)
+        set_sample_rate(parameter_pfleadlag, sample);
 }
 
 void scpi_get_update_rate(void * nothing) {
@@ -190,6 +195,14 @@ struct scpi_node_t current = {
 struct scpi_node_t phase1 = { .name = "PHase1", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
 struct scpi_node_t phase2 = { .name = "PHase2", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
 struct scpi_node_t phase3 = { .name = "PHase3", .children = phase_children, .query_fn = NULL, .setter_fn = NULL };
+
+struct scpi_node_t powerfactor = {
+    .name = "PowerFactor",
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
 
 #define pulse_children {&pulse_node, &frequency_node, NULL}
 
@@ -291,7 +304,7 @@ struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
         &temperature, &humidity,
-       &phase1, &phase2, &phase3, NULL},
+       &phase1, &phase2, &phase3, &powerfactor, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {
