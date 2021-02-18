@@ -41,18 +41,8 @@ void uplink_task(void *pvParameters) {
 
         int argument;
 
-        if(beginswith(line, "set wateroffset ", &argument)) {
-            set_wateroffset(argument);
-            continue;
-        }
-
         if(beginswith(line, "set midpoint ", &argument)) {
             set_midpoint(argument);
-            continue;
-        }
-
-        if(beginswith(line, "hpm_enable ", &argument)) {
-            set_hpmen(argument);
             continue;
         }
 

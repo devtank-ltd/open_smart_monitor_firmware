@@ -16,7 +16,7 @@ static int enable = 0;
 #define ABS(x)  (x<0)?-x:x
 
 void hpm_setup() {
-    enable = get_hpmen();
+    enable = get_sample_rate(parameter_pm25) | get_sample_rate(parameter_pm25);
 }
 
 static void hpm_switch() {

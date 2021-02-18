@@ -9,9 +9,6 @@
 #include "stats.h"
 #include "mac.h"
 
-static char value[VALLEN];
-
-
 static inline int is_whitespace(uint8_t c) {
     return c == '\t' || c == ' ' || c == '\n';
 }
@@ -52,16 +49,6 @@ nvs_handle_t samplerate_handle() {
         return (nvs_handle_t)NULL;
     }
     return my_handle;
-}
-
-const char* get_config(const char * key) {
-    // TODO: Can this function be nixxed?
-    size_t len = VALLEN;
-    nvs_handle_t handle = get_calibration_handle();
-    nvs_get_str(handle, key, value, &len);
-    INFO_PRINTF("%s %s %s", mac_addr, key, value);
-    nvs_close(handle);
-    return value;
 }
 
 void set_midpoint(float v) {
@@ -139,32 +126,6 @@ uint8_t get_pulsein2() {
     }
 }
 
-void set_wateroffset(uint32_t offs) {
-    // Can this function  be nixxed?
-    nvs_handle_t handle = get_calibration_handle();
-    esp_err_t err = nvs_set_u32(handle, "water_offs", offs);
-    ERROR_PRINTF("(%s) setting water_offs!", esp_err_to_name(err));
-    err = nvs_commit(handle);
-    ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
-    nvs_close(handle);
-}
-
-uint32_t get_wateroffset() {
-    // Can this function  be nixxed?
-    uint32_t offs;
-    nvs_handle_t handle = get_calibration_handle();
-    esp_err_t err = nvs_get_u32(handle, "water_offs", &offs);
-    if(err != ESP_OK) {
-        ERROR_PRINTF("(%s) getting water_offset!", esp_err_to_name(err));
-        nvs_set_u32(handle, "water_offs", 0);
-        nvs_close(handle);
-        return 0;
-    } else {
-       nvs_close(handle);
-       return offs;
-    }
-}
-
 
 void set_hpmen(uint8_t en) {
     // Can this function  be nixxed?
@@ -232,7 +193,6 @@ void set_mqtten(uint8_t en) {
 }
 
 uint8_t get_mqtten() {
-    // Can this function  be nixxed?
     uint8_t en = 0;
     nvs_handle_t handle = get_calibration_handle();
     esp_err_t err = nvs_get_u8(handle, "mqtt_en", &en);
