@@ -122,7 +122,7 @@ void scpi_set_update_rate(void * argument) {
 }
 
 void scpi_get_update_rate(void * nothing) {
-    SCPI_PRINTF("%d", get_timedelta(scpi_node_to_param()));
+    SCPI_PRINTF("%u", get_timedelta(scpi_node_to_param()));
 }
 
 void scpi_set_sample_rate(void * argument) {
@@ -134,7 +134,7 @@ void scpi_set_sample_rate(void * argument) {
 }
 
 void scpi_get_sample_rate(void * nothing) {
-    SCPI_PRINTF("%d", get_sample_rate(scpi_node_to_param()));
+    SCPI_PRINTF("%u", get_sample_rate(scpi_node_to_param()));
 }
 
 struct scpi_node_t frequency_node = {

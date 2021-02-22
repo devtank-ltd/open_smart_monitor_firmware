@@ -210,7 +210,7 @@ void set_timedelta(int parameter, uint32_t delta) {
     nvs_handle_t handle = delta_handle();
     esp_err_t err = nvs_set_u32(handle, parameter_name, delta);
     if(err !=ESP_OK)
-        ERROR_PRINTF("(%s) setting timedelta to %d for %s!", esp_err_to_name(err), delta, parameter_name);
+        ERROR_PRINTF("(%s) setting timedelta to %u for %s!", esp_err_to_name(err), delta, parameter_name);
     err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
     nvs_close(handle);
@@ -235,7 +235,7 @@ void set_sample_rate(int parameter, uint32_t delta) {
     nvs_handle_t handle = samplerate_handle();
     esp_err_t err = nvs_set_u32(handle, parameter_name, delta);
     if(err != ESP_OK)
-        ERROR_PRINTF("(%s) setting sample rate to %d for %s!", esp_err_to_name(err), delta, parameter_name);
+        ERROR_PRINTF("(%s) setting sample rate to %u for %s!", esp_err_to_name(err), delta, parameter_name);
     err = nvs_commit(handle);
     ERROR_PRINTF("(%s) commiting handle", esp_err_to_name(err));
     nvs_close(handle);
