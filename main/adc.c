@@ -123,16 +123,13 @@ void get_sound() {
     size_t bytes_read;
     i2s_read(EXAMPLE_I2S_NUM, (void*)micvolts, ADCBUFLEN, &bytes_read, portMAX_DELAY);
     unsigned int n;
-    unsigned int avg = 0;
     for (n = 0; n < bytes_read; n++) {
         uint16_t adcsample = micvolts[n] & 0x0fff;
-        avg += adcsample;
         if(!adcsample) break;
         double a = voltagecalc(adcsample) - midpoint;
 //        printf("%u\n", (unsigned int) adcsample);
         vrms += a * a;
     }
-    avg = avg / n;
     vrms = sqrtl(vrms/n);
 
     // This equation 
