@@ -161,7 +161,7 @@ struct scpi_node_t sample_rate = {
 struct scpi_node_t pulse_node = {
     .name = "PULSe",
     .children = {NULL},
-    .query_fn = frequency_query,
+    .query_fn = pulse_query,
     .setter_fn = NULL,
 };
 
