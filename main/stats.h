@@ -70,4 +70,4 @@ typedef struct {
 
 
 void stats_init();
-void stats_enqueue_sample(int parameter, int sample);
+void stats_enqueue_sample(int parameter, int value);
