@@ -33,14 +33,6 @@ void __stack_chk_guard_setup(void)
     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
 }
 
-void notification(const char * n) {
-    for(int i = 30; i; i--) putchar('*');
-    putchar(' ');
-    puts(n);
-    putchar('\r');
-    fflush(stdout);
-}
-
 void lora_uart_setup() {
     /* UART setup */
     uart_config_t lora = {

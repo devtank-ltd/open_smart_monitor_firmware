@@ -9,18 +9,6 @@
 #include "stats.h"
 #include "mac.h"
 
-static inline int is_whitespace(uint8_t c) {
-    return c == '\t' || c == ' ' || c == '\n';
-}
-
-static inline char * getfield(char * f) {
-    while(!is_whitespace(f[0])) f++;
-    f[0] = '\0';
-    f++;
-    while(is_whitespace(f[0])) f++;
-    return f;
-}
-
 nvs_handle_t get_calibration_handle() {
     nvs_handle_t my_handle;
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &my_handle);

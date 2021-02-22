@@ -404,25 +404,6 @@ unknown_device:
     return ESP_FAIL;
 }
 
-void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int32_t v2, int32_t v3) {
-    int leadlag = 0;
-    if(pf < 0) {
-        pf = -pf;
-        leadlag = -1000;
-    } else if(pf > 0) {
-        leadlag = 1000;
-    } else {
-        leadlag = 0;
-    }
-    stats_enqueue_sample(parameter_powerfactor, pf);
-    stats_enqueue_sample(parameter_pfleadlag, leadlag);
-    stats_enqueue_sample(parameter_current1, i1);
-    stats_enqueue_sample(parameter_current2, i2);
-    stats_enqueue_sample(parameter_current3, i3);
-    stats_enqueue_sample(parameter_voltage2, v2);
-    stats_enqueue_sample(parameter_voltage3, v3);
-}
-
 void get_pfleadlag() {
     int32_t powerfactor = 0;
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
