@@ -88,8 +88,8 @@ int pulse_get1() {
 }
 
 void volume_setup() {
-    int setup1 = get_pulsein1();
-    int setup2 = get_pulsein2();
+    setup1 = get_pulsein1();
+    setup2 = get_pulsein2();
     DEBUG_PRINTF("Setting the volume measurement gpio up");
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_ANYEDGE,
