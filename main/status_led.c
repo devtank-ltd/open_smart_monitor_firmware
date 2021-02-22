@@ -11,13 +11,6 @@ void status_led_set_status(int status) {
     led_status = status;
 }
 
-void status_led_toggle() {
-    static bool status;
-    gpio_set_direction(STATUS_LED, GPIO_MODE_OUTPUT);
-    gpio_set_level(STATUS_LED, status);
-    status = !status;
-}
-
 void status_led_task(void *pvParameters) {
     gpio_set_direction(STATUS_LED, GPIO_MODE_OUTPUT);
     for(;;) {
