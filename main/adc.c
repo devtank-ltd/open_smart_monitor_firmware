@@ -104,18 +104,19 @@ int db_correction(int db) {
     return db + 18;
 }
 
-void battery_query() {
-    static int oldpc = 0;
+void get_battery_pc() {
+    // FIXME: Too many magic numbers here.
     int v = voltagecalc(adc_avg_get(1)) * 3197;
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
+    mqtt_enqueue_int("battery_pc", NULL, pc);
+}
 
-    if(oldpc != pc) {
-        oldpc = pc;
-        mqtt_enqueue_int("battery_mv", NULL, v);
-        mqtt_enqueue_int("battery_pc", NULL, pc);
-    }
+void get_battery_mv() {
+    // FIXME: Too many magic numbers here.
+    int v = voltagecalc(adc_avg_get(1)) * 3197;
+    mqtt_enqueue_int("battery_mv", NULL, v);
 }
 
 void get_sound() {

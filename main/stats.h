@@ -37,7 +37,10 @@
     FN(freq2) \
     FN(pulse1) \
     FN(pulse2) \
-    FN(temp_probe)
+    FN(temp_probe) \
+    FN(battery_mv) \
+    FN(battery_pc)
+
 
 #define GENERATE_GETTER(ENUM) get_ ## ENUM,
 #define DECLARE_GETTER(ENUM) void get_ ## ENUM ();
