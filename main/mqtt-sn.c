@@ -214,8 +214,10 @@ void mqtt_sn_task(void * pvParameters) {
 
             mqtt_announce_str(topic, msg.timestamp, msg.payload, 1);
         }
-        mqtt_announce_str("sku", mqtt_get_time(), "ENV-01", 0);
-        mqtt_announce_str("fw", mqtt_get_time(), GIT_COMMIT, 0);
+        // Don't retry sending these signals; the HILTOP uses these to log
+        // the sensor's uptime
+        mqtt_announce_str("sku", mqtt_get_uptime(), "ENV-01", 0);
+        mqtt_announce_str("fw", mqtt_get_uptime(), GIT_COMMIT, 0);
         mqtt_announce_dropped();
     }
 }
