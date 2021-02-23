@@ -58,6 +58,7 @@ struct scpi_node_t phase3;
 struct scpi_node_t voltage;
 struct scpi_node_t current;
 struct scpi_node_t powerfactor;
+struct scpi_node_t battery;
 
 int scpi_node_to_param() {
     if(scpi_stack_query(&hpm_pm25))    return parameter_pm25;
@@ -80,6 +81,8 @@ int scpi_node_to_param() {
        scpi_stack_query(&voltage))     return parameter_voltage3;
     if(scpi_stack_query(&phase3) &&
        scpi_stack_query(&current))     return parameter_current3;
+
+    if(scpi_stack_query(&battery))     return parameter_battery_pc;
     return 0;
 }
 
@@ -119,6 +122,8 @@ void scpi_set_update_rate(void * argument) {
     set_timedelta(parameter, sample);
     if(parameter == parameter_powerfactor)
         set_timedelta(parameter_pfleadlag, sample);
+    if(parameter == parameter_battery_pc)
+        set_timedelta(parameter_battery_mv, sample);
 }
 
 void scpi_get_update_rate(void * nothing) {
@@ -128,9 +133,11 @@ void scpi_get_update_rate(void * nothing) {
 void scpi_set_sample_rate(void * argument) {
     int sample = atoi((char *)argument);
     int parameter = scpi_node_to_param();
-    set_sample_rate(parameter, sample);
+    set_sample_rate(parameter, sample * 60);
     if(parameter == parameter_powerfactor)
         set_sample_rate(parameter_pfleadlag, sample);
+    if(parameter == parameter_battery_pc)
+        set_sample_rate(parameter_battery_mv, sample);
 }
 
 void scpi_get_sample_rate(void * nothing) {
@@ -165,7 +172,7 @@ struct scpi_node_t pulse_node = {
     .setter_fn = NULL,
 };
 
-#define hpm_children {&sample_rate, NULL}
+#define hpm_children {&update_rate, &sample_rate, NULL}
 struct scpi_node_t hpm_pm25 = {
     .name = "PM25",
     .children = hpm_children,
@@ -176,6 +183,20 @@ struct scpi_node_t hpm_pm25 = {
 struct scpi_node_t hpm_pm10 = {
     .name = "PM10",
     .children = hpm_children,
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
+struct scpi_node_t light = {
+    .name = "LIGHt", 
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
+    .setter_fn = NULL
+};
+
+struct scpi_node_t battery = {
+    .name = "BATTery", 
+    .children = {&update_rate, &sample_rate, NULL},
     .query_fn = NULL, // FIXME: it would be nice if we could query this over SCPI too.
     .setter_fn = NULL
 };
@@ -306,7 +327,7 @@ struct scpi_node_t idn = {
 struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
-        &temperature, &humidity,
+        &temperature, &humidity, &light, &battery,
        &phase1, &phase2, &phase3, &powerfactor, NULL},
 };
 
