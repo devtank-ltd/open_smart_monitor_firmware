@@ -278,6 +278,9 @@ void scpi_mqtt_query(void * argument) {
     case MQTTSN_OVER_LORA:
         SCPI_PRINTF("LORA");
         break;
+    case MQTTSN_OVER_LORAWAN:
+        SCPI_PRINTF("LORAWAN");
+        break;
     default:
         scpi_error(SCPI_UNKNOWN);
         break;
@@ -299,6 +302,11 @@ void scpi_mqtt_setter(void * argument) {
     }
     if(strstr(arg, "LORA")) {
         set_mqtten(MQTTSN_OVER_LORA);
+        DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
+        return;
+    }
+    if(strstr(arg, "LORAWAN")) {
+        set_mqtten(MQTTSN_OVER_LORAWAN);
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
