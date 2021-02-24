@@ -19,6 +19,7 @@
 #include "rom/ets_sys.h"
 #include "pinmap.h"
 #include "stats.h"
+#include "logging.h"
 
 int init=0;
 /// Sends one bit to bus
@@ -104,10 +105,11 @@ void get_temp_probe(void) {
             temp1 = ds18b20_read_byte();
             temp2 = ds18b20_read_byte();
             check = ds18b20_RST_PULSE();
-            float temp = ((float)(temp1+(temp2*256))/16) * 10;
+            float temp = ((float)(temp1+(temp2*256))/16);
 
             // A temperature of 40959 is what we get if it's not plugged in
             int i = temp;
+            DEBUG_PRINTF("temp_probe %f", temp);
             if(i != 40959)
                 stats_enqueue_sample(parameter_temp_probe, i);
         }
