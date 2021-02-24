@@ -34,7 +34,10 @@ void mqtt_enqueue_int(const char * parameter, const char * suffix, int val) {
 
     if(xQueueSend(mqtt_queue, &msg, QDELAY) != pdPASS) {
         status_led_set_status(STATUS_LED_TROUBLE);
-        ERROR_PRINTF("Error enqueueing MQTT %s-%s %d\n", parameter, suffix, val);
+        if(suffix) 
+            ERROR_PRINTF("Error enqueueing MQTT %s-%s %d\n", parameter, suffix, val);
+        else
+            ERROR_PRINTF("Error enqueueing MQTT %s %d\n", parameter, val);
     }
 
 }
