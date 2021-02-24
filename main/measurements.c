@@ -34,14 +34,17 @@ void measurements_task(void *pvParameters) {
 
     for(;;) {
         TickType_t before = xTaskGetTickCount();
+        DEBUG_PRINTF("before %u", before);
         
         for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
             if(next_due[i] < before) {
                 int samplerate = get_sample_rate(i);
                 if(!samplerate) continue;
+                DEBUG_PRINTF("%s timedelta %d, samplerate %d", parameter_names[i], get_timedelta(i), samplerate);
                 parameter_getters[i]();
-                TickType_t offs = pdMS_TO_TICKS(samplerate * 1000);
+                TickType_t offs = pdMS_TO_TICKS(get_timedelta(i) * 60 * 1000);
                 next_due[i] = before + offs;
+                DEBUG_PRINTF("next_due[i] = %u", next_due[i]);
             }
         }
 
