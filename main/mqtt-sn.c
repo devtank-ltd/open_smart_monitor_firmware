@@ -203,8 +203,8 @@ void mqtt_sn_task(void * pvParameters) {
     char topic[TOPICLEN + SUFFIXLEN + 2];
     for(;;) {
         msg_t msg;
-        // 1200000 milliseconds is twenty minutes
-        while(xQueueReceive(mqtt_queue, &msg, pdMS_TO_TICKS(1200000) == pdTRUE)) {
+        // 1200 seconds is twenty minutes
+        while(xQueueReceive(mqtt_queue, &msg, pdMS_TO_TICKS(1200000)) == pdTRUE) {
             strcpy(topic, msg.topic);
             if(strlen(msg.suffix)) {
                 strcat(topic, "-");
