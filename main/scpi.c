@@ -69,6 +69,16 @@ int scpi_node_to_param() {
     if(scpi_stack_query(&light))       return parameter_light;
     if(scpi_stack_query(&powerfactor)) return parameter_powerfactor;
     
+    if(scpi_stack_query(&frequency_node) &&
+       scpi_stack_query(&pulsein1))    return parameter_freq1;
+    if(scpi_stack_query(&frequency_node) &&
+       scpi_stack_query(&pulsein2))    return parameter_freq2;
+
+    if(scpi_stack_query(&pulse_node) &&
+       scpi_stack_query(&pulsein1))    return parameter_pulse1;
+    if(scpi_stack_query(&pulse_node) &&
+       scpi_stack_query(&pulsein2))    return parameter_pulse2;
+
     if(scpi_stack_query(&phase1) &&
        scpi_stack_query(&voltage))     return parameter_voltage1;
     if(scpi_stack_query(&phase1) &&
@@ -144,13 +154,6 @@ void scpi_get_sample_rate(void * nothing) {
     SCPI_PRINTF("%u", get_sample_rate(scpi_node_to_param()));
 }
 
-struct scpi_node_t frequency_node = {
-    .name = "FREQuency",
-    .children = {&update_rate, &sample_rate},
-    .query_fn = frequency_query,
-    .setter_fn = NULL
-};
-
 struct scpi_node_t update_rate = {
     .name = "UPDaterate",
     .children = {NULL},
@@ -163,6 +166,13 @@ struct scpi_node_t sample_rate = {
     .children = {NULL},
     .query_fn = scpi_get_sample_rate,
     .setter_fn = scpi_set_sample_rate,
+};
+
+struct scpi_node_t frequency_node = {
+    .name = "FREQuency",
+    .children = {&update_rate, &sample_rate},
+    .query_fn = frequency_query,
+    .setter_fn = NULL
 };
 
 struct scpi_node_t pulse_node = {
