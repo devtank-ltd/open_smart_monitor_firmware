@@ -31,7 +31,8 @@ void uplink_task(void *pvParameters) {
 
     for(;;) {
         char line[LINELENGTH];
-        int received = uart_read_bytes(UPLINK_UART, line, LINELENGTH, 2000 / portTICK_PERIOD_MS);
+        for(int i = 0; i < LINELENGTH; i++) line[i] = '\0';
+        int received = uart_read_bytes(UPLINK_UART, line, LINELENGTH, 1000 / portTICK_PERIOD_MS);
         if(!received) {
             continue;
         }
