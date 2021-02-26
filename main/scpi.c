@@ -93,7 +93,10 @@ int scpi_node_to_param() {
        scpi_stack_query(&current))     return parameter_current3;
 
     if(scpi_stack_query(&battery))     return parameter_battery_pc;
-    return 0;
+
+    DEBUG_PRINTF("Unknown parameter!");
+    esp_restart();
+    return 1;
 }
 
 void idn_query(void * node) {
@@ -359,18 +362,16 @@ void scpi_parse_node(const char * string, struct scpi_node_t * node) {
     // i.e. a case-insensitive match of either all letters in the node's
     // name, or only the capital letters in the name.
     // strncmp won't cut the mustard.
-    DEBUG_PRINTF("%s", string);
-    DEBUG_PRINTF("looking for %s\nin node %s", string, node->name);
 
     if(!strncmp(string, "?", 1)) {
-        DEBUG_PRINTF("invoking query for node %s\n", node->name);
+        DEBUG_PRINTF("Querying %s on %s\n", node->name, parameter_names[scpi_node_to_param()]);
         if(node->query_fn) node->query_fn(node);
         else scpi_error(NOTQUESTIONABLE);
         return;
     }
 
     if(!strncmp(string, " ", 1) || !strncmp(string, ";", 1)) {
-        DEBUG_PRINTF("invoking setter for node %s\n", node->name);
+        DEBUG_PRINTF("Setting %s on %s\n", node->name, parameter_names[scpi_node_to_param()]);
         if(node->setter_fn) node->setter_fn((void *) string);
         else scpi_error(NOTSETTABLE);
         return;
