@@ -121,7 +121,7 @@ StackType_t  xMQTTStack[MEASSTACKSIZE];
 */
 void app_main(void)
 {
-    nvs_flash_init();
+    config_init();
     mqtt_init();
     stats_init();
     i2c_setup();
