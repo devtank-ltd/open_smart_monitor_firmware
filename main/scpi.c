@@ -133,7 +133,7 @@ void scpi_get_update_rate(void * nothing) {
 void scpi_set_sample_rate(void * argument) {
     int sample = atoi((char *)argument);
     int parameter = scpi_node_to_param();
-    set_sample_rate(parameter, sample * 60);
+    set_sample_rate(parameter, sample);
     if(parameter == parameter_powerfactor)
         set_sample_rate(parameter_pfleadlag, sample);
     if(parameter == parameter_battery_pc)
@@ -335,7 +335,7 @@ struct scpi_node_t idn = {
 struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
-        &temperature, &humidity, &light, &battery,
+        &temperature, &humidity, &light, &battery, &sound,
        &phase1, &phase2, &phase3, &powerfactor, NULL},
 };
 
