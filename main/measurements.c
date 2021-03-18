@@ -13,7 +13,7 @@
 #include "socomec.h"
 #include "volume.h"
 #include "config.h"
-#include "ds18b20.h"
+#include "one_wire_driver.h"
 #include "stats.h"
 
 #define SAMPLE_RATE_MS 1000
@@ -25,7 +25,7 @@ void measurements_task(void *pvParameters) {
     tsl_setup();
     volume_setup();
     smart_meter_setup();
-    ds18b20_init();
+    temp_init();
     hpm_setup();
 
     TickType_t next_due[ARRAY_SIZE(parameter_names)];
