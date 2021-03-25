@@ -1,3 +1,12 @@
+/*
+A driver for a DS18B20 thermometer by Devtank Ltd.
+
+Documents used:
+- DS18B20 Programmable Resolution 1-Wire Digital Thermometer
+    : https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf                          (Accessed: 25.03.21)
+- Understanding and Using Cyclic Redunancy Checks With maxim 1-Wire and iButton products
+    : https://maximintegrated.com/en/design/technical-documents/app-notes/2/27.html     (Accessed: 25.03.21)
+*/
 #include <unistd.h>
 #include <math.h>
 #include <sys/time.h>
@@ -26,21 +35,16 @@
 #define W1_CMD_READ_SCP     0xBE
 
 typedef union {
-    uint16_t w;
     struct {
-        uint8_t l;
-        uint8_t h;
-    };
-} w1_data_t;
-
-typedef struct { 
-    w1_data_t t;
-    w1_data_t t_tmp;
-    uint8_t conf;
-    uint8_t res0;
-    uint8_t res1;
-    uint8_t res2;
-    uint8_t crc;
+        uint16_t t;
+        uint16_t tmp_t;
+        uint8_t conf;
+        uint8_t res0;
+        uint8_t res1;
+        uint8_t res2;
+        uint8_t crc;
+    } __attribute__((packed));
+    uint8_t raw[9];
 } w1_memory_t;
 
 static int w1_read_bit(void) {
@@ -103,16 +107,26 @@ static int w1_send_byte(uint8_t byte) {
     return 0;
 }
 
-static void w1_read_scpad(w1_memory_t* d) { 
-    d->t.l     = w1_read_byte();
-    d->t.h     = w1_read_byte();
-    d->t_tmp.l = w1_read_byte();
-    d->t_tmp.h = w1_read_byte();
-    d->conf    = w1_read_byte();
-    d->res0    = w1_read_byte();
-    d->res1    = w1_read_byte();
-    d->res2    = w1_read_byte();
-    d->crc     = w1_read_byte();
+void w1_read_scpad(w1_memory_t* d) {
+    for (int i = 0; i < 9; i++) {
+        d->raw[i] = w1_read_byte();
+    }
+}
+
+int w1_crc_check(uint8_t* mem, uint8_t size) {
+    uint8_t crc = 0x00;
+    for (uint8_t i = 0; i < size; i++) {
+         uint8_t byte = mem[i];
+         for (uint8_t j = 0; j < 8; ++j) {
+            uint8_t blend = (crc ^ byte) & 0x01;
+            crc >>= 1;
+            if (blend) {
+                crc ^= 0x8C;
+            }
+            byte >>= 1;
+         }
+    }
+    return !(crc == mem[size]);
 }
 
 static void w1_temp_err(void) {
@@ -126,20 +140,25 @@ float get_temperature(void) {
         w1_temp_err();
         return 0;
         }
-    w1_send_byte(W1_CMD_SKIP_ROM);                          // Skip Rom (command all boards on bus)
-    w1_send_byte(W1_CMD_CONV_T);                            // Convert T (write temper to scratchpad)
+    w1_send_byte(W1_CMD_SKIP_ROM);                          
+    w1_send_byte(W1_CMD_CONV_T);                        
     ets_delay_us(DELAY_GET_TEMP);
     if (w1_reset()) {
         w1_temp_err();
         return 0;
     }
-    w1_send_byte(W1_CMD_SKIP_ROM);                          // Skip Rom
-    w1_send_byte(W1_CMD_READ_SCP);                          // Read Scratchpad
+    w1_send_byte(W1_CMD_SKIP_ROM);          
+    w1_send_byte(W1_CMD_READ_SCP);                  
     w1_read_scpad(&d);
-    if (d.t.w > 0xfc00) {                                   // Negative numbers
-        d.t.w = - d.t.w + 0xf920;
+    
+    if (w1_crc_check(d.raw, 8)) {
+        DEBUG_PRINTF("Temperature data not confirmed by CRC");
     }
-    t_out = d.t.w / 16.0f;                                  // Conversion to degC
+
+    if (d.t > 0xfc00) {                                 
+        d.t = - d.t + 0xf920;
+    }
+    t_out = d.t / 16.0f;    
     DEBUG_PRINTF("T: %f C", t_out);
     return t_out;
 }
