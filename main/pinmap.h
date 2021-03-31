@@ -1,7 +1,6 @@
 #pragma once
 /*
  * There's a status LED on GPIO33.
- * For now we're just going to toggle it with every iteration of the main loop.
  */
 #define STATUS_LED 33
 
@@ -58,6 +57,7 @@
 #define LORA_UART_CTS 23
 
 #define PULSE_IN_1  32
+#define PULSE_IN_2  35
 #define DS_GPIO     14
 #define LIGHT_INT   4
 #define TEMP_INT    26
@@ -65,3 +65,5 @@
 
 #define BAT_MON ADC2_CHANNEL_4
 #define POWER_INT 14
+
+#define UPLINK_UART  UART_NUM_0

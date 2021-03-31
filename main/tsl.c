@@ -34,19 +34,6 @@
 #define ABS(x)  (x<0)?-x:x
 #define LUM_DELTA 4
 
-#define SAMPLES 1000
-
-int32_t lux[SAMPLES] = {0};
-
-void tslsample(uint16_t l) {
-    static int sample_no = 0;
-    lux[sample_no] = l;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-        stats(lux, SAMPLES, &mqtt_visible_light_stats);
-    }
-    sample_no %= SAMPLES;
-}
 
 static uint8_t read_tsl_reg(uint8_t reg) {
     uint8_t ret = 0;
@@ -92,7 +79,6 @@ void tsl_setup() {
     write_tsl_reg(CONTROL, CONTROL_ON);
     write_tsl_reg(TIMING,  0x02); // An integration cycle begins every 402ms.
     INFO_PRINTF("TSL2561 initialised %d", read_tsl_reg(CONTROL));
-    mqtt_stats_update_delta(&mqtt_visible_light_stats, 30);
 }
 
 #define CH_SCALE 10
@@ -151,13 +137,12 @@ void CalculateLux(uint16_t ch0, uint16_t ch1)
     else if(r < 1.30) lux = 0.00146 * ch0 - 0.00112 * ch1;
     else lux = 0;
 
-    int32_t vis = lux;
-    tslsample(vis);
+    stats_enqueue_sample(parameter_light, lux);
 }
 
 
 
-void tsl_query() {
+void get_light() {
     uint16_t c0;
     uint16_t c1;
     uint8_t alive = read_tsl_reg(CONTROL) & 0x03;

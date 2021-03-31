@@ -15,27 +15,8 @@ static int enable = 0;
 
 #define ABS(x)  (x<0)?-x:x
 
-#define SAMPLES 1000
-
-int32_t pm25[SAMPLES] = {0};
-int32_t pm10[SAMPLES] = {0};
-
-void sample(int32_t pm25_s, int32_t pm10_s) {
-    static int sample_no = 0;
-    pm10[sample_no] = pm10_s;
-    pm25[sample_no] = pm25_s;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-        stats(pm10, SAMPLES, &mqtt_pm10_stats);
-        stats(pm25, SAMPLES, &mqtt_pm25_stats);
-    }
-    sample_no %= SAMPLES;
-}
-
 void hpm_setup() {
-    enable = get_hpmen();
-    mqtt_stats_update_delta(&mqtt_pm10_stats, 15);
-    mqtt_stats_update_delta(&mqtt_pm25_stats, 15);
+    enable = get_sample_rate(parameter_pm25) | get_sample_rate(parameter_pm25);
 }
 
 static void hpm_switch() {
@@ -55,6 +36,8 @@ typedef union {
     };
 } unit_entry_t;
 
+unit_entry_t pm25_entry = {0};
+unit_entry_t pm10_entry = {0};
 
 static int process_part_measure_response(uint8_t *data) {
 
@@ -78,10 +61,11 @@ static int process_part_measure_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25 = {.h = data[3], .l = data[4]};
-    unit_entry_t pm10 = {.h = data[5], .l = data[6]};
+    pm25_entry.h = data[3];
+    pm25_entry.l = data[4];
+    pm10_entry.h = data[5];
+    pm10_entry.l = data[6];
 
-    sample(pm25.d, pm10.d);
     return 8;
 }
 
@@ -106,11 +90,12 @@ static int process_part_measure_long_response(uint8_t *data) {
         return -1;
     }
 
-    unit_entry_t pm25 = {.h = data[6], .l = data[7]};
-    unit_entry_t pm10 = {.h = data[8], .l = data[9]};
+    pm25_entry.h = data[6];
+    pm25_entry.l = data[7];
+    pm10_entry.h = data[8];
+    pm10_entry.l = data[9];
 
 //    DEBUG_PRINTF("HPM : PM10:%u, PM2.5:%u", (unsigned)pm10.d, (unsigned)pm25.d);
-    sample(pm25.d, pm10.d);
     return 32;
 }
 
@@ -154,7 +139,11 @@ static hpm_response_t responses[] = {
 
 
 int hpm_query() {
-    if(!enable) return 0;
+    // Don't bothre taking the measurements again if it last happened less than a second ago.
+    static TickType_t last_done = 0;
+    if(last_done > xTaskGetTickCount() - pdMS_TO_TICKS(1000))
+        return 0;
+    last_done = xTaskGetTickCount();
 
     hpm_switch();
 
@@ -231,3 +220,14 @@ unknown_response:
     uart_flush_input(DEVS_UART); /* Bin everything in hope to sync back up. */
     return -1;
 }
+
+void get_pm25() {
+    hpm_query();
+    stats_enqueue_sample(parameter_pm25, pm25_entry.d);
+}
+
+void get_pm10() {
+    hpm_query();
+    stats_enqueue_sample(parameter_pm10, pm10_entry.d);
+}
+

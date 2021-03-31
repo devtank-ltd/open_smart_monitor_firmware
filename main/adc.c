@@ -3,7 +3,7 @@
 #include "adc.h"
 #include "pinmap.h"
 #include "logging.h"
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "config.h"
 #include "math.h"
 #include "driver/i2s.h"
@@ -24,21 +24,7 @@ static unsigned adc_values_index = 0;
 #define EXAMPLE_I2S_SAMPLE_RATE 22000
 #define EXAMPLE_I2S_FORMAT        (I2S_CHANNEL_FMT_RIGHT_LEFT)
 
-#define SAMPLES 1000 // 100 000 is too much for dram0_0_seg.
-
 float midpoint = 0;
-
-int32_t db[SAMPLES];
-
-void soundsample(uint16_t db_s) {
-    static int sample_no = 0;
-    db[sample_no] = db_s;
-    sample_no++;
-    if(sample_no >= SAMPLES) {
-       stats(db, SAMPLES, &mqtt_sound_stats);
-    }
-    sample_no %= SAMPLES;
-}
 
 void adc_setup() {
     midpoint = get_midpoint();
@@ -47,7 +33,7 @@ void adc_setup() {
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_ADC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = 16,
-        .communication_format = I2S_COMM_FORMAT_PCM,
+        .communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
         .channel_format = EXAMPLE_I2S_FORMAT,
         .intr_alloc_flags = 0,
         .dma_buf_count = 2,
@@ -73,9 +59,6 @@ void adc_setup() {
     ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
 
     ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, ADC_USECS_PER_SLOT));
-    mqtt_stats_update_delta(&mqtt_sound_stats, 15);
-    mqtt_datum_update_delta(&mqtt_battery_mv_datum, 15);
-    mqtt_datum_update_delta(&mqtt_battery_pc_datum, 15);
 }
 
 static uint16_t adc2_safe_get(adc2_channel_t channel) {
@@ -121,41 +104,38 @@ int db_correction(int db) {
     return db + 18;
 }
 
-void battery_query() {
+void get_battery_pc() {
+    // FIXME: Too many magic numbers here.
     int v = voltagecalc(adc_avg_get(1)) * 3197;
     int pc = (v - 2500) / 17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
-    mqtt_datum_update(&mqtt_battery_mv_datum, v);
-    mqtt_datum_update(&mqtt_battery_pc_datum, pc);
-    int delta = pc == 100 ? 120 : 10;
-    mqtt_datum_update_delta(&mqtt_battery_mv_datum, delta);
-    mqtt_datum_update_delta(&mqtt_battery_pc_datum, delta);
+    mqtt_enqueue_int("battery_pc", NULL, pc);
 }
 
-void sound_query() {
+void get_battery_mv() {
+    // FIXME: Too many magic numbers here.
+    int v = voltagecalc(adc_avg_get(1)) * 3197;
+    mqtt_enqueue_int("battery_mv", NULL, v);
+}
+
+void get_sound() {
     long double vrms = 0;
     size_t bytes_read;
     i2s_read(EXAMPLE_I2S_NUM, (void*)micvolts, ADCBUFLEN, &bytes_read, portMAX_DELAY);
     unsigned int n;
-    unsigned int avg = 0;
     for (n = 0; n < bytes_read; n++) {
         uint16_t adcsample = micvolts[n] & 0x0fff;
-        avg += adcsample;
         if(!adcsample) break;
         double a = voltagecalc(adcsample) - midpoint;
 //        printf("%u\n", (unsigned int) adcsample);
         vrms += a * a;
     }
-    avg = avg / n;
     vrms = sqrtl(vrms/n);
 
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    soundsample(db * 10);
-
-//    printf("vrms = %Lf\t average ADC count %u\n", vrms, avg);
-//    printf("%fdB\n", db);
+    stats_enqueue_sample(parameter_sound, db * 10);
 }
 

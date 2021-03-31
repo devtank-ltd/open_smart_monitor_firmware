@@ -6,7 +6,7 @@
 #include "esp_system.h"
 #include "esp_spi_flash.h"
 #include "driver/uart.h"
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "driver/gpio.h"
 #include "pinmap.h"
 #include "logging.h"
@@ -16,15 +16,6 @@
 #define READ_HOLDING_FUNC 3
 #define MODBUS_ERROR_MASK 0x80
 #define NUM_SAMPLES 1000
-
-static int32_t powerfactor[NUM_SAMPLES];
-static int32_t leadlag[NUM_SAMPLES];
-static int32_t current1[NUM_SAMPLES];
-static int32_t current2[NUM_SAMPLES];
-static int32_t current3[NUM_SAMPLES];
-static int32_t voltage1[NUM_SAMPLES];
-static int32_t voltage2[NUM_SAMPLES];
-static int32_t voltage3[NUM_SAMPLES];
 
 #define E53_ADDR 5
 
@@ -334,16 +325,6 @@ esp_err_t smart_meter_setup() {
     if(!get_socoen())
         return ESP_OK;
     DEBUG_PRINTF("Init Smart Meter");
-    mqtt_stats_update_delta(&mqtt_current1_stats, 30);
-    mqtt_stats_update_delta(&mqtt_current2_stats, 30);
-    mqtt_stats_update_delta(&mqtt_current3_stats, 30);
-    mqtt_stats_update_delta(&mqtt_voltage1_stats, 30);
-    mqtt_stats_update_delta(&mqtt_voltage2_stats, 30);
-    mqtt_stats_update_delta(&mqtt_voltage3_stats, 30);
-    mqtt_stats_update_delta(&mqtt_pf_stats, 360);
-    mqtt_stats_update_delta(&mqtt_pf_sign_stats, 360);
-    mqtt_datum_update_delta(&mqtt_import_energy_datum, 60);
-    mqtt_datum_update_delta(&mqtt_export_energy_datum, 60);
 
     smart_switch_switch();
 
@@ -423,74 +404,60 @@ unknown_device:
     return ESP_FAIL;
 }
 
-void elecsample(int32_t pf, int32_t i1, int32_t i2, int32_t i3, int32_t v1, int32_t v2, int32_t v3) {
-    static int sample_no = 0;
-    if(pf < 0) {
-        powerfactor[sample_no] = -pf;
-        leadlag[sample_no] = -1000;
-    } else if(pf > 0) {
-        powerfactor[sample_no] = pf;
-        leadlag[sample_no] = 1000;
-    } else {
-        powerfactor[sample_no] = 0;
-        leadlag[sample_no] = 0;
-    }
-    current1[sample_no] = i1;
-    current2[sample_no] = i2;
-    current3[sample_no] = i3;
-    voltage1[sample_no] = v1;
-    voltage2[sample_no] = v2;
-    voltage3[sample_no] = v3;
-    sample_no++;
-    if(sample_no > NUM_SAMPLES) {
-        stats(current1, NUM_SAMPLES, &mqtt_current1_stats);
-        stats(current2, NUM_SAMPLES, &mqtt_current2_stats);
-        stats(current3, NUM_SAMPLES, &mqtt_current3_stats);
-        stats(voltage1, NUM_SAMPLES, &mqtt_voltage1_stats);
-        stats(voltage2, NUM_SAMPLES, &mqtt_voltage2_stats);
-        stats(voltage3, NUM_SAMPLES, &mqtt_voltage3_stats);
-        stats(powerfactor, NUM_SAMPLES, &mqtt_pf_stats);
-        stats(leadlag, NUM_SAMPLES, &mqtt_pf_sign_stats);
-        sample_no = 0;
-    }
+void get_pfleadlag() {
+    int32_t powerfactor = 0;
+    sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
+    if(powerfactor > 0)
+        stats_enqueue_sample(parameter_pfleadlag, 1000);
+    else if(powerfactor < 0)
+        stats_enqueue_sample(parameter_pfleadlag, -1000);
+    else
+        stats_enqueue_sample(parameter_pfleadlag, 0);
 }
 
-void smart_meter_query()
-{
-    if(!sococonnected)
-        return;
-
-    smart_switch_switch();
-    static int count = 1;
-    count--;
-
-    uint32_t powerfactor   = 0;
-    uint32_t voltage1      = 0;
-    uint32_t voltage2      = 0;
-    uint32_t voltage3      = 0;
-    uint32_t current1      = 0;
-    uint32_t current2      = 0;
-    uint32_t current3      = 0;
-
-    if(!count) {
-        /* I am expecting this function to be called once per second.
-         * But the import energy does not need to be queried nearly as often
-         * so I set this countdown so that it gets queried hourly instead
-         */
-        int32_t import, export;
-        sense_modbus_read_value(36, &import, sizeof(mqtt_import_energy_datum.value));
-        sense_modbus_read_value(37, &export, sizeof(mqtt_export_energy_datum.value));
-        mqtt_datum_update(&mqtt_import_energy_datum, import);
-        mqtt_datum_update(&mqtt_export_energy_datum, export);
-        count = 3600;
-    }
+void get_powerfactor() {
+    int32_t powerfactor = 0;
     sense_modbus_read_value(16, &powerfactor,   sizeof(powerfactor));
-    sense_modbus_read_value(30, &voltage1,      sizeof(voltage1));
-    sense_modbus_read_value(31, &voltage2,      sizeof(voltage2));
-    sense_modbus_read_value(32, &voltage3,      sizeof(voltage3));
-    sense_modbus_read_value(33, &current1,      sizeof(current1));
-    sense_modbus_read_value(34, &current2,      sizeof(current2));
-    sense_modbus_read_value(35, &current3,      sizeof(current3));
+    if(powerfactor > 0)
+        stats_enqueue_sample(parameter_pfleadlag, powerfactor);
+    else if(powerfactor < 0)
+        stats_enqueue_sample(parameter_pfleadlag, -powerfactor);
+    else
+        stats_enqueue_sample(parameter_pfleadlag, 0);
+}
 
-    elecsample(powerfactor, current1, current2, current3, voltage1, voltage2, voltage3);
+void get_voltage1() {
+    uint32_t voltage;
+    sense_modbus_read_value(30, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage1, voltage);
+}
+
+void get_voltage2() {
+    uint32_t voltage;
+    sense_modbus_read_value(31, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage2, voltage);
+}
+
+void get_voltage3() {
+    uint32_t voltage;
+    sense_modbus_read_value(32, &voltage,      sizeof(voltage));
+    stats_enqueue_sample(parameter_voltage3, voltage);
+}
+
+void get_current1() {
+    uint32_t current;
+    sense_modbus_read_value(33, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current1, current);
+}
+
+void get_current2() {
+    uint32_t current;
+    sense_modbus_read_value(34, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current2, current);
+}
+
+void get_current3() {
+    uint32_t current;
+    sense_modbus_read_value(35, &current,      sizeof(current));
+    stats_enqueue_sample(parameter_current3, current);
 }

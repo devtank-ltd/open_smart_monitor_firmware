@@ -7,16 +7,21 @@
 #include "driver/uart.h"
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
+#include "nvs_flash.h"
+#include "uplink.h"
+#include "mqtt-sn.h"
+#include "mqtt-dbg.h"
 
 #include "pinmap.h"
 
-#include "mqtt-sn.h"
+#include "mqtt.h"
 #include "mac.h"
 #include "config.h"
 #include "status_led.h"
 #include "logging.h"
 #include "commit.h"
 #include "math.h"
+#include "stats.h"
 #include "measurements.h"
 
 #define LEDSTACKSIZE 1000
@@ -26,14 +31,6 @@ unsigned long __stack_chk_guard;
 void __stack_chk_guard_setup(void)
 {
     __stack_chk_guard = 0xBAAAAAAD;//provide some magic numbers
-}
-
-void notification(const char * n) {
-    for(int i = 30; i; i--) putchar('*');
-    putchar(' ');
-    puts(n);
-    putchar('\r');
-    fflush(stdout);
 }
 
 void lora_uart_setup() {
@@ -117,18 +114,28 @@ StackType_t  xLEDStack[LEDSTACKSIZE];
 TaskHandle_t xMeasureHandle = NULL;
 StaticTask_t xMeasureBuffer;
 StackType_t  xMeasureStack[MEASSTACKSIZE];
-
+/*
 TaskHandle_t xMQTTHandle = NULL;
 StaticTask_t xMQTTBuffer;
 StackType_t  xMQTTStack[MEASSTACKSIZE];
-
+*/
 void app_main(void)
 {
+    config_init();
+    mqtt_init();
+    stats_init();
     i2c_setup();
     getmac();
     lora_uart_setup();
     device_uart_setup();
     status_led_set_status(STATUS_LED_OK);
+    uplink_init();
+
+    if(get_mqtten() == MQTTSN_OVER_LORA)
+        mqtt_sn_init();
+
+    if(get_mqtten() == MQTT_LOG_TO_USB)
+        mqtt_dbg_init();
 
     xLEDHandle = xTaskCreateStatic(
                       status_led_task, /* Function that implements the task. */
@@ -148,15 +155,6 @@ void app_main(void)
                       tskIDLE_PRIORITY + 1,
                       xMeasureStack,
                       &xMeasureBuffer);
-
-    xMeasureHandle = xTaskCreateStatic(
-                      mqtt_task,
-                      "MQTT-SN",
-                      MEASSTACKSIZE,
-                      (void*)1,
-                      tskIDLE_PRIORITY + 1,
-                      xMQTTStack,
-                      &xMQTTBuffer);
 
     for(;;) vTaskDelay(INT_MAX);
     esp_restart();

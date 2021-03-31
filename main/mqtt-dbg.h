@@ -2,4 +2,4 @@
 #include <stdbool.h>
 #include "freertos/FreeRTOS.h"
 
-void mqtt_sn_init();
+void mqtt_dbg_init();
