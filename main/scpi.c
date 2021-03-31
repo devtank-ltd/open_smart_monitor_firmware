@@ -364,14 +364,14 @@ void scpi_parse_node(const char * string, struct scpi_node_t * node) {
     // strncmp won't cut the mustard.
 
     if(!strncmp(string, "?", 1)) {
-        DEBUG_PRINTF("Querying %s on %s\n", node->name, parameter_names[scpi_node_to_param()]);
+        DEBUG_PRINTF("Querying %s\n", node->name);
         if(node->query_fn) node->query_fn(node);
         else scpi_error(NOTQUESTIONABLE);
         return;
     }
 
     if(!strncmp(string, " ", 1) || !strncmp(string, ";", 1)) {
-        DEBUG_PRINTF("Setting %s on %s\n", node->name, parameter_names[scpi_node_to_param()]);
+        DEBUG_PRINTF("Setting %s\n", node->name);
         if(node->setter_fn) node->setter_fn((void *) string);
         else scpi_error(NOTSETTABLE);
         return;
