@@ -83,6 +83,11 @@ uint8_t get_pulsein2() {
     }
 }
 
+void set_wateroffset(uint32_t offs) {
+    esp_err_t err = nvs_set_u32(cal_handle, "water_offs", offs);
+    ERROR_PRINTF("(%s) setting water_offs!", esp_err_to_name(err));
+}
+
 
 void set_hpmen(uint8_t en) {
     // Can this function  be nixxed?
