@@ -49,12 +49,12 @@ typedef union {
 
 static int w1_read_bit(void) {
     portDISABLE_INTERRUPTS();
-    gpio_set_direction(DS_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(DS_GPIO, 0);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(OW_GPIO, 0);
     ets_delay_us(DELAY_READ_START);
-    gpio_set_direction(DS_GPIO, GPIO_MODE_INPUT);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_INPUT);
     ets_delay_us(DELAY_READ_WAIT);
-    int out = gpio_get_level(DS_GPIO);
+    int out = gpio_get_level(OW_GPIO);
     ets_delay_us(DELAY_READ_RELEASE);
     portENABLE_INTERRUPTS();
     return out;
@@ -63,14 +63,14 @@ static int w1_read_bit(void) {
 static int w1_send_bit(int bit) {
     portDISABLE_INTERRUPTS();
     if (bit) {
-        gpio_set_level(DS_GPIO, 0);
+        gpio_set_level(OW_GPIO, 0);
         ets_delay_us(DELAY_WRITE_1_START);
-        gpio_set_level(DS_GPIO, 1);
+        gpio_set_level(OW_GPIO, 1);
         ets_delay_us(DELAY_WRITE_1_END);
     } else {
-        gpio_set_level(DS_GPIO, 0);
+        gpio_set_level(OW_GPIO, 0);
         ets_delay_us(DELAY_WRITE_0_START);                
-        gpio_set_level(DS_GPIO, 1);                        
+        gpio_set_level(OW_GPIO, 1);                        
         ets_delay_us(DELAY_WRITE_0_END); 
     }
     portENABLE_INTERRUPTS();
@@ -78,16 +78,16 @@ static int w1_send_bit(int bit) {
 }
 
 static int w1_reset(void) {
-    gpio_set_direction(DS_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(DS_GPIO, 0);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_level(OW_GPIO, 0);
     ets_delay_us(DELAY_RESET_SET);
-    gpio_set_direction(DS_GPIO, GPIO_MODE_INPUT);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_INPUT);
     ets_delay_us(DELAY_RESET_WAIT);
-    if (gpio_get_level(DS_GPIO) == 1) {
+    if (gpio_get_level(OW_GPIO) == 1) {
         return 1; 
         }
     ets_delay_us(DELAY_RESET_READ);
-    return !(gpio_get_level(DS_GPIO));
+    return !(gpio_get_level(OW_GPIO));
 }
 
 static uint8_t w1_read_byte(void) {
@@ -99,11 +99,11 @@ static uint8_t w1_read_byte(void) {
 }
 
 static int w1_send_byte(uint8_t byte) {
-    gpio_set_direction(DS_GPIO, GPIO_MODE_OUTPUT);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_OUTPUT);
     for (unsigned i = 0; i < 8; i++) {
         w1_send_bit((byte & (1 << i)));
     }
-    gpio_set_direction(DS_GPIO, GPIO_MODE_INPUT);
+    gpio_set_direction(OW_GPIO, GPIO_MODE_INPUT);
     return 0;
 }
 
@@ -164,7 +164,7 @@ float get_temperature(void) {
 }
 
 int temp_init(void) {
-    gpio_pad_select_gpio(DS_GPIO);
+    gpio_pad_select_gpio(OW_GPIO);
     if (w1_reset()) {
         w1_temp_err();
         return 1;
