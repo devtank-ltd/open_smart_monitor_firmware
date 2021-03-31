@@ -17,6 +17,7 @@ Documents used:
 #include "driver/gpio.h"
 #include "pinmap.h"
 #include "logging.h"
+#include "stats.h"
 
 #define DELAY_READ_START    2
 #define DELAY_READ_WAIT     10
@@ -133,19 +134,19 @@ static void w1_temp_err(void) {
     DEBUG_PRINTF("Temperature probe did not respond");
 }
 
-float get_temperature(void) {
+void get_temp_probe(void) {
     float t_out;
     w1_memory_t d; 
     if (w1_reset()) {
         w1_temp_err();
-        return 0;
-        }
+        return;
+    }
     w1_send_byte(W1_CMD_SKIP_ROM);                          
     w1_send_byte(W1_CMD_CONV_T);                        
     ets_delay_us(DELAY_GET_TEMP);
     if (w1_reset()) {
         w1_temp_err();
-        return 0;
+        return;
     }
     w1_send_byte(W1_CMD_SKIP_ROM);          
     w1_send_byte(W1_CMD_READ_SCP);                  
@@ -153,6 +154,7 @@ float get_temperature(void) {
     
     if (w1_crc_check(d.raw, 8)) {
         DEBUG_PRINTF("Temperature data not confirmed by CRC");
+        return;
     }
 
     if (d.t > 0xfc00) {                                 
@@ -160,7 +162,7 @@ float get_temperature(void) {
     }
     t_out = d.t / 16.0f;    
     DEBUG_PRINTF("T: %f C", t_out);
-    return t_out;
+    stats_enqueue_sample(parameter_temp_probe, t_out);
 }
 
 int temp_init(void) {
