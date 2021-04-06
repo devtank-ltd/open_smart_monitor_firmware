@@ -48,6 +48,7 @@ struct scpi_node_t pulsein1;
 struct scpi_node_t pulsein2;
 struct scpi_node_t hpm_pm25;
 struct scpi_node_t hpm_pm10;
+struct scpi_node_t externaltemperature;
 struct scpi_node_t temperature;
 struct scpi_node_t humidity;
 struct scpi_node_t sound;
@@ -63,6 +64,7 @@ struct scpi_node_t battery;
 int scpi_node_to_param() {
     if(scpi_stack_query(&hpm_pm25))    return parameter_pm25;
     if(scpi_stack_query(&hpm_pm10))    return parameter_pm10;
+    if(scpi_stack_query(&externaltemperature)) return parameter_temp_probe;
     if(scpi_stack_query(&temperature)) return parameter_temperature;
     if(scpi_stack_query(&humidity))    return parameter_humidity;
     if(scpi_stack_query(&sound))       return parameter_sound;
@@ -243,6 +245,13 @@ struct scpi_node_t powerfactor = {
 
 #define pulse_children {&pulse_node, &frequency_node, NULL}
 
+struct scpi_node_t externaltemperature = {
+    .name = "EXTernalTEMPerature",
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
+
 struct scpi_node_t temperature = {
     .name = "TEMPerature",
     .children = {&update_rate, &sample_rate, NULL},
@@ -348,8 +357,8 @@ struct scpi_node_t idn = {
 struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
-        &temperature, &humidity, &light, &battery, &sound,
-       &phase1, &phase2, &phase3, &powerfactor, NULL},
+        &externaltemperature, &temperature, &humidity, &light, &battery, &sound,
+        &phase1, &phase2, &phase3, &powerfactor, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {
