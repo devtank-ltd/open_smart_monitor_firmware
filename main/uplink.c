@@ -30,9 +30,8 @@ bool beginswith(const char * haystack, const char * needle, int * argument) {
 void uplink_task(void *pvParameters) {
 
     for(;;) {
-        char line[LINELENGTH];
-        for(int i = 0; i < LINELENGTH; i++) line[i] = '\0';
-        int received = uart_read_bytes(UPLINK_UART, line, LINELENGTH, 1000 / portTICK_PERIOD_MS);
+        char line[LINELENGTH] = {0};
+        int received = uart_read_bytes(UPLINK_UART, (unsigned char*)line, LINELENGTH, 1000 / portTICK_PERIOD_MS);
         if(!received) {
             continue;
         }
