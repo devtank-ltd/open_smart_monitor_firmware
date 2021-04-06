@@ -322,13 +322,13 @@ void scpi_mqtt_setter(void * argument) {
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
-    if(strstr(arg, "LORA")) {
-        set_mqtten(MQTTSN_OVER_LORA);
+    if(strstr(arg, "LORAWAN")) {
+        set_mqtten(MQTTSN_OVER_LORAWAN);
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
-    if(strstr(arg, "LORAWAN")) {
-        set_mqtten(MQTTSN_OVER_LORAWAN);
+    if(strstr(arg, "LORA")) {
+        set_mqtten(MQTTSN_OVER_LORA);
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
