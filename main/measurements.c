@@ -34,8 +34,7 @@ void measurements_task(void *pvParameters) {
 
     for(;;) {
         TickType_t before = xTaskGetTickCount();
-        DEBUG_PRINTF("before %u", before);
-        
+
         for(int i = 0; i < ARRAY_SIZE(parameter_names); i++) {
             if(next_due[i] < before) {
                 int samplerate = get_sample_rate(i);
