@@ -80,7 +80,7 @@ void device_uart_setup() {
 
 void i2c_setup() {
 
-    i2c_config_t conf;
+    i2c_config_t conf = {0};
 
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = I2CPIN_MASTER_SDA;
@@ -88,7 +88,6 @@ void i2c_setup() {
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = 100000;
-    conf.clk_flags = 0;
 
     esp_err_t err = i2c_param_config(I2CBUS, &conf);
     if (err != ESP_OK) {
