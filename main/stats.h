@@ -33,6 +33,7 @@
     FN(voltage3) \
     FN(powerfactor) \
     FN(pfleadlag) \
+    FN(importenergy) \
     FN(freq1) \
     FN(freq2) \
     FN(pulse1) \

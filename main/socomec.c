@@ -426,6 +426,12 @@ void get_powerfactor() {
         stats_enqueue_sample(parameter_pfleadlag, 0);
 }
 
+void get_importenergy() {
+    uint32_t import;
+    sense_modbus_read_value(36, &import,    sizeof(import));
+    stats_enqueue_sample(parameter_importenergy, import);
+}
+
 void get_voltage1() {
     uint32_t voltage;
     sense_modbus_read_value(30, &voltage,      sizeof(voltage));
