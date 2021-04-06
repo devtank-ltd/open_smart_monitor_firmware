@@ -5,6 +5,7 @@
 #define NOTQUESTIONABLE 1
 #define NOTSETTABLE     2
 #define SCPI_UNKNOWN    3
+#define TOOMANY         -350
 
 typedef void (*scpi_operation)(void * node);
 
@@ -21,13 +22,30 @@ struct scpi_node_t {
 
 struct scpi_node_t * stack[MAXPARSEDEPTH] = {0};
 int error_queue[ERRORQUEUELEN] = {0};
+static int error_in = 0;
+static int error_out = 0;
 static int stackpointer = 0;
 
 void scpi_error(int error_code) {
-    static int in = 0;
-    error_queue[in++] = error_code;
-    in %= ERRORQUEUELEN;
-    DEBUG_PRINTF("Enqueuing error code %d", error_code);
+    if(error_in == error_out - 1) {
+        error_queue[error_in] = TOOMANY;
+    } else {
+        error_queue[error_in++] = error_code;
+        error_in %= ERRORQUEUELEN;
+    }
+}
+
+void error_dequeue(void * nothing) {
+    if(error_in == error_out) {
+        SCPI_PRINTF("+0, \"No error\"");
+        return;
+    }
+    int error = error_queue[error_out++];
+    error_out %= ERRORQUEUELEN;
+    if(error == NOTQUESTIONABLE) SCPI_PRINTF("%d, \"Not questionable\"", error);
+    if(error == NOTSETTABLE)     SCPI_PRINTF("%d, \"Not settable\"", error);
+    if(error == SCPI_UNKNOWN)    SCPI_PRINTF("%d, \"Unknown\"", error);
+    if(error == TOOMANY)         SCPI_PRINTF("%d, \"Queue overflow\"", error);
 }
 
 int scpi_stack_query(struct scpi_node_t * n) {
@@ -322,13 +340,13 @@ void scpi_mqtt_setter(void * argument) {
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
-    if(strstr(arg, "LORA")) {
-        set_mqtten(MQTTSN_OVER_LORA);
+    if(strstr(arg, "LORAWAN")) {
+        set_mqtten(MQTTSN_OVER_LORAWAN);
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
-    if(strstr(arg, "LORAWAN")) {
-        set_mqtten(MQTTSN_OVER_LORAWAN);
+    if(strstr(arg, "LORA")) {
+        set_mqtten(MQTTSN_OVER_LORA);
         DEBUG_PRINTF("Changed MQTT setting. Don't forget to reboot");
         return;
     }
@@ -343,6 +361,27 @@ struct scpi_node_t mqtt = {
     .setter_fn = scpi_mqtt_setter
 };
 
+// SCPI STUFF GOES HERE
+struct scpi_node_t system_error_next = {
+    .name = "NEXT",
+    .children = {NULL},
+    .query_fn = error_dequeue,
+    .setter_fn = NULL,
+};
+
+struct scpi_node_t system_error = {
+    .name = "ERRor",
+    .children = {&system_error_next, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
+
+struct scpi_node_t scpi_system = {
+    .name = "SYSTem",
+    .children = {&system_error, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
 
 // IEEE-448.1 STUFF GOES HERE
 struct scpi_node_t idn = {
@@ -358,7 +397,7 @@ struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
         &externaltemperature, &temperature, &humidity, &light, &battery, &sound,
-        &phase1, &phase2, &phase3, &powerfactor, NULL},
+        &phase1, &phase2, &phase3, &powerfactor, &scpi_system, NULL},
 };
 
 void scpi_parse_node(const char * string, struct scpi_node_t * node) {
