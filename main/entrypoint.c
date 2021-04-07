@@ -8,7 +8,7 @@
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
 #include "nvs_flash.h"
-#include "uplink.h"
+#include "console.h"
 #include "mqtt-sn.h"
 #include "mqtt-dbg.h"
 
@@ -128,7 +128,7 @@ void app_main(void)
     lora_uart_setup();
     device_uart_setup();
     status_led_set_status(STATUS_LED_OK);
-    uplink_init();
+    console_init();
 
     if(get_mqtten() == MQTTSN_OVER_LORA)
         mqtt_sn_init();
