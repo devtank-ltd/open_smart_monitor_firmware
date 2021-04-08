@@ -108,7 +108,7 @@ void get_temperature() {
     int temp_celsius = (((int64_t)temp.d * 1000000 / (1 << 16)) * 165 / 100000) - 400;
 
     if(temp_celsius > -300) {
-        stats_enqueue_sample(parameter_temperature, temp_celsius);
+        stats_enqueue_sample(parameter_temperature, temp_celsius / 10);
     } else {
         ERROR_PRINTF("I refuse to believe it's less than -30 degrees here.");
     }
