@@ -39,7 +39,6 @@ void console_task(void *pvParameters) {
 
             if(c == '\n' || c == '\r' || c == ';' || offset == LINELENGTH) {
                 line[offset + 1] = '\0';
-                DEBUG_PRINTF("%s", line);
                 scpi_parse(line);
                 status_led_set_status(STATUS_LED_OK);
                 break;
