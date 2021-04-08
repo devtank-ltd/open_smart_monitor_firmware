@@ -107,7 +107,7 @@ int db_correction(int db) {
 void get_battery_pc() {
     // FIXME: Too many magic numbers here.
     int v = voltagecalc(adc_avg_get(1)) * 3197;
-    int pc = (v - 2500) / 17;
+    int pc = (v - 2500) / .17;
     if(pc < 0) pc = 0;
     if(pc > 100) pc = 100;
     mqtt_enqueue_int("battery_pc", NULL, pc);
@@ -136,6 +136,6 @@ void get_sound() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    stats_enqueue_sample(parameter_sound, db * 10);
+    stats_enqueue_sample(parameter_sound, db);
 }
 
