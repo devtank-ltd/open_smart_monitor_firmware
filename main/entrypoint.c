@@ -8,7 +8,7 @@
 #include "esp32/rom/uart.h"
 #include "driver/i2c.h"
 #include "nvs_flash.h"
-#include "uplink.h"
+#include "console.h"
 #include "mqtt-sn.h"
 #include "mqtt-dbg.h"
 
@@ -80,7 +80,7 @@ void device_uart_setup() {
 
 void i2c_setup() {
 
-    i2c_config_t conf;
+    i2c_config_t conf = {0};
 
     conf.mode = I2C_MODE_MASTER;
     conf.sda_io_num = I2CPIN_MASTER_SDA;
@@ -88,7 +88,6 @@ void i2c_setup() {
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = 100000;
-    conf.clk_flags = 0;
 
     esp_err_t err = i2c_param_config(I2CBUS, &conf);
     if (err != ESP_OK) {
@@ -129,7 +128,7 @@ void app_main(void)
     lora_uart_setup();
     device_uart_setup();
     status_led_set_status(STATUS_LED_OK);
-    uplink_init();
+    console_init();
 
     if(get_mqtten() == MQTTSN_OVER_LORA)
         mqtt_sn_init();

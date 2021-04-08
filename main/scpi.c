@@ -78,6 +78,7 @@ struct scpi_node_t voltage;
 struct scpi_node_t current;
 struct scpi_node_t powerfactor;
 struct scpi_node_t battery;
+struct scpi_node_t importenergy;
 
 int scpi_node_to_param() {
     if(scpi_stack_query(&hpm_pm25))    return parameter_pm25;
@@ -88,6 +89,7 @@ int scpi_node_to_param() {
     if(scpi_stack_query(&sound))       return parameter_sound;
     if(scpi_stack_query(&light))       return parameter_light;
     if(scpi_stack_query(&powerfactor)) return parameter_powerfactor;
+    if(scpi_stack_query(&importenergy))return parameter_importenergy;
     
     if(scpi_stack_query(&frequency_node) &&
        scpi_stack_query(&pulsein1))    return parameter_freq1;
@@ -260,6 +262,13 @@ struct scpi_node_t powerfactor = {
     .setter_fn = NULL
 };
 
+struct scpi_node_t importenergy = {
+    .name = "IMPOrtenergy",
+    .children = {&update_rate, &sample_rate, NULL},
+    .query_fn = NULL,
+    .setter_fn = NULL
+};
+
 
 #define pulse_children {&pulse_node, &frequency_node, NULL}
 
@@ -396,7 +405,7 @@ struct scpi_node_t idn = {
 struct scpi_node_t root = {
     .name = "ROOT",
     .children = {&pulsein1, &pulsein2, &hpm_pm25, &hpm_pm10, &idn, &mqtt,
-        &externaltemperature, &temperature, &humidity, &light, &battery, &sound,
+        &importenergy, &externaltemperature, &temperature, &humidity, &light, &battery, &sound,
         &phase1, &phase2, &phase3, &powerfactor, &scpi_system, NULL},
 };
 

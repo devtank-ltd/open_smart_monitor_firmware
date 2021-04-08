@@ -5,7 +5,7 @@
 #include "freertos/queue.h"
 #include "driver/uart.h"
 #include "pinmap.h"
-//#include "mqtt.h"
+#include "status_led.h"
 #include "string.h"
 #include "logging.h"
 #include "scpi.h"
@@ -27,32 +27,32 @@ bool beginswith(const char * haystack, const char * needle, int * argument) {
     return false;
 }
 
-void uplink_task(void *pvParameters) {
+void console_task(void *pvParameters) {
 
     for(;;) {
-        char line[LINELENGTH];
-        for(int i = 0; i < LINELENGTH; i++) line[i] = '\0';
-        int received = uart_read_bytes(UPLINK_UART, line, LINELENGTH, 1000 / portTICK_PERIOD_MS);
-        if(!received) {
-            continue;
+        char line[LINELENGTH] = {0};
+        int offset = 0;
+        for(;;) {
+            char c;
+            int received = uart_read_bytes(CONSOLE_UART, &c, 1, 10 / portTICK_PERIOD_MS);
+            if(!received) continue;
+
+            if(c == '\n' || c == '\r' || c == ';' || offset == LINELENGTH) {
+                line[offset + 1] = '\0';
+                DEBUG_PRINTF("%s", line);
+                scpi_parse(line);
+                status_led_set_status(STATUS_LED_OK);
+                break;
+            }
+            status_led_set_status(STATUS_LED_TROUBLE);
+
+            line[offset++] = c;
+            offset %= LINELENGTH;
         }
-        if(!strstr(line, "\r")) {
-            continue;
-        }
-
-        int argument;
-
-        if(beginswith(line, "set midpoint ", &argument)) {
-            set_midpoint(argument);
-            continue;
-        }
-
-        scpi_parse(line);
-
     }
 }
 
-void uplink_init() {
+void console_init() {
     const uart_config_t uart_config = {
             .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
             .data_bits = UART_DATA_8_BITS,
@@ -61,12 +61,12 @@ void uplink_init() {
             .source_clk = UART_SCLK_REF_TICK,
     };
     const int uart_buffer_size = 2 * 1024;
-    ESP_ERROR_CHECK(uart_param_config(UPLINK_UART, &uart_config));
-    ESP_ERROR_CHECK(uart_driver_install(UPLINK_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_param_config(CONSOLE_UART, &uart_config));
+    ESP_ERROR_CHECK(uart_driver_install(CONSOLE_UART, uart_buffer_size, uart_buffer_size, 0, NULL, 0));
 
     xUplinkHandle = xTaskCreateStatic(
-                      uplink_task,     /* Function that implements the task. */
-                      "UPLINKTASK",    /* Text name for the task. */
+                      console_task,    /* Function that implements the task. */
+                      "CONSOLETASK",   /* Text name for the task. */
                       STACKSIZE,       /* Number of indexes in the xStack array. */
                       (void*)1,        /* Parameter passed into the task. */
                       tskIDLE_PRIORITY,/* Priority at which the task is created. */
