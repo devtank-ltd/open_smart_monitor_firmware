@@ -136,6 +136,6 @@ void get_sound() {
     // This equation 
     double db = db_correction((20*log10(vrms/0.00891))-AMP_GAIN+94);
 
-    stats_enqueue_sample(parameter_sound, db);
+    stats_enqueue_sample(parameter_sound, db * 10);
 }
 
