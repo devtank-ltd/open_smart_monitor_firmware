@@ -5,7 +5,7 @@
 #include "freertos/queue.h"
 #include "driver/uart.h"
 #include "pinmap.h"
-//#include "mqtt.h"
+#include "status_led.h"
 #include "string.h"
 #include "logging.h"
 #include "scpi.h"
@@ -31,23 +31,24 @@ void console_task(void *pvParameters) {
 
     for(;;) {
         char line[LINELENGTH] = {0};
-        int received = uart_read_bytes(CONSOLE_UART, (unsigned char*)line, LINELENGTH, 1000 / portTICK_PERIOD_MS);
-        if(!received) {
-            continue;
+        int offset = 0;
+        for(;;) {
+            char c;
+            int received = uart_read_bytes(CONSOLE_UART, &c, 1, 10 / portTICK_PERIOD_MS);
+            if(!received) continue;
+
+            if(c == '\n' || c == '\r' || c == ';' || offset == LINELENGTH) {
+                line[offset + 1] = '\0';
+                DEBUG_PRINTF("%s", line);
+                scpi_parse(line);
+                status_led_set_status(STATUS_LED_OK);
+                break;
+            }
+            status_led_set_status(STATUS_LED_TROUBLE);
+
+            line[offset++] = c;
+            offset %= LINELENGTH;
         }
-        if(!strstr(line, "\r")) {
-            continue;
-        }
-
-        int argument;
-
-        if(beginswith(line, "set midpoint ", &argument)) {
-            set_midpoint(argument);
-            continue;
-        }
-
-        scpi_parse(line);
-
     }
 }
 
