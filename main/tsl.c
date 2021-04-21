@@ -127,7 +127,6 @@ float afn(float r) {
 
 void CalculateLux(uint16_t ch0, uint16_t ch1)
 {
-    if(!ch0) return;
     float r = ch1/(float)ch0;
     float a = afn(r);
     int lux;
