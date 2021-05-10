@@ -13,7 +13,7 @@ git:
 
 build: git
 
-flash: build dfu
+#flash: build dfu
 dfu:
 	./into_dfu.sh
 
